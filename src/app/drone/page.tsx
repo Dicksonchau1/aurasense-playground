@@ -582,11 +582,8 @@ function DroneInspectContent() {
 
 export default function DronePage() {
   return (
-    <MembershipDrawerProvider>
-      <PlaygroundShell>
-        <DroneInspectContent />
-      </PlaygroundShell>
-      <NepaAgent />
-    </MembershipDrawerProvider>
+    <PlaygroundShell>
+      <DroneInspectContent />
+    </PlaygroundShell>
   )
 }
