@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aura Rehearse — NEPA Playground
 
-## Getting Started
+Live: **https://playground.aurasensehk.com**
 
-First, run the development server:
+A browser-only playground for the **NEPA** (Non-invasive Envelope of Pattern Analysis) engine.
+
+- **Rehearse** — practise on-camera. Four behavioural lanes are cross-checked against your own baseline. Nothing leaves your device.
+- **Drone** — placeholder for live AI overlay on any camera feed. Webcam + YOLOv8n inference arrives in V0.5.
+
+This is **V0**: dark UI, mock real-time metrics, locked premium lanes, zero backend.
+V0.5 will add Supabase auth, save & share, dynamic OG cards, and in-browser YOLO for Drone.
+
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run lint
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Requires Node 20+.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project shape
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/
+    page.tsx                 # redirects → /rehearse
+    layout.tsx               # dark theme, fonts, MembershipDrawerProvider, Vercel Analytics
+    rehearse/page.tsx
+    drone/page.tsx
+  components/
+    playground-shell.tsx     # 3-column shell
+    sidebar.tsx              # nav + static guest chip (V0.5: AuthButton)
+    membership-drawer.tsx    # premium lane explainer
+    lane-toggle.tsx          # ✓ / 🔒 chip
+    rehearse/                # metrics-panel, lane-bar, mock-runtime
+    drone/                   # placeholder body (V0.5: yolo-overlay, drone-metrics)
+    ui/                      # button, pill, sheet
+  lib/
+    cn.ts                    # clsx + tailwind-merge
+    copy.ts                  # canonical strings, language discipline
+```
 
-## Learn More
+## Language discipline
 
-To learn more about Next.js, take a look at the following resources:
+The product never uses **deception, lie, truth, emotion, honesty, confidence score**.
+It always frames behaviour as **anomaly, consistency, coherence, cross-check, envelope, practice**.
+The single user persona is **the candidate**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Roadmap (read `BACKLOG.md` for everything else)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Milestone | Scope                                                                 |
+| --------- | --------------------------------------------------------------------- |
+| **V0** ✅ | Mock rehearse, drone placeholder, design system, membership drawer    |
+| V0.5      | Magic-link + Google auth, save/share sessions, in-browser YOLO drone  |
+| V1        | Stripe gating, RTSP/SRT ingest, server-side Roboflow inference        |
+| V1.5      | MBIS export                                                           |
+| V2        | Aura Avatar, lip-sync detector, LiDAR                                 |
 
-## Deploy on Vercel
+## Launch posts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See `LAUNCH.md`.
