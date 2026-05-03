@@ -77,3 +77,13 @@ export function MembershipDrawer({ open, onClose }: MembershipDrawerProps) {
     </Drawer>
   )
 }
+
+// TODO: V0 agent collision artifact — proper provider wiring pending.
+export function useMembershipDrawer() {
+  return {
+    isOpen: false,
+    open: (_label?: string) => {},
+    close: () => {},
+    toggle: () => {},
+  };
+}
