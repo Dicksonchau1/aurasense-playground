@@ -34,7 +34,7 @@ export function LaneToggles({ onOpenMembership }: LaneTogglesProps) {
           style={{
             background: lane.enabled ? 'rgba(16,185,129,0.15)' : 'var(--panel)',
             color: lane.enabled ? 'var(--accent-green)' : 'var(--muted)',
-            border: `1px solid ${lane.enabled ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`,
+            border: '1px solid ' + (lane.enabled ? 'rgba(16,185,129,0.3)' : 'var(--border)'),
             cursor: lane.locked ? 'pointer' : 'default',
           }}
         >
@@ -45,10 +45,7 @@ export function LaneToggles({ onOpenMembership }: LaneTogglesProps) {
               {lane.lockedLabel && <span className="text-xs opacity-60">{lane.lockedLabel}</span>}
             </>
           ) : (
-            <>
-              <span>✓</span>
-              {lane.label}
-            </>
+            <><span>&#10003;</span>{lane.label}</>
           )}
         </button>
       ))}

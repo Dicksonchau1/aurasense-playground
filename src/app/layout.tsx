@@ -1,33 +1,35 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { MembershipDrawerProvider } from "@/components/membership-drawer";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
+import './globals.css'
 
-const geistSans = Geist({ variable: "--font-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: "Aura Rehearse · NEPA Playground",
-  description:
-    "Practice on-camera. Watch your envelope and consistency in real time. Nothing leaves your device.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://playground.aurasensehk.com"
-  ),
-};
+  title: 'Aura Rehearse — NEPA Playground',
+  description: 'Reflects. Rehearses. Your private practice mirror. Nothing leaves your device.',
+  metadataBase: new URL('https://playground.aurasensehk.com'),
+  openGraph: {
+    title: 'Aura Rehearse — NEPA Playground',
+    description: 'Reflects. Rehearses. Your private practice mirror. Nothing leaves your device.',
+    url: 'https://playground.aurasensehk.com/rehearse',
+    images: [{ url: '/og.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Aura Rehearse — NEPA Playground',
+    description: 'Live envelope score + consistency index from your webcam. 100% in-browser.',
+    images: ['/og.png'],
+  },
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
-    >
-      <body className="min-h-full bg-zinc-950 text-zinc-100 font-sans">
-        <MembershipDrawerProvider>{children}</MembershipDrawerProvider>
+    <html lang="en" className={inter.variable}>
+      <body>
+        {children}
         <Analytics />
       </body>
     </html>
-  );
+  )
 }

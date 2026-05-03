@@ -29,32 +29,25 @@ export default function RehearsePage() {
     drift: 0,
   })
 
-  // Update scores from landmarks
   useEffect(() => {
     if (!isActive || landmarks.length === 0) return
-
     const posture = Math.round(postureScore(landmarks))
     const gaze = Math.round(gazeScore(landmarks))
     const framing = Math.round(framingScore(landmarks))
     const pacing = pacingScore
-
     consistencyRef.current.push([posture, gaze, framing])
     const consistency = consistencyRef.current.score()
     const drift = consistencyRef.current.driftTrend()
     const envelopeScore = envelope({ posture, gaze, framing, pacing })
-
     setScores({ posture, gaze, framing, pacing, envelope: envelopeScore, consistency, drift })
   }, [landmarks, pacingScore, isActive])
 
-  // Draw skeleton on canvas
   useEffect(() => {
     const canvas = canvasRef.current
     const video = videoRef.current
     if (!canvas || !video) return
-
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-
     if (landmarks.length > 0) {
       canvas.width = video.videoWidth || 1280
       canvas.height = video.videoHeight || 720
@@ -64,7 +57,6 @@ export default function RehearsePage() {
     }
   }, [landmarks, videoRef])
 
-  // Keyboard shortcut ⌘↵ / Ctrl+↵
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -99,34 +91,20 @@ export default function RehearsePage() {
   return (
     <PlaygroundShell metrics={metrics}>
       <div className="p-6 max-w-3xl">
-        {/* Breadcrumb */}
         <p className="text-xs mb-4" style={{ color: 'var(--muted)' }}>
-          NEPA Playground <span className="mx-1">›</span> Aura Rehearse
+          NEPA Playground <span className="mx-1">&#8250;</span> Aura Rehearse
         </p>
-
-        {/* Headline */}
         <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text)' }}>Aura Rehearse</h1>
         <p className="text-base mb-1" style={{ color: 'var(--accent-green)' }}>Reflects. Rehearses.</p>
         <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
           Your private practice mirror. Nothing leaves your device.
         </p>
-
-        {/* Video area */}
         <div
           className="relative w-full rounded-xl overflow-hidden mb-4"
           style={{ aspectRatio: '16/9', background: 'var(--panel)', border: '1px solid var(--border)' }}
         >
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
-            playsInline
-            muted
-          />
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 w-full h-full"
-            style={{ pointerEvents: 'none' }}
-          />
+          <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
+          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }} />
           {!isActive && (
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-sm" style={{ color: 'var(--muted)' }}>Enable camera to begin</p>
@@ -138,8 +116,6 @@ export default function RehearsePage() {
             </div>
           )}
         </div>
-
-        {/* Role selector */}
         <div className="flex gap-2 mb-3">
           {['Candidate', 'Interviewer', 'Mock', 'Review'].map(role => (
             <button
@@ -157,27 +133,21 @@ export default function RehearsePage() {
             </button>
           ))}
         </div>
-
-        {/* Lane toggles */}
         <div className="mb-4">
           <LaneToggles onOpenMembership={() => setDrawerOpen(true)} />
         </div>
-
-        {/* CTA pill */}
         <CtaPill
           isActive={isActive}
           hasPermission={!!stream && !error}
           onStart={start}
           onStop={stop}
         />
-
         {error && (
           <p className="text-xs mt-2" style={{ color: 'var(--lock-red)' }}>
             Camera permission required. Please allow access and try again.
           </p>
         )}
       </div>
-
       <MembershipDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </PlaygroundShell>
   )

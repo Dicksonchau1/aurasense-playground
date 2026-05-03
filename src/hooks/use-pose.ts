@@ -11,12 +11,11 @@ export function usePose(videoRef: React.RefObject<HTMLVideoElement | null>, isAc
 
   useEffect(() => {
     let cancelled = false
-
     async function initPose() {
       try {
-        // @ts-ignore
         const { FilesetResolver, PoseLandmarker } = await import(
           /* webpackIgnore: true */
+          // @ts-ignore
           'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9/vision_bundle.mjs'
         )
         const vision = await FilesetResolver.forVisionTasks(
@@ -24,8 +23,7 @@ export function usePose(videoRef: React.RefObject<HTMLVideoElement | null>, isAc
         )
         const pose = await PoseLandmarker.createFromOptions(vision, {
           baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
           },
           runningMode: 'VIDEO',
           numPoses: 1,
@@ -35,7 +33,6 @@ export function usePose(videoRef: React.RefObject<HTMLVideoElement | null>, isAc
         console.error('Failed to init MediaPipe pose:', e)
       }
     }
-
     initPose()
     return () => { cancelled = true }
   }, [])
@@ -45,41 +42,27 @@ export function usePose(videoRef: React.RefObject<HTMLVideoElement | null>, isAc
     const pose = poseLandmarkerRef.current as {
       detectForVideo: (v: HTMLVideoElement, ts: number) => { landmarks: { x: number; y: number; z: number; visibility?: number }[][] }
     } | null
-
     if (!video || !pose || video.readyState < 2) {
       rafRef.current = requestAnimationFrame(loop)
       return
     }
-
     const now = performance.now()
-    const elapsed = now - lastFrameTime.current
-    if (elapsed < 1000 / FPS_CAP) {
+    if (now - lastFrameTime.current < 1000 / FPS_CAP) {
       rafRef.current = requestAnimationFrame(loop)
       return
     }
     lastFrameTime.current = now
-
     try {
       const result = pose.detectForVideo(video, now)
-      if (result.landmarks?.[0]) {
-        setLandmarks(result.landmarks[0])
-      } else {
-        setLandmarks([])
-      }
-    } catch {
-      // ignore
-    }
-
+      if (result.landmarks?.[0]) setLandmarks(result.landmarks[0])
+      else setLandmarks([])
+    } catch { /* ignore */ }
     rafRef.current = requestAnimationFrame(loop)
   }, [videoRef])
 
   useEffect(() => {
-    if (isActive) {
-      rafRef.current = requestAnimationFrame(loop)
-    } else {
-      cancelAnimationFrame(rafRef.current)
-      setLandmarks([])
-    }
+    if (isActive) rafRef.current = requestAnimationFrame(loop)
+    else { cancelAnimationFrame(rafRef.current); setLandmarks([]) }
     return () => cancelAnimationFrame(rafRef.current)
   }, [isActive, loop])
 

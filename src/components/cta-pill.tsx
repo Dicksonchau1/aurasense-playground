@@ -20,15 +20,9 @@ export function CtaPill({ isActive, hasPermission, onStart, onStop }: CtaPillPro
         }}
       >
         {isActive ? (
-          <>
-            <span>■</span>
-            End session
-          </>
+          <><span>&#9632;</span> End session</>
         ) : (
-          <>
-            Start Rehearsal
-            <kbd className="text-xs opacity-70 font-mono">⌘↵</kbd>
-          </>
+          <>Start Rehearsal <kbd className="text-xs opacity-70 font-mono">&#8984;&#8629;</kbd></>
         )}
       </button>
       <div className="relative">
@@ -40,10 +34,8 @@ export function CtaPill({ isActive, hasPermission, onStart, onStop }: CtaPillPro
           <Key className="w-4 h-4" style={{ color: 'var(--muted)' }} />
         </button>
         {!hasPermission && (
-          <span
-            className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2"
-            style={{ background: 'var(--lock-red)', borderColor: 'var(--bg)' }}
-          />
+          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2"
+            style={{ background: 'var(--lock-red)', borderColor: 'var(--bg)' }} />
         )}
       </div>
     </div>

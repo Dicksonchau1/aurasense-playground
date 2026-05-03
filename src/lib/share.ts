@@ -11,13 +11,10 @@ export async function captureScreenshot(
   return offscreen.toDataURL('image/png')
 }
 
-export function buildShareURL(scores: {
-  envelope: number
-  consistency: number
-}): string {
+export function buildShareURL(scores: { envelope: number; consistency: number }): string {
   const params = new URLSearchParams({
     e: String(scores.envelope),
     c: String(scores.consistency),
   })
-  return `https://playground.aurasensehk.com/rehearse?${params}`
+  return 'https://playground.aurasensehk.com/rehearse?' + params
 }

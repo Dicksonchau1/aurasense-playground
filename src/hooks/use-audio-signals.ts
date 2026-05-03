@@ -21,32 +21,22 @@ export function useAudioSignals(stream: MediaStream | null, isActive: boolean) {
       speechFrames.current = []
       return
     }
-
     const { analyser, cleanup } = createAudioAnalyser(stream)
     analyserRef.current = analyser
     cleanupRef.current = cleanup
-
     const maxFrames = WINDOW_SECONDS * FPS
-
     function tick() {
       if (!analyserRef.current) return
       const rms = getRMS(analyserRef.current)
       speechFrames.current.push(rms > 0.02)
-      if (speechFrames.current.length > maxFrames) {
-        speechFrames.current.shift()
-      }
+      if (speechFrames.current.length > maxFrames) speechFrames.current.shift()
       const speechCount = speechFrames.current.filter(Boolean).length
       const ratio = speechCount / speechFrames.current.length
       setPacingScore(computePacingScore(ratio))
       rafRef.current = requestAnimationFrame(tick)
     }
-
     rafRef.current = requestAnimationFrame(tick)
-
-    return () => {
-      cleanup()
-      cancelAnimationFrame(rafRef.current)
-    }
+    return () => { cleanup(); cancelAnimationFrame(rafRef.current) }
   }, [stream, isActive])
 
   return { pacingScore }

@@ -27,12 +27,8 @@ export function useCamera() {
   }, [])
 
   const stop = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop())
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
+    if (stream) stream.getTracks().forEach(t => t.stop())
+    if (videoRef.current) videoRef.current.srcObject = null
     setStream(null)
     setIsActive(false)
   }, [stream])

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { redirect } from 'next/navigation'
 
-export default function Index() {
-  redirect("/rehearse");
+export default function Home() {
+  redirect('/rehearse')
 }

@@ -1,14 +1,10 @@
-import type { PoseLandmarkerResult } from '@mediapipe/tasks-vision'
-
-export type { PoseLandmarkerResult }
-
 export const SKELETON_CONNECTIONS: [number, number][] = [
-  [11, 12], // shoulders
-  [11, 13], [13, 15], // left arm
-  [12, 14], [14, 16], // right arm
-  [23, 24], // hips
-  [11, 23], [12, 24], // shoulder-hip
-  [0, 2], [0, 5], [2, 7], [5, 8], // face outline
+  [11, 12],
+  [11, 13], [13, 15],
+  [12, 14], [14, 16],
+  [23, 24],
+  [11, 23], [12, 24],
+  [0, 2], [0, 5], [2, 7], [5, 8],
 ]
 
 export function drawSkeleton(
@@ -18,8 +14,6 @@ export function drawSkeleton(
   height: number
 ) {
   ctx.clearRect(0, 0, width, height)
-
-  // Draw connections
   ctx.strokeStyle = '#10b981'
   ctx.lineWidth = 2
   for (const [a, b] of SKELETON_CONNECTIONS) {
@@ -31,8 +25,6 @@ export function drawSkeleton(
     ctx.lineTo(lB.x * width, lB.y * height)
     ctx.stroke()
   }
-
-  // Draw landmarks
   ctx.fillStyle = '#10b981'
   for (const lm of landmarks) {
     if (!lm) continue

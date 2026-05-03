@@ -1,64 +1,44 @@
 # Aura Rehearse — NEPA Playground
 
-Live: **https://playground.aurasensehk.com**
+> Reflects. Rehearses. Your private practice mirror. Nothing leaves your device.
 
-A browser-only playground for the **NEPA** (Non-invasive Envelope of Pattern Analysis) engine.
+Live at **[playground.aurasensehk.com/rehearse](https://playground.aurasensehk.com/rehearse)**
 
-- **Rehearse** — practise on-camera. Four behavioural lanes are cross-checked against your own baseline. Nothing leaves your device.
-- **Drone** — placeholder for live AI overlay on any camera feed. Webcam + YOLOv8n inference arrives in V0.5.
+## What It Is
 
-This is **V0**: dark UI, mock real-time metrics, locked premium lanes, zero backend.
-V0.5 will add Supabase auth, save & share, dynamic OG cards, and in-browser YOLO for Drone.
+Aura Rehearse is a fully client-side interview self-coaching tool. It uses your webcam to:
 
-## Develop
+- Render a live **pose skeleton overlay** (MediaPipe Tasks Vision)
+- Compute an **Envelope Score** (0–100) — a weighted composite of posture, gaze, framing, and pacing
+- Track a **Consistency Index** — rolling cross-variance of all lanes
+- Give **adaptive tips** based on your lowest-scoring lane
+
+All processing happens in your browser. Zero backend. Zero auth. Zero data collection.
+
+## Running Locally
 
 ```bash
+git clone https://github.com/Dicksonchau1/aurasense-playground
+cd aurasense-playground
 npm install
-npm run dev      # http://localhost:3000
-npm run lint
-npm run build
+npm run dev
 ```
 
-Requires Node 20+.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Project shape
+## Tech Stack
 
-```
-src/
-  app/
-    page.tsx                 # redirects → /rehearse
-    layout.tsx               # dark theme, fonts, MembershipDrawerProvider, Vercel Analytics
-    rehearse/page.tsx
-    drone/page.tsx
-  components/
-    playground-shell.tsx     # 3-column shell
-    sidebar.tsx              # nav + static guest chip (V0.5: AuthButton)
-    membership-drawer.tsx    # premium lane explainer
-    lane-toggle.tsx          # ✓ / 🔒 chip
-    rehearse/                # metrics-panel, lane-bar, mock-runtime
-    drone/                   # placeholder body (V0.5: yolo-overlay, drone-metrics)
-    ui/                      # button, pill, sheet
-  lib/
-    cn.ts                    # clsx + tailwind-merge
-    copy.ts                  # canonical strings, language discipline
-```
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 15+, App Router |
+| Language | TypeScript, React 19 |
+| Styling | Tailwind CSS v4 |
+| UI Components | shadcn/ui |
+| Pose Detection | MediaPipe Tasks Vision v0.10.9 (CDN) |
+| Audio Analysis | Web Audio API (native) |
+| Analytics | Vercel Analytics |
+| Hosting | Vercel |
 
-## Language discipline
+## License
 
-The product never uses **deception, lie, truth, emotion, honesty, confidence score**.
-It always frames behaviour as **anomaly, consistency, coherence, cross-check, envelope, practice**.
-The single user persona is **the candidate**.
-
-## Roadmap (read `BACKLOG.md` for everything else)
-
-| Milestone | Scope                                                                 |
-| --------- | --------------------------------------------------------------------- |
-| **V0** ✅ | Mock rehearse, drone placeholder, design system, membership drawer    |
-| V0.5      | Magic-link + Google auth, save/share sessions, in-browser YOLO drone  |
-| V1        | Stripe gating, RTSP/SRT ingest, server-side Roboflow inference        |
-| V1.5      | MBIS export                                                           |
-| V2        | Aura Avatar, lip-sync detector, LiDAR                                 |
-
-## Launch posts
-
-See `LAUNCH.md`.
+MIT © 2025 AuraSense HK
