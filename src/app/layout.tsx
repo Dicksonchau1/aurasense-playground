@@ -1,0 +1,35 @@
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
+import './globals.css'
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+
+export const metadata: Metadata = {
+  title: 'Aura Rehearse — NEPA Playground',
+  description: 'Reflects. Rehearses. Your private practice mirror — live envelope score from your webcam. Nothing leaves your device.',
+  metadataBase: new URL('https://playground.aurasensehk.com'),
+  openGraph: {
+    title: 'Aura Rehearse — NEPA Playground',
+    description: 'Reflects. Rehearses. Your private practice mirror. Nothing leaves your device.',
+    url: 'https://playground.aurasensehk.com/rehearse',
+    images: [{ url: '/og.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Aura Rehearse — NEPA Playground',
+    description: 'Live envelope score + consistency index from your webcam. 100% in-browser.',
+    images: ['/og.png'],
+  },
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={inter.variable}>
+      <body>
+        {children}
+        <Analytics />
+      </body>
+    </html>
+  )
+}
