@@ -4,7 +4,7 @@ import { PlaygroundShell } from '@/components/playground-shell'
 import { LaneToggle } from '@/components/lane-toggle'
 import { MembershipDrawerProvider, useMembershipDrawer } from '@/components/membership-drawer'
 import { ProGate } from '@/components/pro-gate'
-import { NepaAgent } from '@/components/nepa-agent'
+import { captureFrameRegion } from '@/components/nav-bar'
 import { ExternalLink, Radio, Layers, List, RefreshCw, Maximize2, AlertTriangle, Settings, CreditCard, Key, Activity, Zap, Shield } from 'lucide-react'
 
 const DRONES = [
@@ -226,7 +226,13 @@ function DroneInspectContent() {
 
               {/* Main viewport */}
               <div className="relative rounded-2xl overflow-hidden"
-                style={{ background: '#000', border: '1px solid rgba(16,185,129,0.2)', aspectRatio: '16/9' }}>
+                style={{ background: '#000', border: '1px solid rgba(16,185,129,0.2)', aspectRatio: '16/9' }}
+                onClick={(e) => {
+                  const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+                  const x = Math.round(((e.clientX - rect.left) / rect.width) * 100)
+                  const y = Math.round(((e.clientY - rect.top) / rect.height) * 100)
+                  captureFrameRegion(`x:${x}% y:${y}% — ${selectedDrone.name}`)
+                }}>
                 {/* Mock video background — gradient with scanlines */}
                 <div className="absolute inset-0"
                   style={{ background: 'linear-gradient(180deg, #0a1628 0%, #071020 40%, #0d1a2e 70%, #091525 100%)' }} />

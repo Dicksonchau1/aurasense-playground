@@ -1,189 +1,71 @@
-import Link from 'next/link';
+'use client'
+import Link from 'next/link'
+import { Zap, ArrowRight } from 'lucide-react'
 
-export default function LandingPage() {
+export default function HomePage() {
   return (
-    <main className="relative min-h-screen w-full overflow-x-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      {/* HERO with full-bleed background video */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-        >
-          <source src="/hero/scene-builder.mp4" type="video/mp4" />
-        </video>
+    <div className="min-h-dvh flex flex-col items-center justify-center"
+      style={{ background: '#070e1a', fontFamily: 'monospace' }}>
+      {/* Ambient glow */}
+      <div className="pointer-events-none fixed inset-0"
+        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 60%, rgba(16,185,129,0.07) 0%, transparent 70%)' }} />
+      {/* Grid */}
+      <div className="pointer-events-none fixed inset-0 opacity-30"
+        style={{ backgroundImage: 'linear-gradient(rgba(16,185,129,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.04) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
-        {/* Dark gradient overlay */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.95) 100%)',
-          }}
-        />
+      <div className="relative z-10 flex flex-col items-center gap-8 px-6 text-center">
+        {/* Logo mark */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', boxShadow: '0 0 24px rgba(16,185,129,0.15)' }}>
+            <Zap className="w-5 h-5" style={{ color: '#10b981' }} />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-bold tracking-widest uppercase" style={{ color: '#10b981' }}>AuraSense HK</p>
+            <p className="text-[10px] tracking-wider uppercase" style={{ color: 'rgba(255,255,255,0.3)' }}>NEPA Playground</p>
+          </div>
+        </div>
 
-        {/* Cyan glow vignette */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse at center, rgba(34,211,238,0.10) 0%, transparent 65%)',
-          }}
-        />
-
-        {/* Hero content */}
-        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-          <p className="mb-6" style={{
-            fontFamily: 'ui-monospace, monospace',
-            textTransform: 'uppercase',
-            letterSpacing: '0.15em',
-            fontSize: '0.75rem',
-            color: '#22d3ee',
-          }}>
-            Neuromorphic Perception · Live in your browser
-          </p>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: 800, lineHeight: 1.05, marginBottom: '1.5rem' }}>
-            Watch the world model{' '}
-            <span style={{ color: '#22d3ee' }}>come into the network</span>.
+        {/* Headline */}
+        <div className="space-y-3">
+          <h1 className="text-4xl font-bold tracking-tight" style={{ color: '#e2e8f0' }}>
+            Neuromorphic Perception<br />
+            <span style={{ color: '#10b981' }}>Orchestration</span>
           </h1>
-          <p style={{ fontSize: '1.125rem', color: '#9ca3af', maxWidth: '600px', margin: '0 auto 2.5rem', lineHeight: 1.65 }}>
-            AuraSense Playground lets you interact with NEPA — our event-driven
-            perception chain — directly in your browser. Plug your video. Plug
-            your robot. Plan your mission. Agnostic to upstream.
-          </p>
-
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
-            <Link href="/rehearse" style={{
-              background: '#22d3ee',
-              color: '#000',
-              padding: '0.875rem 2rem',
-              borderRadius: '0.5rem',
-              fontFamily: 'ui-monospace, monospace',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              textDecoration: 'none',
-              boxShadow: '0 0 24px rgba(34,211,238,0.3)',
-              transition: 'all 200ms',
-            }}>
-              Open Aura Rehearse →
-            </Link>
-            <Link href="/drone" style={{
-              background: 'transparent',
-              color: '#f5f5f5',
-              padding: '0.875rem 2rem',
-              borderRadius: '0.5rem',
-              border: '1px solid #1f2937',
-              fontFamily: 'ui-monospace, monospace',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              fontSize: '0.875rem',
-              textDecoration: 'none',
-              transition: 'all 200ms',
-            }}>
-              Try Drone Overlay
-            </Link>
-          </div>
-
-          <p style={{
-            marginTop: '2rem',
-            fontFamily: 'ui-monospace, monospace',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            fontSize: '0.7rem',
-            color: '#6b7280',
-          }}>
-            Free to try · HK$148/mo Pro · HK$888/mo Studio
+          <p className="text-sm max-w-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            Live drone overlay · Aura Rehearse · NEPA inference runtime.
+            Nothing leaves your device.
           </p>
         </div>
 
-        {/* Scroll indicator */}
-        <div style={{
-          position: 'absolute',
-          bottom: '2rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontFamily: 'ui-monospace, monospace',
-          fontSize: '0.7rem',
-          color: '#6b7280',
-          letterSpacing: '0.1em',
-        }}>
-          ↓ scroll
-        </div>
-      </section>
+        {/* Big enter button */}
+        <Link href="/drone"
+          className="group flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-base tracking-wide transition-all hover:scale-105 active:scale-95"
+          style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#000', boxShadow: '0 0 40px rgba(16,185,129,0.3), 0 4px 24px rgba(0,0,0,0.4)' }}>
+          <Zap className="w-5 h-5" />
+          Enter Playground
+          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+        </Link>
 
-      {/* Four surfaces */}
-      <section style={{ padding: '6rem 1.5rem', borderTop: '1px solid #1f2937' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <p style={{
-            textAlign: 'center',
-            fontFamily: 'ui-monospace, monospace',
-            textTransform: 'uppercase',
-            letterSpacing: '0.15em',
-            fontSize: '0.75rem',
-            color: '#22d3ee',
-            marginBottom: '1rem',
-          }}>
-            Four surfaces, one perception layer
-          </p>
-          <h2 style={{ textAlign: 'center', fontSize: '2.5rem', fontWeight: 700, marginBottom: '3rem' }}>
-            Plug anything. NEPA processes.
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-            <Link href="/rehearse" style={{ display: 'block', padding: '2rem', borderRadius: '0.75rem', border: '1px solid #1f2937', background: '#0a0a0a', textDecoration: 'none', color: 'inherit', transition: 'all 200ms' }}>
-              <p style={{ fontFamily: 'ui-monospace, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.7rem', color: '#22d3ee', marginBottom: '0.75rem' }}>01 / Rehearse</p>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>Voice Mirror</h3>
-              <p style={{ color: '#9ca3af', fontSize: '0.95rem', lineHeight: 1.5 }}>Live envelope + consistency from your webcam. 100% in-browser.</p>
-            </Link>
-            <Link href="/drone" style={{ display: 'block', padding: '2rem', borderRadius: '0.75rem', border: '1px solid #1f2937', background: '#0a0a0a', textDecoration: 'none', color: 'inherit', transition: 'all 200ms' }}>
-              <p style={{ fontFamily: 'ui-monospace, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.7rem', color: '#22d3ee', marginBottom: '0.75rem' }}>02 / Drone</p>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>Video HUD</h3>
-              <p style={{ color: '#9ca3af', fontSize: '0.95rem', lineHeight: 1.5 }}>Plug any video — sample, RTSP, WebRTC. NEPA overlays detections + telemetry.</p>
-            </Link>
-            <div style={{ display: 'block', padding: '2rem', borderRadius: '0.75rem', border: '1px solid #1f2937', background: '#0a0a0a', opacity: 0.6 }}>
-              <p style={{ fontFamily: 'ui-monospace, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.7rem', color: '#22d3ee', marginBottom: '0.75rem' }}>03 / Robotics 🔒</p>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>Robot Registry</h3>
-              <p style={{ color: '#9ca3af', fontSize: '0.95rem', lineHeight: 1.5 }}>Coming soon — register any robot with AuraSense schema or URDF.</p>
-            </div>
-            <div style={{ display: 'block', padding: '2rem', borderRadius: '0.75rem', border: '1px solid #1f2937', background: '#0a0a0a', opacity: 0.6 }}>
-              <p style={{ fontFamily: 'ui-monospace, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.7rem', color: '#22d3ee', marginBottom: '0.75rem' }}>04 / Planner 🔒</p>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>Waypoint Plan</h3>
-              <p style={{ color: '#9ca3af', fontSize: '0.95rem', lineHeight: 1.5 }}>Coming soon — plan once, export to ROS2, PX4, MAVLink, or JSON.</p>
-            </div>
-          </div>
+        {/* Sublinks */}
+        <div className="flex gap-6 text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          <Link href="/rehearse" className="hover:text-emerald-400 transition-colors">Aura Rehearse</Link>
+          <a href="https://aurasensehk.com" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">AuraSense HK ↗</a>
+          <a href="https://github.com/Dicksonchau1" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">GitHub ↗</a>
         </div>
-      </section>
 
-      {/* What is NEPA */}
-      <section style={{ padding: '6rem 1.5rem', borderTop: '1px solid #1f2937' }}>
-        <div style={{ maxWidth: '768px', margin: '0 auto', textAlign: 'center' }}>
-          <p style={{
-            fontFamily: 'ui-monospace, monospace',
-            textTransform: 'uppercase',
-            letterSpacing: '0.15em',
-            fontSize: '0.75rem',
-            color: '#22d3ee',
-            marginBottom: '1rem',
-          }}>
-            What is NEPA
-          </p>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>
-            A perception chain, not a black box
-          </h2>
-          <p style={{ fontSize: '1.125rem', color: '#9ca3af', lineHeight: 1.7 }}>
-            NEPA orchestrates five small, deterministic blocks — early_discard, roi_only,
-            polygon_zone, imu_parse, events_only — into a sub-millisecond perception loop.
-            End-to-end p95: <span style={{ color: '#22d3ee', fontWeight: 600 }}>117 µs</span> measured deterministically.
-          </p>
+        {/* Status bar */}
+        <div className="flex items-center gap-4 text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#10b981' }} />
+            RUNTIME ONLINE
+          </span>
+          <span>·</span>
+          <span>SHA-256 AUDIT CHAIN</span>
+          <span>·</span>
+          <span>V0.4</span>
         </div>
-      </section>
-    </main>
-  );
+      </div>
+    </div>
+  )
 }

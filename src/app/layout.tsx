@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
+import { MembershipDrawerProvider } from '@/components/membership-drawer'
+import { NavBar } from '@/components/nav-bar'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -23,8 +25,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        {children}
+      <body style={{ background: '#070e1a', margin: 0 }}>
+        <MembershipDrawerProvider>
+          <NavBar />
+          <main style={{ paddingTop: '3rem', minHeight: '100dvh' }}>
+            {children}
+          </main>
+        </MembershipDrawerProvider>
         <Analytics />
       </body>
     </html>
