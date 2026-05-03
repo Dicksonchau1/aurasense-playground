@@ -5,5 +5,5 @@ export function middleware() {
 }
 
 export const config = {
-  matcher: [],  // run on nothing — fully disabled
+  matcher: [],
 }
