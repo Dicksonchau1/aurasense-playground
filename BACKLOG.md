@@ -31,3 +31,11 @@ Anything that arrives after V0 ship goes here, **not** into the current mileston
 ## Inbound (uncategorised)
 
 _Add new requests below as they arrive._
+
+## P1 — Restore real MembershipDrawer hook
+- [ ] Replace stub useMembershipDrawer in src/components/membership-drawer.tsx
+- [ ] Add MembershipDrawerProvider with React.useState
+- [ ] Wrap children in src/app/layout.tsx
+- [ ] LaneToggle locked-click should open drawer with trigger label
+- [ ] Origin: V0 agent collision (May 2026); current stub returns no-op
+
