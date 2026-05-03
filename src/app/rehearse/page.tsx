@@ -20,13 +20,8 @@ export default function RehearsePage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const [scores, setScores] = useState({
-    posture: 0,
-    gaze: 0,
-    framing: 0,
-    pacing: 75,
-    envelope: 0,
-    consistency: 100,
-    drift: 0,
+    posture: 0, gaze: 0, framing: 0, pacing: 75,
+    envelope: 0, consistency: 100, drift: 0,
   })
 
   useEffect(() => {
@@ -69,20 +64,13 @@ export default function RehearsePage() {
 
   const metrics = (
     <div onClick={e => {
-      if ((e.target as HTMLElement).closest('[data-open-membership]')) {
-        setDrawerOpen(true)
-      }
+      if ((e.target as HTMLElement).closest('[data-open-membership]')) setDrawerOpen(true)
     }}>
       <MetricsPanel
         envelope={isActive ? scores.envelope : 0}
         consistency={isActive ? scores.consistency : 100}
         drift={isActive ? scores.drift : 0}
-        lanes={{
-          posture: isActive ? scores.posture : 0,
-          gaze: isActive ? scores.gaze : 0,
-          framing: isActive ? scores.framing : 0,
-          pacing: isActive ? scores.pacing : 75,
-        }}
+        lanes={{ posture: isActive ? scores.posture : 0, gaze: isActive ? scores.gaze : 0, framing: isActive ? scores.framing : 0, pacing: isActive ? scores.pacing : 75 }}
         isActive={isActive}
       />
     </div>
@@ -92,13 +80,14 @@ export default function RehearsePage() {
     <PlaygroundShell metrics={metrics}>
       <div className="p-6 max-w-3xl">
         <p className="text-xs mb-4" style={{ color: 'var(--muted)' }}>
-          NEPA Playground <span className="mx-1">&#8250;</span> Aura Rehearse
+          NEPA Playground <span className="mx-1">›</span> Aura Rehearse
         </p>
         <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text)' }}>Aura Rehearse</h1>
         <p className="text-base mb-1" style={{ color: 'var(--accent-green)' }}>Reflects. Rehearses.</p>
         <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
           Your private practice mirror. Nothing leaves your device.
         </p>
+
         <div
           className="relative w-full rounded-xl overflow-hidden mb-4"
           style={{ aspectRatio: '16/9', background: 'var(--panel)', border: '1px solid var(--border)' }}
@@ -116,11 +105,10 @@ export default function RehearsePage() {
             </div>
           )}
         </div>
+
         <div className="flex gap-2 mb-3">
           {['Candidate', 'Interviewer', 'Mock', 'Review'].map(role => (
-            <button
-              key={role}
-              disabled={role !== 'Candidate'}
+            <button key={role} disabled={role !== 'Candidate'}
               className="px-3 py-1.5 rounded-full text-xs border transition-colors"
               style={{
                 background: role === 'Candidate' ? 'rgba(16,185,129,0.15)' : 'transparent',
@@ -128,26 +116,23 @@ export default function RehearsePage() {
                 color: role === 'Candidate' ? 'var(--accent-green)' : 'var(--muted)',
                 cursor: role !== 'Candidate' ? 'not-allowed' : 'pointer',
               }}
-            >
-              {role}
-            </button>
+            >{role}</button>
           ))}
         </div>
+
         <div className="mb-4">
           <LaneToggles onOpenMembership={() => setDrawerOpen(true)} />
         </div>
-        <CtaPill
-          isActive={isActive}
-          hasPermission={!!stream && !error}
-          onStart={start}
-          onStop={stop}
-        />
+
+        <CtaPill isActive={isActive} hasPermission={!!stream && !error} onStart={start} onStop={stop} />
+
         {error && (
           <p className="text-xs mt-2" style={{ color: 'var(--lock-red)' }}>
             Camera permission required. Please allow access and try again.
           </p>
         )}
       </div>
+
       <MembershipDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </PlaygroundShell>
   )
