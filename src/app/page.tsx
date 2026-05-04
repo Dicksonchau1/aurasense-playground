@@ -1,69 +1,103 @@
 'use client'
 import React from 'react'
-import { FrameClickable } from '@/components/frame-clickable'
-import { WorldModelSection } from '@/components/world-model-section'
-import { TenStageSection } from '@/components/ten-stage-section'
+import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
 export default function HomePage() {
   return (
-    <main className="min-h-dvh pt-16 pb-12" style={{ background: '#070e1a', color: 'white' }}>
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-4 pt-8">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full"
-            style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}>
-            NEPA · WORLD MODEL · STDP
-          </span>
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-          AI perception that <span style={{ color: '#10b981' }}>predicts</span>, not recognises.
-        </h1>
-        <p className="mt-3 text-sm md:text-base max-w-2xl" style={{ color: 'rgba(255,255,255,0.65)' }}>
-          AuraSense fuses spike-timing dependent plasticity with a latent world model. Click any region of the hero below to dispatch that frame slice to the NEPA runtime.
+    <main
+      className="min-h-dvh flex items-center justify-center px-4"
+      style={{ background: '#070e1a', color: 'white' }}
+    >
+      <section className="max-w-2xl w-full text-center">
+        <p
+          className="text-[10px] font-mono uppercase tracking-[0.25em] mb-4"
+          style={{ color: '#10b981' }}
+        >
+          AuraSense Playground
         </p>
 
-        {/* Hero video */}
-        <div className="mt-6 rounded-2xl overflow-hidden"
-          style={{ border: '1px solid rgba(16,185,129,0.2)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
-          <FrameClickable source="hero" style={{ aspectRatio: '16/9', background: '#000' }}>
-            <video
-              src="/hero/world-model-stdp.mp4"
-              autoPlay loop muted playsInline crossOrigin="anonymous"
-              onError={(e) => {
-                const v = e.currentTarget
-                if (!v.src.endsWith('/hero/scene-builder.mp4')) v.src = '/hero/scene-builder.mp4'
-              }}
-              className="w-full h-full object-cover"
-            />
-          </FrameClickable>
+        <h1
+          className="text-4xl md:text-5xl font-bold leading-tight tracking-tight"
+          style={{ color: 'white' }}
+        >
+          NEPA inference, <span style={{ color: '#10b981' }}>live</span>.
+        </h1>
+
+        <p
+          className="mt-4 text-sm md:text-base max-w-md mx-auto"
+          style={{ color: 'rgba(255,255,255,0.65)' }}
+        >
+          A minimal sandbox for the AuraSense NEPA runtime. Try the live drone feed,
+          rehearse a scene, or open the agent in the corner.
+        </p>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link
+            href="/drone"
+            className="px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-opacity hover:opacity-90"
+            style={{
+              background: 'rgba(16,185,129,0.15)',
+              border: '1px solid rgba(16,185,129,0.3)',
+              color: '#10b981',
+            }}
+          >
+            Drone Console <ArrowRight className="w-3 h-3" />
+          </Link>
+
+          <Link
+            href="/rehearse"
+            className="px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-opacity hover:opacity-90"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.85)',
+            }}
+          >
+            Rehearse <ArrowRight className="w-3 h-3" />
+          </Link>
+
+          <Link
+            href="/portal"
+            className="px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-opacity hover:opacity-90"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.85)',
+            }}
+          >
+            Portal <ArrowRight className="w-3 h-3" />
+          </Link>
+
+          <a
+            href="https://www.aurasensehk.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-opacity hover:opacity-90"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.6)',
+            }}
+          >
+            ← Marketing site
+          </a>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <a href="/drone" className="px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5"
-            style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
-            View Drone Console <ArrowRight className="w-3 h-3" />
-          </a>
-          <a href="/rehearse" className="px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}>
-            Rehearse Scene <ArrowRight className="w-3 h-3" />
-          </a>
-        </div>
+        <p
+          className="mt-12 text-[10px] font-mono"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
+        >
+          AuraSense Ltd · Kowloon, Hong Kong ·{' '}
+          <Link href="/privacy" className="hover:underline" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Privacy
+          </Link>{' '}
+          ·{' '}
+          <Link href="/terms" className="hover:underline" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Terms
+          </Link>
+        </p>
       </section>
-
-      <div className="my-8 max-w-6xl mx-auto px-4">
-        <div style={{ height: 1, background: 'rgba(16,185,129,0.15)' }} />
-      </div>
-
-      {/* World Model — public section */}
-      <WorldModelSection />
-
-      <div className="my-8 max-w-6xl mx-auto px-4">
-        <div style={{ height: 1, background: 'rgba(16,185,129,0.15)' }} />
-      </div>
-
-      {/* 10-Stage Pipeline — public section */}
-      <TenStageSection />
     </main>
   )
 }
