@@ -28,15 +28,42 @@ def _check_auth(req):
         return web.json_response({"ok": False, "error": "unauthorized"}, status=401)
 
 def _result_dict(r):
+    """Convert gRPC InferenceResult → dict for JSON response. Defensive against field naming."""
+    detections = []
+    for d in r.detections:
+        # Protobuf reserves 'class' as a Python keyword — access via property name varies
+        try:
+            cls = getattr(d, "class")
+        except Exception:
+            try:
+                cls = d.cls
+            except Exception:
+                cls = "unknown"
+        score = float(getattr(d, "score", 0.0))
+        bbox = list(getattr(d, "bbox", []))
+        detections.append({"class": cls, "score": score, "bbox": bbox})
+
+    stdp = getattr(r, "stdp", None)
+    world = getattr(r, "world", None)
+
     return {
-        "detections":  [{"class": getattr(d, "class"), "score": d.score, "bbox": list(d.bbox)} for d in r.detections],
-        "stdp":        {"spike_rate_hz": r.stdp.spike_rate_hz, "sparsity": r.stdp.sparsity,
-                        "plasticity_events": r.stdp.plasticity_events, "energy_w": r.stdp.energy_w},
-        "world_model": {"horizon_frames": r.world.horizon_frames, "prediction_error": r.world.prediction_error,
-                        "anomaly_flag": r.world.anomaly_flag, "latent_dim": r.world.latent_dim},
-        "latency_ms": r.latency_ms,
-        "runtime":    f"{r.runtime}@{NODE_ID}",
+        "detections":  detections,
+        "stdp": {
+            "spike_rate_hz":     getattr(stdp, "spike_rate_hz", 0.0)     if stdp else 0.0,
+            "sparsity":          getattr(stdp, "sparsity", 0.0)          if stdp else 0.0,
+            "plasticity_events": getattr(stdp, "plasticity_events", 0)   if stdp else 0,
+            "energy_w":          getattr(stdp, "energy_w", 0.0)          if stdp else 0.0,
+        },
+        "world_model": {
+            "horizon_frames":    getattr(world, "horizon_frames", 16)    if world else 16,
+            "prediction_error":  getattr(world, "prediction_error", 0.0) if world else 0.0,
+            "anomaly_flag":      bool(getattr(world, "anomaly_flag", False)) if world else False,
+            "latent_dim":        getattr(world, "latent_dim", 256)       if world else 256,
+        },
+        "latency_ms": int(getattr(r, "latency_ms", 0)),
+        "runtime":    f"{getattr(r, 'runtime', 'unknown')}@{NODE_ID}",
     }
+
 
 async def health(req):
     if (d := _check_auth(req)): return d
@@ -56,7 +83,7 @@ async def infer_frame(req):
         elif part.name == "region":  region  = (await part.text()).strip()
         elif part.name == "user_id": user_id = (await part.text()).strip()
     r = await (await stub()).InferFrame(nepa_pb2.FrameRequest(
-        image_jpeg=image_bytes, source=source, region=region, user_id=user_id))
+        image_jpeg=bytes(image_bytes), source=source, region=region, user_id=user_id))
     return web.json_response(_result_dict(r))
 
 async def infer_video(req):
@@ -68,7 +95,7 @@ async def infer_video(req):
         elif part.name == "filename": filename    = (await part.text()).strip()
         elif part.name == "user_id":  user_id     = (await part.text()).strip()
     r = await (await stub()).InferVideo(nepa_pb2.VideoRequest(
-        video_mp4=video_bytes, filename=filename, user_id=user_id))
+        video_mp4=bytes(video_bytes), filename=filename, user_id=user_id))
     return web.json_response(_result_dict(r))
 
 async def stream_anomalies(req):
