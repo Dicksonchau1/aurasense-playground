@@ -12,7 +12,6 @@ def _to_pb(r) -> nepa_pb2.InferenceResult:
     return nepa_pb2.InferenceResult(
         detections=[nepa_pb2.Detection(**{"class": d.cls, "score": d.score, "bbox": d.bbox}) for d in r.detections],
         stdp=nepa_pb2.StdpStats(
-            spike_rate_hz=r.stdp.spike_rate_hz, sparsity=r.stdp.spar                                                                                   stdp=nepa_pb2.StdpStats(
             spike_rate_hz=r.stdp.spike_rate_hz,
             sparsity=r.stdp.sparsity,
             plasticity_events=r.stdp.plasticity_events,
@@ -31,7 +30,7 @@ def _to_pb(r) -> nepa_pb2.InferenceResult:
 class NepaService(nepa_pb2_grpc.NepaRuntimeServicer):
     def __init__(self):
         self.backend = load_backend()
-        print(f"[NEPA] backend ready: {self.backend.runtime}")
+        print(f"[NEPA] backend ready: {self.backend.runtime}", flush=True)
 
     def InferFrame(self, req: nepa_pb2.FrameRequest, ctx) -> nepa_pb2.InferenceResult:
         try:
@@ -40,14 +39,11 @@ class NepaService(nepa_pb2_grpc.NepaRuntimeServicer):
             ctx.set_code(grpc.StatusCode.INTERNAL)
             ctx.set_details(f"infer_frame failed: {e}")
             raise
-        # Side-effect: enqueue real anomaly into per-user queue
         if req.user_id:
             push_if_anomaly(req.user_id, req.source, req.region, r)
         return _to_pb(r)
 
     def InferVideo(self, req: nepa_pb2.VideoRequest, ctx) -> nepa_pb2.InferenceResult:
-        # Decode first keyframe and run the frame pipeline.
-        # Replace with full multi-frame pipeline (cv2.VideoCapture loop) for production.
         try:
             import cv2, numpy as np, tempfile
             with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
@@ -59,7 +55,7 @@ class NepaService(nepa_pb2_grpc.NepaRuntimeServicer):
             else:
                 r = self.backend.infer_frame(b"", req.filename, "FULL")
         except Exception as e:
-            print(f"[InferVideo] decode failed → null infer: {e}")
+            print(f"[InferVideo] decode failed → null infer: {e}", flush=True)
             r = self.backend.infer_frame(b"", req.filename, "FULL")
         if req.user_id:
             push_if_anomaly(req.user_id, req.filename, "FULL", r)
@@ -98,13 +94,12 @@ def serve():
         ],
     )
     nepa_pb2_grpc.add_NepaRuntimeServicer_to_server(NepaService(), server)
-    addr = f"[::]:{port}"
-    server.add_insecure_port(addr)
+    server.add_insecure_port(f"[::]:{port}")
     server.start()
-    print(f"[NEPA] gRPC listening on :{port} · workers={workers} · pid={os.getpid()}")
+    print(f"[NEPA] gRPC listening on :{port} · workers={workers} · pid={os.getpid()}", flush=True)
 
     def shutdown(signum, _frame):
-        print(f"\n[NEPA] signal {signum} → graceful shutdown")
+        print(f"\n[NEPA] signal {signum} → graceful shutdown", flush=True)
         server.stop(grace=2)
         sys.exit(0)
     signal.signal(signal.SIGINT,  shutdown)

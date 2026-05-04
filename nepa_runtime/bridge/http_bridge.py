@@ -102,4 +102,4 @@ def make_app():
 if __name__ == "__main__":
     port = int(os.getenv("NEPA_BRIDGE_PORT", "8080"))
     print(f"[bridge] node={NODE_ID} listening :{port} → gRPC {GRPC_ADDR}")
-    web.run_app(make_app(), host="127.0.0.1", port=port, access_log=None)
+    web.run_app(make_app(), host="0.0.0.0", port=port, access_log=None)
