@@ -1,0 +1,30 @@
+[Unit]
+Description=AuraSense NEPA Runtime (gRPC)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jetson
+Group=jetson
+WorkingDirectory=/home/jetson/aurasense-playground/nepa_runtime
+Environment=NEPA_BACKEND=null
+Environment=NEPA_GRPC_PORT=50051
+Environment=NEPA_GRPC_WORKERS=4
+Environment=NEPA_VERSION=0.4.1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 -m nepa_runtime.server
+Restart=on-failure
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/jetson/aurasense-playground/nepa_runtime
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

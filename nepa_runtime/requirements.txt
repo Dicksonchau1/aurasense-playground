@@ -1,0 +1,12 @@
+grpcio==1.62.1
+grpcio-tools==1.62.1
+protobuf==4.25.3
+numpy>=1.24
+opencv-python-headless>=4.8
+Pillow>=10.0
+# Optional backends — install per platform:
+# onnxruntime-gpu>=1.17     # x86 / Jetson Orin
+# onnxruntime>=1.17         # CPU fallback / Jetson Nano JP4
+# tensorrt                  # preinstalled on JetPack
+aiohttp>=3.9
+aiohttp>=3.9

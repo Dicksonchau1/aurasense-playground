@@ -1,0 +1,20 @@
+[Unit]
+Description=AuraSense Jetson → VPS reverse SSH tunnel
+After=network-online.target nepa-bridge.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jetson
+EnvironmentFile=/etc/nepa/tunnel.env
+# Reverse-tunnel: VPS:18080 ←→ Jetson:8080
+ExecStart=/usr/bin/ssh -NT -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+          -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=accept-new \
+          -i /home/jetson/.ssh/nepa_tunnel_ed25519 \
+          -R ${VPS_TUNNEL_PORT}:127.0.0.1:8080 \
+          ${VPS_TUNNEL_USER}@${VPS_HOST}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
