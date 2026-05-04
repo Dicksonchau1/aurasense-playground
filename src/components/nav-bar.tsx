@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Zap, X, Send, Activity, Upload, Crosshair } from 'lucide-react'
+import { Zap, X, Send, Activity, Upload } from 'lucide-react'
 import { useMembershipDrawer } from '@/components/membership-drawer'
 
 interface Message {
@@ -16,10 +16,10 @@ interface Message {
 }
 
 const QUICK = [
-  { label: 'World Model',   q: 'world model' },
-  { label: 'STDP Network',  q: 'stdp'        },
-  { label: 'Run Inference', q: 'inference'   },
-  { label: 'Agentic Flow',  q: 'agentic'     },
+  { label: 'World Model',   q: 'Explain the world model in 2 sentences.' },
+  { label: 'STDP',          q: 'What is STDP and why no backprop?' },
+  { label: 'Run Inference', q: 'How do I run inference on a frame?' },
+  { label: 'Show Alerts',   q: 'Show me the alert queue.' },
 ]
 
 const INFERENCE_ENDPOINTS = [
@@ -28,46 +28,8 @@ const INFERENCE_ENDPOINTS = [
   { label: 'World Model Predict', endpoint: '/api/nepa/world-model/predict', method: 'POST' },
 ]
 
-function agentReply(input: string, frame?: string, attachment?: string): Message {
-  const lower = input.toLowerCase()
-  let text = 'Routing to NEPA runtime…'
-  let endpoint = '/api/nepa/status'
-  if (attachment) {
-    text = `Received ${attachment}. Dispatching to /api/nepa/inference/visual + /api/nepa/inference/stdp + /api/nepa/world-model/predict in parallel. ETA ~3s.`
-    endpoint = '/api/nepa/inference/visual'
-  } else if (frame) {
-    text = `Frame region ${frame} captured. STDP encoder + world model prior running.`
-    endpoint = '/api/nepa/inference/stdp'
-  } else if (lower.includes('world model')) {
-    text = 'World model is the latent dynamics prior. STDP supplies sparse spikes, world model predicts the next state — together they form the hybrid loop.'
-    endpoint = '/api/nepa/world-model/predict'
-  } else if (lower.includes('stdp')) {
-    text = 'STDP = Spike-Timing Dependent Plasticity. Online weight updates from spike order. No backprop, no labels — biological computing.'
-    endpoint = '/api/nepa/inference/stdp'
-  } else if (lower.includes('inference')) {
-    text = 'Three inference paths active: Visual, STDP, World Model. Upload an MP4 below to run all three.'
-    endpoint = '/api/nepa/inference/visual'
-  } else if (lower.includes('agentic') || lower.includes('flow')) {
-    text = '10-stage NEPA pipeline. See it on the home page or the public section below the hero.'
-    endpoint = '/api/nepa/pipeline/status'
-  } else if (lower.includes('drone') || lower.includes('uav')) {
-    text = '4 units indexed. UAV-003 on alert.'
-    endpoint = '/api/registry/drones'
-  } else if (lower.includes('mission')) {
-    text = '2 missions in-flight, 1 queued.'
-    endpoint = '/api/nepa/missions/active'
-  } else if (lower.includes('anomal')) {
-    text = 'Anomaly = world model prediction error spike. Movement-based, no identity.'
-    endpoint = '/api/nepa/anomalies/live'
-  }
-  return {
-    id: Date.now().toString(),
-    role: 'agent',
-    text,
-    endpoint,
-    ts: new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' }),
-  }
-}
+// Marketing site exposes the OpenRouter agent at this URL with CORS allow-list
+const AGENT_URL = 'https://www.aurasensehk.com/api/agent/chat'
 
 let _frameCaptureCallback: ((region: string) => void) | null = null
 export function registerFrameCapture(cb: (region: string) => void) {
@@ -75,6 +37,10 @@ export function registerFrameCapture(cb: (region: string) => void) {
 }
 export function captureFrameRegion(region: string) {
   _frameCaptureCallback?.(region)
+}
+
+function nowTs() {
+  return new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' })
 }
 
 export function NavBar() {
@@ -85,15 +51,16 @@ export function NavBar() {
     {
       id: '0',
       role: 'agent',
-      text: 'NEPA agent online. Upload an MP4 or click any frame on the hero / drone feed to begin.',
-      endpoint: '/api/nepa/status',
-      ts: new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' }),
+      text: 'NEPA agent online. Ask anything about your deployment, upload an MP4, or click any frame on the hero / drone feed.',
+      endpoint: '/api/agent/health',
+      ts: nowTs(),
     },
   ])
   const [input, setInput] = useState('')
   const [pulse, setPulse] = useState(false)
   const [pendingFrame, setPendingFrame] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [thinking, setThinking] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -104,7 +71,7 @@ export function NavBar() {
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, open])
+  }, [messages, open, thinking])
 
   // Frame capture handler — listens to clicks on hero / drone / rehearse pages
   useEffect(() => {
@@ -120,7 +87,7 @@ export function NavBar() {
           text: `Analyse frame · ${source} · ${label} · ${frame.width}×${frame.height}`,
           frame: `${source}:${label}`,
           attachment: frame.dataUrl,
-          ts: new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' }),
+          ts: nowTs(),
         }
         setMessages(prev => [...prev, userMsg])
 
@@ -145,7 +112,7 @@ export function NavBar() {
                 d.world_model?.prediction_error ?? '—'
               } · ${d.runtime ?? 'runtime'}`,
               endpoint: '/api/nepa/inference/frame',
-              ts: new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' }),
+              ts: nowTs(),
             },
           ])
         } catch {
@@ -155,7 +122,7 @@ export function NavBar() {
               id: Date.now() + '_e',
               role: 'agent',
               text: 'Inference failed — endpoint unreachable.',
-              ts: new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' }),
+              ts: nowTs(),
             },
           ])
         }
@@ -166,19 +133,61 @@ export function NavBar() {
     }
   }, [])
 
-  function send(text?: string) {
+  async function send(text?: string) {
     const msg = (text || input).trim()
     if (!msg) return
+
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
       text: msg,
-      ts: new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' }),
+      ts: nowTs(),
     }
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setPendingFrame(null)
-    setTimeout(() => setMessages(prev => [...prev, agentReply(msg)]), 600)
+    setThinking(true)
+
+    // Conversation history for the agent (last 8 messages, excluding system intro)
+    const history = messages
+      .slice(-8)
+      .filter(m => m.id !== '0')
+      .map(m => ({
+        role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.text,
+      }))
+    history.push({ role: 'user', content: msg })
+
+    try {
+      const res = await fetch(AGENT_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ messages: history, sessionId: 'playground' }),
+      })
+      const j = await res.json()
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + '_a',
+          role: 'agent',
+          text: j.content || j.error || 'No response.',
+          endpoint: '/api/agent/chat',
+          ts: nowTs(),
+        },
+      ])
+    } catch (err) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + '_e',
+          role: 'agent',
+          text: 'Agent unreachable: ' + (err as Error).message,
+          ts: nowTs(),
+        },
+      ])
+    } finally {
+      setThinking(false)
+    }
   }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -190,16 +199,27 @@ export function NavBar() {
       role: 'user',
       text: `Uploaded ${file.name}`,
       attachment: file.name,
-      ts: new Date().toLocaleTimeString('en-HK', { hour: '2-digit', minute: '2-digit' }),
+      ts: nowTs(),
     }
     setMessages(prev => [...prev, userMsg])
+
     INFERENCE_ENDPOINTS.forEach(ep => {
       const fd = new FormData()
       fd.append('video', file)
       fetch(ep.endpoint, { method: 'POST', body: fd }).catch(() => {})
     })
+
     setTimeout(() => {
-      setMessages(prev => [...prev, agentReply('', undefined, file.name)])
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + '_a',
+          role: 'agent',
+          text: `Received ${file.name}. Dispatched to /api/nepa/inference/visual + /stdp + /world-model/predict in parallel. Results stream into the audit chain.`,
+          endpoint: '/api/nepa/inference/visual',
+          ts: nowTs(),
+        },
+      ])
       setUploading(false)
     }, 800)
     if (fileRef.current) fileRef.current.value = ''
@@ -339,12 +359,14 @@ export function NavBar() {
                 NEPA Agent
               </p>
               <p className="text-[9px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                Chat · Upload · Frame inference
+                Claude · OpenRouter · Tools
               </p>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#10b981' }} />
-              <span className="text-[9px] font-mono" style={{ color: '#10b981' }}>LIVE</span>
+              <span className="text-[9px] font-mono" style={{ color: '#10b981' }}>
+                LIVE
+              </span>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -392,12 +414,12 @@ export function NavBar() {
                     ) : m.attachment ? (
                       <div
                         className="mb-1.5 text-[9px] font-mono px-1.5 py-0.5 rounded inline-flex items-center gap-1"
-                        style={{ background: 'rgba(16,185,129,0.18)', color: '#10b981' }}
+                           style={{ background: 'rgba(16,185,129,0.18)', color: '#10b981' }}
                       >
                         <Upload className="w-2.5 h-2.5" /> {m.attachment}
                       </div>
                     ) : null}
-                    <p>{m.text}</p>
+                    <p className="whitespace-pre-wrap">{m.text}</p>
                     {m.endpoint && (
                       <p className="mt-1.5 text-[9px] font-mono opacity-60">→ {m.endpoint}</p>
                     )}
@@ -408,6 +430,21 @@ export function NavBar() {
                 </div>
               </div>
             ))}
+            {thinking && (
+              <div className="flex justify-start">
+                <div
+                  className="px-3 py-2 rounded-xl text-xs flex items-center gap-2"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    color: 'rgba(255,255,255,0.65)',
+                  }}
+                >
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#10b981' }} />
+                  Thinking…
+                </div>
+              </div>
+            )}
             {uploading && (
               <div className="flex justify-start">
                 <div
@@ -435,7 +472,8 @@ export function NavBar() {
               <button
                 key={q.q}
                 onClick={() => send(q.q)}
-                className="px-2 py-1 rounded-md text-[9px] font-medium transition-all hover:opacity-80"
+                disabled={thinking}
+                className="px-2 py-1 rounded-md text-[9px] font-medium transition-all hover:opacity-80 disabled:opacity-40"
                 style={{
                   background: 'rgba(16,185,129,0.08)',
                   color: '#10b981',
@@ -475,9 +513,18 @@ export function NavBar() {
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && send()}
-              placeholder={pendingFrame ? `Frame ${pendingFrame} ready…` : 'Ask NEPA…'}
-              className="flex-1 px-3 py-2 rounded-lg text-xs outline-none"
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !thinking) send()
+              }}
+              disabled={thinking}
+              placeholder={
+                thinking
+                  ? 'Agent is thinking…'
+                  : pendingFrame
+                    ? `Frame ${pendingFrame} ready…`
+                    : 'Ask NEPA…'
+              }
+              className="flex-1 px-3 py-2 rounded-lg text-xs outline-none disabled:opacity-50"
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
@@ -486,8 +533,9 @@ export function NavBar() {
             />
             <button
               onClick={() => send()}
+              disabled={thinking || !input.trim()}
               aria-label="Send"
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80"
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all hover:opacity-80 disabled:opacity-40"
               style={{
                 background: 'rgba(16,185,129,0.18)',
                 border: '1px solid rgba(16,185,129,0.35)',
