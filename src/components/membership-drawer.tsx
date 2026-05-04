@@ -180,8 +180,8 @@ export function MembershipDrawerProvider({ children }: { children: React.ReactNo
                     <>
                       <ul className="mt-3 grid grid-cols-1 gap-1.5">
                         {plan.features.map(f => (
-                          
-                              style={{ color:'rgba(255,255,255,0.8)' }}>
+                          <li key={f} className="flex items-center gap-2 text-[11px]"
+                              style={{ color: 'rgba(255,255,255,0.8)' }}>
                             <Check className="w-3 h-3 flex-shrink-0" style={{ color: plan.accent }} />
                             {f}
                           </li>
