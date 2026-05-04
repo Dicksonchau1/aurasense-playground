@@ -130,7 +130,7 @@ export default function DronePage() {
         </div>
 
         <p className="mt-4 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          Click any 9-region tile on the live feed — actual pixels are captured and POSTed to de>/api/nepa/inference/frame</code>.
+          Click any 9-region tile on the live feed — actual pixels are captured and POSTed to <code>/api/nepa/inference/frame</code>.
         </p>
       </section>
     </main>
