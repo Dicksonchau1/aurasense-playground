@@ -29,24 +29,45 @@ export function MembershipDrawerProvider({ children }: { children: React.ReactNo
   const open  = useCallback((_planName?: string) => setIsOpen(true), [])
   const close = useCallback(() => setIsOpen(false), [])
 
-  async function checkout(plan: PlanKey) {
-    if (plan === 'starter') return
-    if (plan === 'enterprise') {
-      window.location.href = 'mailto:sales@aurasensehk.com?subject=Enterprise%20inquiry'
+ async function checkout(plan: PlanKey) {
+  if (plan === 'starter') return
+  if (plan === 'enterprise') {
+    window.location.href = 'mailto:sales@aurasensehk.com?subject=Enterprise%20inquiry'
+    return
+  }
+  try {
+    const res = await fetch('/api/billing/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ plan, annual: false }),
+    })
+
+    // Read the body once as text so we can fall through on any failure
+    const text = await res.text()
+    let j: any = {}
+    try { j = text ? JSON.parse(text) : {} } catch {}
+
+    if (res.ok && j.ok && j.url) {
+      window.location.href = j.url
       return
     }
-    try {
-      const res = await fetch('/api/billing/checkout', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ plan, annual: false }),
-      })
-      const j = await res.json()
-      if (j.ok && j.url) window.location.href = j.url
-      else alert('Checkout: ' + (j.error || 'unknown'))
-    } catch (e) { alert('Checkout error: ' + (e as Error).message) }
-  }
 
+    // 401 → redirect to /portal sign-in page
+    if (res.status === 401 || j.error === 'auth_required') {
+      window.location.href = '/portal?signin=1&plan=' + plan
+      return
+    }
+
+    if (j.error === 'stripe_not_configured') {
+      alert('Billing is not configured yet. Please contact support@aurasensehk.com.')
+      return
+    }
+
+    alert('Checkout error: ' + (j.error || res.statusText || `HTTP ${res.status}`))
+  } catch (err) {
+    alert('Checkout failed: ' + (err as Error).message)
+  }
+}
   return (
     <Ctx.Provider value={{ open, close, isOpen }}>
       {children}
