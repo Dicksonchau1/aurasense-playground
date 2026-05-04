@@ -1,9 +1,7 @@
-'use client'
-
 export default function Privacy() {
   return (
     <main className="min-h-dvh pt-16 pb-12 px-4" style={{ background: '#070e1a', color: 'white' }}>
-      <article className="max-w-3xl mx-auto prose-invert">
+      <article className="max-w-3xl mx-auto">
         <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: '#10b981' }}>
           Privacy Policy
         </p>
@@ -12,43 +10,25 @@ export default function Privacy() {
 
         <section className="mt-6 space-y-4 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
           <h2 className="text-lg font-semibold mt-6" style={{ color: '#10b981' }}>1. What we collect</h2>
-          <p>
-            <strong>Account:</strong> email address (for magic-link auth via Supabase). No passwords stored.<br/>
-            <strong>Inference frames:</strong> JPEG bytes you upload or click-capture, processed in-memory and stored privately if you have a Pro/Team plan. Frame storage is per-user, RLS-protected, never shared.<br/>
-            <strong>Audit chain:</strong> SHA-256 hashes of inference results, your plan, and timestamps. Tamper-evident log.<br/>
-            <strong>Billing:</strong> handled by Stripe. We never store card numbers.
-          </p>
+          <p><strong>Account:</strong> email for magic-link auth via Supabase. No passwords stored.</p>
+          <p><strong>Inference frames:</strong> JPEG bytes processed in-memory; only stored in your private bucket if you sign in. RLS-protected per user.</p>
+          <p><strong>Audit chain:</strong> SHA-256 hashes, plan, timestamps. Tamper-evident log.</p>
+          <p><strong>Billing:</strong> handled by Stripe. We never see your card number.</p>
 
           <h2 className="text-lg font-semibold mt-6" style={{ color: '#10b981' }}>2. What we never do</h2>
-          <p>
-            We <strong>never</strong> perform face recognition, biometric identification, or person re-identification. NEPA detects movement-based anomalies via world-model prediction error, not identity. We <strong>never</strong> train on your data.
-          </p>
+          <p>We <strong>never</strong> perform face recognition, biometric ID, or person re-identification. NEPA detects movement-based anomalies via world-model prediction error — not identity. We <strong>never</strong> train on your data.</p>
 
-          <h2 className="text-lg font-semibold mt-6" style={{ color: '#10b981' }}>3. Where data lives</h2>
-          <p>
-            <strong>Supabase:</strong> auth + audit chain + frame storage, hosted in Singapore region.<br/>
-            <strong>Stripe:</strong> billing, hosted by Stripe Inc.<br/>
-            <strong>Vercel:</strong> the playground frontend, hosted in HK region.<br/>
-            <strong>Edge runtime:</strong> a Jetson Nano in Kowloon, HK. Frames are processed in-memory and discarded.
-          </p>
+          <h2 className="text-lg font-semibold mt-6" style={{ color: '#10b981' }}>3. Data location</h2>
+          <p>Supabase (Singapore region) for auth + audit + storage. Stripe for billing. Vercel HKG1 for the app. Edge runtime on a Jetson Nano in Kowloon, HK.</p>
 
           <h2 className="text-lg font-semibold mt-6" style={{ color: '#10b981' }}>4. Your rights</h2>
-          <p>
-            Email <a href="mailto:privacy@aurasensehk.com" style={{ color: '#10b981' }}>privacy@aurasensehk.com</a> to:
-            request a copy of your data, delete your account, or revoke consent. We respond within 7 days.
-          </p>
+          <p>Email <a href="mailto:privacy@aurasensehk.com" style={{ color: '#10b981' }}>privacy@aurasensehk.com</a> to access, delete, or export your data. We respond within 7 days.</p>
 
           <h2 className="text-lg font-semibold mt-6" style={{ color: '#10b981' }}>5. Cookies</h2>
-          <p>
-            We use Supabase's session cookie (HTTP-only, secure) for authentication. We don't use marketing cookies, trackers, or analytics that profile you across sites.
-          </p>
+          <p>Only Supabase&apos;s HTTP-only session cookie. No marketing trackers, no cross-site profiling.</p>
 
           <h2 className="text-lg font-semibold mt-6" style={{ color: '#10b981' }}>6. Contact</h2>
-          <p>
-            AuraSense Ltd<br/>
-            Kowloon, Hong Kong<br/>
-            <a href="mailto:privacy@aurasensehk.com" style={{ color: '#10b981' }}>privacy@aurasensehk.com</a>
-          </p>
+          <p>AuraSense Ltd, Kowloon, Hong Kong. <a href="mailto:privacy@aurasensehk.com" style={{ color: '#10b981' }}>privacy@aurasensehk.com</a></p>
         </section>
       </article>
     </main>
