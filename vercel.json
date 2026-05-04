@@ -1,19 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "regions": ["hkg1", "sin1"],
+  "regions": ["hkg1"],
   "headers": [
     {
       "source": "/api/nepa/anomalies/live",
       "headers": [
-        { "key": "Cache-Control",       "value": "no-cache, no-transform" },
-        { "key": "X-Accel-Buffering",   "value": "no" }
+        { "key": "Cache-Control",     "value": "no-cache, no-transform" },
+        { "key": "X-Accel-Buffering", "value": "no" }
       ]
     }
   ],
   "functions": {
-    "src/app/api/nepa/anomalies/live/route.ts": { "maxDuration": 300 },
-    "src/app/api/nepa/inference/frame/route.ts": { "maxDuration": 30 },
-    "src/app/api/billing/webhook/route.ts":      { "maxDuration": 30 }
+    "src/app/api/nepa/anomalies/live/route.ts":   { "maxDuration": 300 },
+    "src/app/api/nepa/inference/frame/route.ts":  { "maxDuration": 30 },
+    "src/app/api/billing/webhook/route.ts":       { "maxDuration": 30 }
   }
 }
