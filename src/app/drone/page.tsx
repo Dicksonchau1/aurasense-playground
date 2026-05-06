@@ -1,7 +1,9 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { FrameClickable } from '@/components/frame-clickable'
-import { Plane, Battery, Signal, AlertCircle, Radio } from 'lucide-react'
+import { YoloOverlay } from '@/components/yolo-overlay'
+import { Plane, Battery, Signal, AlertCircle, Radio, Zap } from 'lucide-react'
+import type { BBox } from '@/lib/yolo'
 
 interface Drone { id: string; model: string; status: string; battery: number; region: string }
 
@@ -11,13 +13,77 @@ export default function DronePage() {
   const [feedMode, setFeedMode] = useState<'video' | 'webcam'>('video')
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const rafRef = useRef<number>(0)
+
+  // YOLO state
+  const [yoloReady, setYoloReady] = useState(false)
+  const [yoloError, setYoloError] = useState('')
+  const [boxes, setBoxes] = useState<BBox[]>([])
+  const [fps, setFps] = useState(0)
+  const [latencyMs, setLatencyMs] = useState(0)
+  const [videoSize, setVideoSize] = useState({ w: 1280, h: 720 })
+  const inferringRef = useRef(false)
 
   useEffect(() => {
     fetch('/api/registry/drones').then(r => r.json()).then(j => setDrones(j?.data?.units ?? []))
       .catch(() => {})
   }, [])
 
-  // Optional: hook a real MediaStream (webcam stand-in for drone WebRTC feed)
+  // Load YOLO on mount (dynamic import to avoid SSR)
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { initYolo } = await import('@/lib/yolo')
+        await initYolo()
+        if (!cancelled) setYoloReady(true)
+      } catch (e) {
+        if (!cancelled) setYoloError((e as Error).message)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  // Inference loop — runs when webcam is attached and YOLO is ready
+  const runLoop = useCallback(async () => {
+    const video = videoRef.current
+    if (!video || video.readyState < 2) {
+      rafRef.current = requestAnimationFrame(runLoop)
+      return
+    }
+    if (inferringRef.current) {
+      rafRef.current = requestAnimationFrame(runLoop)
+      return
+    }
+    inferringRef.current = true
+    const t0 = performance.now()
+    try {
+      const { runYoloInference } = await import('@/lib/yolo')
+      const detected = await runYoloInference(video)
+      const t1 = performance.now()
+      const elapsed = t1 - t0
+      setBoxes(detected)
+      setLatencyMs(Math.round(elapsed))
+      setFps(Math.round(1000 / elapsed))
+      setVideoSize({ w: video.videoWidth || 1280, h: video.videoHeight || 720 })
+    } catch {
+      // Swallow per-frame errors silently
+    }
+    inferringRef.current = false
+    rafRef.current = requestAnimationFrame(runLoop)
+  }, [])
+
+  // Start/stop inference loop based on webcam state and YOLO readiness
+  useEffect(() => {
+    if (feedMode === 'webcam' && yoloReady) {
+      rafRef.current = requestAnimationFrame(runLoop)
+    } else {
+      cancelAnimationFrame(rafRef.current)
+      setBoxes([])
+    }
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [feedMode, yoloReady, runLoop])
+
   async function attachWebcam() {
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false })
@@ -32,12 +98,17 @@ export default function DronePage() {
     }
   }
   function detachWebcam() {
+    cancelAnimationFrame(rafRef.current)
     streamRef.current?.getTracks().forEach(t => t.stop())
     streamRef.current = null
     if (videoRef.current) videoRef.current.srcObject = null
     setFeedMode('video')
+    setBoxes([])
   }
-  useEffect(() => () => streamRef.current?.getTracks().forEach(t => t.stop()), [])
+  useEffect(() => () => {
+    cancelAnimationFrame(rafRef.current)
+    streamRef.current?.getTracks().forEach(t => t.stop())
+  }, [])
 
   return (
     <main className="min-h-dvh pt-16 pb-12 px-4" style={{ background: '#070e1a', color: 'white' }}>
@@ -81,6 +152,15 @@ export default function DronePage() {
                 }}
                 className="w-full h-full object-cover"
               />
+              {/* YOLO bounding box overlay — only active in webcam mode */}
+              {feedMode === 'webcam' && yoloReady && (
+                <YoloOverlay
+                  boxes={boxes}
+                  videoWidth={videoSize.w}
+                  videoHeight={videoSize.h}
+                  style={{ zIndex: 10 }}
+                />
+              )}
               <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded text-[9px] font-mono pointer-events-none"
                 style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
                 {active} · {feedMode === 'webcam' ? 'WEBRTC' : '4K'} · 30fps
@@ -90,11 +170,30 @@ export default function DronePage() {
                   style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
                   <Signal className="w-3 h-3" /> 92%
                 </div>
+                {feedMode === 'webcam' && yoloReady && (
+                  <div className="px-2 py-0.5 rounded text-[9px] font-mono flex items-center gap-1"
+                    style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>
+                    <Zap className="w-3 h-3" />
+                    {fps} FPS · {latencyMs}ms · {boxes.length} obj
+                  </div>
+                )}
               </div>
+              {feedMode === 'webcam' && !yoloReady && !yoloError && (
+                <div className="absolute bottom-2 left-2 z-10 px-2 py-0.5 rounded text-[9px] font-mono"
+                  style={{ background: 'rgba(0,0,0,0.7)', color: 'rgba(255,255,255,0.5)' }}>
+                  Loading YOLOv8n model…
+                </div>
+              )}
+              {yoloError && (
+                <div className="absolute bottom-2 left-2 z-10 px-2 py-0.5 rounded text-[9px] font-mono"
+                  style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444' }}>
+                  YOLO: {yoloError}
+                </div>
+              )}
             </FrameClickable>
           </div>
 
-          {/* Fleet list */}
+          {/* Fleet list + inference stats */}
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: 'rgba(16,185,129,0.7)' }}>Fleet</p>
             {drones.map(d => {
@@ -126,13 +225,46 @@ export default function DronePage() {
             {drones.length === 0 && (
               <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>Loading fleet…</p>
             )}
+
+            {/* Inference metrics panel */}
+            {feedMode === 'webcam' && (
+              <div className="rounded-xl p-3 mt-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(245,158,11,0.7)' }}>
+                  YOLOv8n Inference
+                </p>
+                <div className="space-y-1">
+                  <MetricRow label="Status" value={yoloReady ? '● Ready' : '○ Loading'} color={yoloReady ? '#10b981' : '#f59e0b'} />
+                  <MetricRow label="FPS" value={`${fps}`} color="#f5f5f5" />
+                  <MetricRow label="Latency" value={`${latencyMs} ms`} color="#f5f5f5" />
+                  <MetricRow label="Objects" value={`${boxes.length}`} color="#f5f5f5" />
+                  {boxes.slice(0, 3).map((b, i) => (
+                    <MetricRow
+                      key={i}
+                      label={`  ${b.className}`}
+                      value={`${Math.round(b.confidence * 100)}%`}
+                      color="rgba(255,255,255,0.5)"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <p className="mt-4 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Click any 9-region tile on the live feed — actual pixels are captured and POSTed to <code>/api/nepa/inference/frame</code>.
+          Attach live camera to enable YOLOv8n real-time object detection.
         </p>
       </section>
     </main>
+  )
+}
+
+function MetricRow({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</span>
+      <span className="text-[10px] font-mono font-bold" style={{ color }}>{value}</span>
+    </div>
   )
 }

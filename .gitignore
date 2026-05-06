@@ -25,3 +25,4 @@ nepa_runtime/nepa_pb2_grpc.py
 .DS_Store
 Thumbs.db
 .vercel
+.env*.local
