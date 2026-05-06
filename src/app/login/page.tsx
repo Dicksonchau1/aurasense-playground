@@ -1,18 +1,20 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Mail, Chrome } from 'lucide-react'
+import { Mail, Globe } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const sb = createClient()
 
   async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setError('')
+    const sb = createClient()
     const { error: err } = await sb.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
@@ -24,6 +26,7 @@ export default function LoginPage() {
 
   async function signInWithGoogle() {
     setError('')
+    const sb = createClient()
     const { error: err } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -110,7 +113,7 @@ export default function LoginPage() {
                 cursor: 'pointer',
               }}
             >
-              <Chrome className="w-4 h-4" />
+              <Globe className="w-4 h-4" />
               Continue with Google
             </button>
           </>

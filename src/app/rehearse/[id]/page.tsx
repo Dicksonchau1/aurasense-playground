@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { Share2, Trophy, BarChart3 } from 'lucide-react'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
+
 interface Props { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
