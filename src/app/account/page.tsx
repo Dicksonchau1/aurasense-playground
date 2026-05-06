@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Trash2, ExternalLink } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AccountPage() {
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
