@@ -1,52 +1,61 @@
 'use client'
 import { Lock } from 'lucide-react'
 
-interface LaneToggle {
-  key: string
-  label: string
-  enabled: boolean
-  locked?: boolean
-  lockedLabel?: string
-}
-
 interface LaneTogglesProps {
+  activeLanes: Set<string>
+  onToggle: (key: string) => void
   onOpenMembership: () => void
 }
 
-const LANES: LaneToggle[] = [
-  { key: 'posture', label: 'Posture', enabled: true },
-  { key: 'gaze', label: 'Gaze', enabled: true },
-  { key: 'framing', label: 'Framing', enabled: true },
-  { key: 'pacing', label: 'Pacing', enabled: true },
-  { key: 'avatar', label: 'Aura Avatar', enabled: false, locked: true },
-  { key: 'lipsync', label: 'Lip-sync', enabled: false, locked: true, lockedLabel: 'V2' },
-  { key: 'history', label: 'Session history', enabled: false, locked: true },
+const ACTIVE_LANES = [
+  { key: 'posture', label: 'Posture' },
+  { key: 'gaze', label: 'Gaze' },
+  { key: 'framing', label: 'Framing' },
+  { key: 'pacing', label: 'Pacing' },
+  { key: 'grid', label: 'Framing Grid' },
 ]
 
-export function LaneToggles({ onOpenMembership }: LaneTogglesProps) {
+const LOCKED_LANES = [
+  { key: 'avatar', label: 'Aura Avatar' },
+  { key: 'lipsync', label: 'Lip-sync', badge: 'V2' },
+  { key: 'history', label: 'Session history' },
+]
+
+export function LaneToggles({ activeLanes, onToggle, onOpenMembership }: LaneTogglesProps) {
   return (
     <div className="flex flex-wrap gap-2">
-      {LANES.map(lane => (
+      {ACTIVE_LANES.map(lane => {
+        const on = activeLanes.has(lane.key)
+        return (
+          <button
+            key={lane.key}
+            onClick={() => onToggle(lane.key)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all"
+            style={{
+              background: on ? 'rgba(16,185,129,0.15)' : 'var(--panel)',
+              color: on ? 'var(--accent-green)' : 'var(--muted)',
+              border: '1px solid ' + (on ? 'rgba(16,185,129,0.3)' : 'var(--border)'),
+            }}
+          >
+            <span>{on ? '✓' : '○'}</span>{lane.label}
+          </button>
+        )
+      })}
+      {LOCKED_LANES.map(lane => (
         <button
           key={lane.key}
-          onClick={lane.locked ? onOpenMembership : undefined}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-opacity"
+          onClick={onOpenMembership}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs"
           style={{
-            background: lane.enabled ? 'rgba(16,185,129,0.15)' : 'var(--panel)',
-            color: lane.enabled ? 'var(--accent-green)' : 'var(--muted)',
-            border: '1px solid ' + (lane.enabled ? 'rgba(16,185,129,0.3)' : 'var(--border)'),
-            cursor: lane.locked ? 'pointer' : 'default',
+            background: 'var(--panel)',
+            color: 'var(--muted)',
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
           }}
         >
-          {lane.locked ? (
-            <>
-              <Lock className="w-3 h-3" style={{ color: 'var(--lock-red)' }} />
-              {lane.label}
-              {lane.lockedLabel && <span className="text-xs opacity-60">{lane.lockedLabel}</span>}
-            </>
-          ) : (
-            <><span>&#10003;</span>{lane.label}</>
-          )}
+          <Lock className="w-3 h-3" style={{ color: 'var(--lock-red)' }} />
+          {lane.label}
+          {'badge' in lane && lane.badge && <span className="opacity-60">{lane.badge}</span>}
         </button>
       ))}
     </div>

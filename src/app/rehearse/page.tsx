@@ -1,75 +1,247 @@
 'use client'
-import React, { useState } from 'react'
-import { FrameClickable } from '@/components/frame-clickable'
-import { Sparkles, RefreshCw } from 'lucide-react'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { Circle } from 'lucide-react'
+import { useCamera } from '@/hooks/use-camera'
+import { usePose } from '@/hooks/use-pose'
+import { useAudioSignals } from '@/hooks/use-audio-signals'
+import { useRecording } from '@/hooks/use-recording'
+import { useFaceLandmarks } from '@/hooks/use-face-landmarks'
+import { MetricsPanel } from '@/components/metrics-panel'
+import { LaneToggles } from '@/components/lane-toggles'
+import { CtaPill } from '@/components/cta-pill'
+import { useMembershipDrawer } from '@/components/membership-drawer'
+import { drawSkeleton, drawFramingGrid } from '@/lib/pose'
+import {
+  postureScore,
+  framingScore,
+  gazeScoreFromIris,
+  envelope,
+  ConsistencyTracker,
+} from '@/lib/signals'
 
-const SCENES = [
-  { id: 'warehouse', label: 'Warehouse Patrol',  src: '/hero/world-model-stdp.mp4' },
-  { id: 'rooftop',   label: 'Rooftop Inspection', src: '/hero/world-model-stdp.mp4' },
-  { id: 'corridor',  label: 'Indoor Corridor',    src: '/hero/scene-builder.mp4'    },
-]
+const ZERO_LANES = { posture: 0, gaze: 0, framing: 0, pacing: 75 }
 
 export default function RehearsePage() {
-  const [scene, setScene] = useState(SCENES[0])
-  const [seed, setSeed] = useState(42)
+  const { videoRef, stream, error, isActive, start, stop } = useCamera()
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { landmarks } = usePose(videoRef, isActive)
+  const { pacingScore } = useAudioSignals(stream, isActive)
+  const { irisLeft, irisRight } = useFaceLandmarks(videoRef, isActive)
+  const { isRecording, startRecording, stopRecording } = useRecording(videoRef, canvasRef)
+  const { open: openMembership } = useMembershipDrawer()
+  const consistencyRef = useRef(new ConsistencyTracker())
+
+  const [lanes, setLanes] = useState(ZERO_LANES)
+  const [envelopeScore, setEnvelopeScore] = useState(0)
+  const [consistency, setConsistency] = useState(100)
+  const [drift, setDrift] = useState(0)
+  const [activeLanes, setActiveLanes] = useState(
+    () => new Set(['posture', 'gaze', 'framing', 'pacing'])
+  )
+
+  // ⌘↵ / Ctrl↵ toggles session
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault()
+        if (isActive) stop(); else start()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isActive, start, stop])
+
+  // Draw skeleton + optional framing grid
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const video = videoRef.current
+    if (!canvas || !video) return
+    const w = video.clientWidth || 640
+    const h = video.clientHeight || 360
+    if (canvas.width !== w) canvas.width = w
+    if (canvas.height !== h) canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.clearRect(0, 0, w, h)
+    if (activeLanes.has('grid')) drawFramingGrid(ctx, w, h)
+    if (landmarks.length > 0) drawSkeleton(ctx, landmarks, w, h)
+  }, [landmarks, activeLanes, videoRef])
+
+  // Compute scores on each landmark update
+  useEffect(() => {
+    if (!isActive || landmarks.length === 0) return
+    const posture = activeLanes.has('posture') ? postureScore(landmarks) : 0
+    const gaze = activeLanes.has('gaze') ? gazeScoreFromIris(irisLeft, irisRight, landmarks) : 0
+    const framing = activeLanes.has('framing') ? framingScore(landmarks) : 0
+    const pacing = activeLanes.has('pacing') ? pacingScore : 0
+    const newLanes = { posture, gaze, framing, pacing }
+    setLanes(newLanes)
+    setEnvelopeScore(envelope(newLanes))
+    consistencyRef.current.push([posture, gaze, framing, pacing])
+    setConsistency(consistencyRef.current.score())
+    setDrift(consistencyRef.current.driftTrend())
+  }, [landmarks, pacingScore, irisLeft, irisRight, isActive, activeLanes])
+
+  const handleToggle = useCallback((key: string) => {
+    setActiveLanes(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }, [])
 
   return (
-    <main className="min-h-dvh pt-16 pb-12 px-4" style={{ background: '#070e1a', color: 'white' }}>
-      <section className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-4 h-4" style={{ color: '#10b981' }} />
-          <h1 className="text-2xl font-bold">Rehearse</h1>
-          <span className="ml-2 text-[10px] font-mono px-2 py-0.5 rounded-full"
-            style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}>
-            SCENE-BUILDER
-          </span>
+    <div style={{ display: 'flex', height: 'calc(100dvh - 3rem)', overflow: 'hidden' }}>
+      {/* Input panel */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        padding: '16px 20px', gap: 12, overflowY: 'auto', minWidth: 0,
+      }}>
+        {/* Breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>NEPA Playground</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>›</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Aura Rehearse</span>
         </div>
-        <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          Synthetic scenes from the world model. Click anywhere on the preview to capture that exact frame and run NEPA inference.
-        </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-4">
-          <div className="rounded-2xl overflow-hidden"
-            style={{ border: '1px solid rgba(16,185,129,0.2)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
-            <FrameClickable source={`rehearse-${scene.id}`} fullFrameOnClick style={{ aspectRatio: '16/9', background: '#000' }}>
-              <video
-                key={scene.id + seed}
-                src={scene.src}
-                autoPlay loop muted playsInline crossOrigin="anonymous"
-                className="w-full h-full object-cover"
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>Aura Rehearse</h1>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '2px 0 0' }}>
+            Reflects. Rehearses. — Your private practice mirror. Nothing leaves your device.
+          </p>
+        </div>
+
+        {/* 16:9 video + canvas overlay */}
+        <div style={{
+          position: 'relative', width: '100%', aspectRatio: '16/9',
+          borderRadius: 12, overflow: 'hidden',
+          background: '#111111', border: '1px solid #262626', flexShrink: 0,
+        }}>
+          <video
+            ref={videoRef}
+            autoPlay playsInline muted
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover', transform: 'scaleX(-1)',
+            }}
+          />
+          <canvas
+            ref={canvasRef}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              transform: 'scaleX(-1)',
+            }}
+          />
+          {!isActive && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <p style={{ color: '#737373', fontSize: 14 }}>Enable camera to begin</p>
+            </div>
+          )}
+          {error && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <p style={{ color: '#ef4444', fontSize: 13, padding: '0 20px', textAlign: 'center' }}>{error}</p>
+            </div>
+          )}
+          {isRecording && (
+            <div style={{
+              position: 'absolute', top: 10, left: 10,
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(0,0,0,0.6)', borderRadius: 6, padding: '4px 8px',
+            }}>
+              <Circle
+                className="w-2.5 h-2.5 animate-pulse"
+                style={{ color: '#ef4444', fill: '#ef4444' }}
               />
-              <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded text-[9px] font-mono pointer-events-none"
-                style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
-                {scene.label.toUpperCase()} · seed {seed}
-              </div>
-            </FrameClickable>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: 'rgba(16,185,129,0.7)' }}>Scenes</p>
-            {SCENES.map(s => {
-              const active = scene.id === s.id
-              return (
-                <button key={s.id} onClick={() => setScene(s)}
-                  className="w-full text-left rounded-xl p-3 transition-all"
-                  style={{
-                    background: active ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)',
-                    border: active ? '1px solid rgba(16,185,129,0.35)' : '1px solid rgba(255,255,255,0.06)',
-                  }}>
-                  <p className="text-xs font-semibold" style={{ color: active ? '#10b981' : 'rgba(255,255,255,0.85)' }}>{s.label}</p>
-                  <p className="text-[10px] mt-0.5 font-mono opacity-50" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.src}</p>
-                </button>
-              )
-            })}
-
-            <button onClick={() => setSeed(Math.floor(Math.random() * 9999))}
-              className="w-full mt-2 py-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5"
-              style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
-              <RefreshCw className="w-3 h-3" /> Re-roll seed
-            </button>
-          </div>
+              <span style={{ fontSize: 11, color: '#f5f5f5' }}>REC</span>
+            </div>
+          )}
         </div>
-      </section>
-    </main>
+
+        {/* Role selector */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['Candidate', 'Interviewer', 'Mock', 'Review'] as const).map((role, i) => (
+            <button
+              key={role}
+              disabled={i > 0}
+              style={{
+                padding: '5px 12px', borderRadius: 20, fontSize: 12,
+                background: i === 0 ? 'rgba(16,185,129,0.15)' : 'transparent',
+                color: i === 0 ? '#10b981' : '#737373',
+                border: '1px solid ' + (i === 0 ? 'rgba(16,185,129,0.3)' : '#262626'),
+                cursor: i > 0 ? 'not-allowed' : 'default',
+              }}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+
+        <LaneToggles
+          activeLanes={activeLanes}
+          onToggle={handleToggle}
+          onOpenMembership={openMembership}
+        />
+
+        {/* CTA row + Record button */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <CtaPill
+              isActive={isActive}
+              hasPermission={!error && !!stream}
+              onStart={start}
+              onStop={stop}
+            />
+          </div>
+          {isActive && (
+            <button
+              onClick={isRecording ? stopRecording : startRecording}
+              title={isRecording ? 'Stop & download recording' : 'Record session as .webm'}
+              style={{
+                padding: '0 14px', borderRadius: 12,
+                border: '1px solid ' + (isRecording ? 'rgba(239,68,68,0.4)' : '#262626'),
+                background: isRecording ? 'rgba(239,68,68,0.12)' : '#111111',
+                color: isRecording ? '#ef4444' : '#737373',
+                fontSize: 12, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6,
+                cursor: 'pointer', flexShrink: 0,
+              }}
+            >
+              <Circle
+                className="w-3 h-3"
+                style={{
+                  color: isRecording ? '#ef4444' : '#737373',
+                  fill: isRecording ? '#ef4444' : 'transparent',
+                }}
+              />
+              {isRecording ? 'Stop' : 'Record'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Metrics panel */}
+      <div style={{
+        width: 384, flexShrink: 0,
+        borderLeft: '1px solid #262626',
+        background: '#111111',
+        overflowY: 'auto',
+      }}>
+        <MetricsPanel
+          envelope={isActive ? envelopeScore : 0}
+          consistency={isActive ? consistency : 100}
+          drift={isActive ? drift : 0}
+          lanes={isActive ? lanes : ZERO_LANES}
+          isActive={isActive}
+        />
+      </div>
+    </div>
   )
 }
