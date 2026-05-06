@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: 'Aura Rehearse — NEPA Playground',
   description: 'Reflects. Rehearses. Your private practice mirror. Nothing leaves your device.',
   metadataBase: new URL('https://playground.aurasensehk.com'),
+  icons: [{ rel: 'icon', url: '/favicon.svg', type: 'image/svg+xml' }],
   openGraph: {
     title: 'Aura Rehearse — NEPA Playground',
     description: 'Reflects. Rehearses. Your private practice mirror. Nothing leaves your device.',
