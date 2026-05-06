@@ -11,6 +11,7 @@ export interface PlanQuota {
     webhooks:           boolean
     air_gapped:         boolean
     sse_realtime:       boolean
+    rtsp_ingest:        boolean   // V1: RTSP/SRT ingest via edge GPU service
   }
 }
 
@@ -20,28 +21,28 @@ export const QUOTAS: Record<PlanKey, PlanQuota> = {
     videos_per_day: 5,
     bytes_per_day:  500 * 1024 * 1024,        // 500 MB
     max_seats:      1,
-    features: { audit_chain: true, world_model_api: false, webhooks: false, air_gapped: false, sse_realtime: true },
+    features: { audit_chain: true, world_model_api: false, webhooks: false, air_gapped: false, sse_realtime: true, rtsp_ingest: false },
   },
   pro: {
     frames_per_day: -1,
     videos_per_day: 200,
     bytes_per_day:  20 * 1024 * 1024 * 1024,  // 20 GB
     max_seats:      1,
-    features: { audit_chain: true, world_model_api: true, webhooks: false, air_gapped: false, sse_realtime: true },
+    features: { audit_chain: true, world_model_api: true, webhooks: false, air_gapped: false, sse_realtime: true, rtsp_ingest: true },
   },
   team: {
     frames_per_day: -1,
     videos_per_day: -1,
     bytes_per_day:  200 * 1024 * 1024 * 1024, // 200 GB
     max_seats:      10,
-    features: { audit_chain: true, world_model_api: true, webhooks: true, air_gapped: false, sse_realtime: true },
+    features: { audit_chain: true, world_model_api: true, webhooks: true, air_gapped: false, sse_realtime: true, rtsp_ingest: true },
   },
   enterprise: {
     frames_per_day: -1,
     videos_per_day: -1,
     bytes_per_day:  -1,
     max_seats:      9999,
-    features: { audit_chain: true, world_model_api: true, webhooks: true, air_gapped: true, sse_realtime: true },
+    features: { audit_chain: true, world_model_api: true, webhooks: true, air_gapped: true, sse_realtime: true, rtsp_ingest: true },
   },
 }
 
