@@ -27,7 +27,7 @@ export default function RehearsePage() {
   const { landmarks } = usePose(videoRef, isActive)
   const { pacingScore } = useAudioSignals(stream, isActive)
   const { irisLeft, irisRight } = useFaceLandmarks(videoRef, isActive)
-  const { isRecording, startRecording, stopRecording } = useRecording(videoRef, canvasRef)
+  const { isRecording, isSupported: recordingSupported, startRecording, stopRecording } = useRecording(videoRef, canvasRef)
   const { open: openMembership } = useMembershipDrawer()
   const consistencyRef = useRef(new ConsistencyTracker())
 
@@ -134,7 +134,7 @@ export default function RehearsePage() {
               transform: 'scaleX(-1)',
             }}
           />
-          {!isActive && (
+          {!isActive && !error && (
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -146,8 +146,9 @@ export default function RehearsePage() {
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 24px',
             }}>
-              <p style={{ color: '#ef4444', fontSize: 13, padding: '0 20px', textAlign: 'center' }}>{error}</p>
+              <p style={{ color: '#ef4444', fontSize: 13, textAlign: 'center' }}>{error}</p>
             </div>
           )}
           {isRecording && (
@@ -190,7 +191,7 @@ export default function RehearsePage() {
           onOpenMembership={openMembership}
         />
 
-        {/* CTA row + Record button */}
+        {/* CTA row + Record button (hidden on Safari iOS where captureStream is unsupported) */}
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1 }}>
             <CtaPill
@@ -200,7 +201,7 @@ export default function RehearsePage() {
               onStop={stop}
             />
           </div>
-          {isActive && (
+          {isActive && recordingSupported && (
             <button
               onClick={isRecording ? stopRecording : startRecording}
               title={isRecording ? 'Stop & download recording' : 'Record session as .webm'}
