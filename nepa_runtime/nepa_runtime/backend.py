@@ -40,6 +40,12 @@ class Backend(abc.ABC):
     name: str = "abstract"
     @abc.abstractmethod
     def infer_frame(self, jpeg: bytes, source: str = "", region: str = "") -> InferResult: ...
+    # TODO(audit-2026-05): add a per-user STDP state hook so that
+    # `infer_frame(..., user_id=...)` mutates a calibration map keyed by
+    # user_id (and ideally skill_id). Today STDP weights are global per
+    # process; this prevents the calibration layer from learning distinct
+    # baselines for two operators sharing the same edge device.
+    # See AUDIT_2026_05.md §3 / §5.
 
 class NullBackend(Backend):
     """No model — synthetic but realistic. Replaces the JS mock adapter."""
