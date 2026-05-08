@@ -1,4 +1,7 @@
 'use client'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { FrameClickable } from '@/components/frame-clickable'
+import { Plane, Battery, Signal, AlertCircle, Radio, Lock, Zap, X, ExternalLink } from 'lucide-react'
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { FrameClickable } from '@/components/frame-clickable'
 import { YoloOverlay } from '@/components/yolo-overlay'
@@ -39,6 +42,27 @@ export default function DronePage() {
   const [latencyMs, setLatencyMs] = useState(0)
   const [videoSize, setVideoSize] = useState({ w: 1280, h: 720 })
   const inferringRef = useRef(false)
+
+  // V1 RTSP / edge state
+  const [rtspUrl, setRtspUrl] = useState('')
+  const [slotId, setSlotId] = useState<string | null>(null)
+  const [streamStatus, setStreamStatus] = useState<'idle' | 'starting' | 'live' | 'stopping'>('idle')
+  const [edgeStats, setEdgeStats] = useState<EdgeStats | null>(null)
+  const [statsErr, setStatsErr] = useState<string | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Simple plan resolution from /api/billing/me (no SSR needed)
+  const [plan, setPlan] = useState<string>('starter')
+  const [loadingPlan, setLoadingPlan] = useState(true)
+  useEffect(() => {
+    fetch('/api/billing/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (j?.plan) setPlan(j.plan) })
+      .catch(() => {})
+      .finally(() => setLoadingPlan(false))
+  }, [])
+
+  const canIngest = plan === 'pro' || plan === 'team' || plan === 'enterprise'
 
   useEffect(() => {
     fetch('/api/registry/drones').then(r => r.json()).then(j => setDrones(j?.data?.units ?? []))
@@ -120,6 +144,66 @@ export default function DronePage() {
     cancelAnimationFrame(rafRef.current)
     streamRef.current?.getTracks().forEach(t => t.stop())
   }, [])
+
+  // ---------- RTSP edge stream -------------------------------------------
+
+  const startPolling = useCallback((id: string) => {
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/edge/stats/${id}`)
+        if (!r.ok) { setStatsErr(`stats ${r.status}`); return }
+        const s: EdgeStats = await r.json()
+        setEdgeStats(s)
+        setStatsErr(null)
+      } catch (e) { setStatsErr((e as Error).message) }
+    }, 2000)
+  }, [])
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+  }, [])
+
+  useEffect(() => () => stopPolling(), [stopPolling])
+
+  async function startRtsp() {
+    if (!rtspUrl.trim()) return
+    setStreamStatus('starting')
+    try {
+      const r = await fetch('/api/edge/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: rtspUrl.trim() }),
+      })
+      const j = await r.json()
+      if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`)
+      setSlotId(j.slot_id)
+      setStreamStatus('live')
+      startPolling(j.slot_id)
+    } catch (e) {
+      alert('Failed to start stream: ' + (e as Error).message)
+      setStreamStatus('idle')
+    }
+  }
+
+  async function stopRtsp() {
+    if (!slotId) return
+    setStreamStatus('stopping')
+    stopPolling()
+    try {
+      await fetch(`/api/edge/close/${slotId}`, { method: 'POST' })
+    } catch {}
+    setSlotId(null)
+    setEdgeStats(null)
+    setStreamStatus('idle')
+  }
+
+  // ---------- render -------------------------------------------------------
+
+  const p50inf = edgeStats?.p50_ms?.inference ?? null
+  const p95inf = edgeStats?.p95_ms?.inference ?? null
+  const p95full = edgeStats
+    ? Object.values(edgeStats.p95_ms).reduce((a, b) => a + b, 0)
+    : null
 
   return (
     <main className="min-h-dvh pt-16 pb-12 px-4" style={{ background: '#070e1a', color: 'white' }}>
@@ -360,6 +444,7 @@ export default function DronePage() {
 
         <p className="mt-4 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Click any 9-region tile on the live feed — actual pixels are captured and POSTed to <code>/api/nepa/inference/frame</code>.
+          {!canIngest && <> · <a href="/pricing" style={{ color: '#10b981' }}>Upgrade to Pro</a> for RTSP/SRT edge ingest.</>}
           Attach live camera to enable YOLOv8n real-time object detection.
         </p>
       </section>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { edgeIngestUrl } from '@/lib/edge'
+import { QUOTAS } from '@/lib/billing/plans'
 import { QUOTAS, planForUser } from '@/lib/billing/plans'
 import { admin } from '@/lib/supabase/admin'
 
@@ -12,6 +13,16 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 })
 
+  // Resolve current plan from subscriptions table
+  const { data: sub } = await sb
+    .from('subscriptions')
+    .select('plan')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const plan = (sub?.plan as string) ?? 'starter'
+
+  // Plan gate: only pro / team / enterprise may ingest RTSP
+  const quota = QUOTAS[plan as keyof typeof QUOTAS] ?? QUOTAS.starter
   const { data: row } = await admin()
     .from('user_plans')
     .select('plan')
@@ -45,6 +56,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e.message, detail: e.detail }, { status })
   }
 
+  // Log stream to Supabase for account history
+  await sb.from('streams').insert({
+    user_id: user.id,
+    kind: 'rtsp',
+    source_url: url,
+    edge_session_id: slot.slot_id,
+    status: 'active',
+    metadata: { plan, target_fps: body?.target_fps ?? 15 },
+  })
   // Best-effort log to streams table; ignored if table is missing.
   try {
     await admin().from('streams').insert({
