@@ -1,11 +1,8 @@
 'use client'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { FrameClickable } from '@/components/frame-clickable'
-import { Plane, Battery, Signal, AlertCircle, Radio, Lock, Zap, X, ExternalLink } from 'lucide-react'
-import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { FrameClickable } from '@/components/frame-clickable'
 import { YoloOverlay } from '@/components/yolo-overlay'
-import { Plane, Battery, Signal, AlertCircle, Radio, Zap } from 'lucide-react'
+import { Plane, Battery, Signal, AlertCircle, Radio, Lock, Zap, X, ExternalLink } from 'lucide-react'
 import type { BBox } from '@/lib/yolo'
 
 interface Drone { id: string; model: string; status: string; battery: number; region: string }
