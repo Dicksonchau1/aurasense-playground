@@ -59,7 +59,7 @@ export default function RehearsePage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [isActive, start, stop])
 
-  // Draw skeleton + optional framing grid
+  // Draw skeleton + optional framing grid with animation
   useEffect(() => {
     const canvas = canvasRef.current
     const video = videoRef.current
@@ -71,8 +71,29 @@ export default function RehearsePage() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     ctx.clearRect(0, 0, w, h)
-    if (activeLanes.has('grid')) drawFramingGrid(ctx, w, h)
-    if (landmarks.length > 0) drawSkeleton(ctx, landmarks, w, h)
+
+    // Animate grid fade-in
+    if (activeLanes.has('grid')) {
+      ctx.save()
+      ctx.globalAlpha = 0.7
+      drawFramingGrid(ctx, w, h)
+      ctx.restore()
+    }
+
+    // Animate skeleton with a pulse effect
+    if (landmarks.length > 0) {
+      ctx.save()
+      const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 300)
+      ctx.globalAlpha = pulse
+      drawSkeleton(ctx, landmarks, w, h)
+      ctx.restore()
+    }
+    // Draw a modern HUD overlay (corners, subtle border)
+    ctx.save()
+    ctx.strokeStyle = 'rgba(16,185,129,0.25)'
+    ctx.lineWidth = 4
+    ctx.strokeRect(2, 2, w - 4, h - 4)
+    ctx.restore()
   }, [landmarks, activeLanes, videoRef])
 
   // Compute scores on each landmark update

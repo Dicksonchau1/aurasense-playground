@@ -16,15 +16,32 @@ interface EdgeStats {
   fps: number
 }
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[9px] uppercase tracking-widest" style={{ color: 'rgba(16,185,129,0.6)' }}>{label}</span>
-      <span className="text-sm font-mono font-bold" style={{ color: '#10b981' }}>{value}</span>
-      {sub && <span className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>{sub}</span>}
-    </div>
-  )
-}
+  import { useEffect, useRef } from 'react'
+  function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+    const ref = useRef<HTMLSpanElement>(null)
+    const prev = useRef(value)
+    useEffect(() => {
+      if (ref.current && prev.current !== value) {
+        ref.current.animate([
+          { opacity: 0.6, transform: 'scale(0.95)' },
+          { opacity: 1, transform: 'scale(1.08)' },
+          { opacity: 1, transform: 'scale(1)' }
+        ], {
+          duration: 400,
+          fill: 'forwards',
+          easing: 'cubic-bezier(0.4,0,0.2,1)'
+        })
+        prev.current = value
+      }
+    }, [value])
+    return (
+      <div className="flex flex-col gap-0.5 p-2 rounded-lg" style={{ background: 'rgba(16,185,129,0.07)', minWidth: 90 }}>
+        <span className="text-[9px] uppercase tracking-widest mb-0.5" style={{ color: 'rgba(16,185,129,0.6)' }}>{label}</span>
+        <span ref={ref} className="text-lg font-mono font-bold transition-all duration-300" style={{ color: '#10b981', letterSpacing: '0.01em' }}>{value}</span>
+        {sub && <span className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{sub}</span>}
+      </div>
+    )
+  }
 
 export default function DronePage() {
   const [drones, setDrones] = useState<Drone[]>([])
@@ -297,8 +314,8 @@ export default function DronePage() {
 
           {/* Latency HUD */}
           {streamStatus === 'live' && (
-            <div className="mt-3 rounded-lg px-3 py-2 flex gap-6 flex-wrap"
-              style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <div className="mt-3 rounded-xl px-3 py-3 flex gap-4 flex-wrap items-stretch"
+              style={{ background: 'rgba(16,185,129,0.10)', border: '1.5px solid rgba(16,185,129,0.22)', boxShadow: '0 2px 16px 0 rgba(16,185,129,0.08)' }}>
               <Stat
                 label="Full pipeline p95"
                 value={p95full !== null ? `${p95full.toFixed(1)} ms` : '—'}
@@ -318,7 +335,7 @@ export default function DronePage() {
                 value={edgeStats?.fps != null ? edgeStats.fps.toFixed(1) : '—'}
               />
               {statsErr && (
-                <span className="text-[10px] self-center" style={{ color: '#ef4444' }}>⚠ {statsErr}</span>
+                <span className="text-[10px] self-center" style={{ color: '#ef4444', alignSelf: 'flex-end' }}>⚠ {statsErr}</span>
               )}
             </div>
           )}
