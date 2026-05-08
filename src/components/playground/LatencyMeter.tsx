@@ -54,16 +54,17 @@ export function LatencyMeter({ slotId, windowSize = 60 }: Props) {
   const w = 160
   const h = 36
   const dx = samples.length > 1 ? w / (samples.length - 1) : 0
+  // Animated sparkline path
   const path = (key: 'p50' | 'p95') =>
     samples
       .map((s, i) => `${i === 0 ? 'M' : 'L'}${(i * dx).toFixed(2)} ${(h - (s[key] / max) * h).toFixed(2)}`)
       .join(' ')
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+    <div className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 shadow-lg" style={{boxShadow:'0 2px 16px 0 rgba(16,185,129,0.08)'}}>
       <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.25em] text-white/50">
         <span>Latency</span>
-        <span className={connected ? 'text-emerald-400' : 'text-white/30'}>{connected ? '● live' : '○ offline'}</span>
+        <span className={connected ? 'text-emerald-400 animate-pulse' : 'text-white/30'}>{connected ? '● live' : '○ offline'}</span>
       </div>
       <div className="mt-2 flex items-baseline gap-4 font-mono text-white">
         <div>
@@ -78,8 +79,12 @@ export function LatencyMeter({ slotId, windowSize = 60 }: Props) {
       <svg viewBox={`0 0 ${w} ${h}`} className="mt-2 h-9 w-full">
         {samples.length > 1 ? (
           <>
-            <path d={path('p95')} stroke="#10b981" strokeWidth={1} fill="none" />
-            <path d={path('p50')} stroke="rgba(255,255,255,0.45)" strokeWidth={1} fill="none" />
+            <path d={path('p95')} stroke="#10b981" strokeWidth={2} fill="none" style={{filter:'drop-shadow(0 1px 2px #10b98188)'}}>
+              <animate attributeName="d" dur="0.4s" to={path('p95')} fill="freeze" />
+            </path>
+            <path d={path('p50')} stroke="rgba(255,255,255,0.45)" strokeWidth={1.5} fill="none" style={{filter:'drop-shadow(0 1px 2px #fff4)'}}>
+              <animate attributeName="d" dur="0.4s" to={path('p50')} fill="freeze" />
+            </path>
           </>
         ) : (
           <text x={w / 2} y={h / 2} textAnchor="middle" fontSize={6} fill="rgba(255,255,255,0.3)">

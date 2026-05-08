@@ -12,18 +12,39 @@ const TIPS: Record<keyof LaneScores, string[]> = {
   pacing: ['Allow brief pauses between thoughts.','Aim to speak 60–70% of the session duration.','Vary sentence rhythm to maintain delivery.'],
 }
 
+import { useEffect, useRef } from 'react'
+
 function LaneBar({ label, score }: { label: string; score: number }) {
+  const barRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (barRef.current) {
+      barRef.current.animate([
+        { width: barRef.current.style.width },
+        { width: score + '%' }
+      ], {
+        duration: 400,
+        fill: 'forwards',
+        easing: 'cubic-bezier(0.4,0,0.2,1)'
+      })
+      barRef.current.style.width = score + '%'
+    }
+  }, [score])
   return (
     <div className="mb-4">
       <div className="flex justify-between items-center mb-1">
         <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{label}</span>
         <span className="text-sm font-mono font-medium" style={{ color: 'var(--text)' }}>{Math.round(score)}</span>
       </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-        <div className="h-full rounded-full transition-all duration-300" style={{
-          width: score + '%',
-          background: score > 70 ? 'var(--accent-green)' : score > 40 ? 'var(--accent-amber, #f59e0b)' : 'var(--lock-red)',
-        }} />
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--border)', boxShadow: '0 1px 4px 0 rgba(16,185,129,0.08)' }}>
+        <div
+          ref={barRef}
+          className="h-full rounded-full transition-all duration-300"
+          style={{
+            width: score + '%',
+            background: score > 70 ? 'linear-gradient(90deg,#10b981,#38bdf8)' : score > 40 ? 'linear-gradient(90deg,#f59e0b,#f472b6)' : 'linear-gradient(90deg,#ef4444,#f59e0b)',
+            transition: 'width 0.4s cubic-bezier(0.4,0,0.2,1)',
+          }}
+        />
       </div>
     </div>
   )

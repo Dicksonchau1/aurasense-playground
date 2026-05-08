@@ -1,14 +1,12 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
-import { FrameClickable } from '@/components/frame-clickable'
-import { YoloOverlay } from '@/components/yolo-overlay'
 import { NEPAOverlay } from '@/components/drone/nepa-overlay'
 import { useSupabaseUser } from '@/lib/auth/useSupabaseUser'
 import { usePlan } from '@/lib/billing/usePlan'
 import { captureRegionAsBlob } from '@/lib/nepa/frameCapture'
 import { postNEPAFrame } from '@/lib/nepa/inferenceClient'
 import type { NEPARegionMeta, NEPAInferenceResponse } from '@/types/nepa'
-import { Plane, Battery, Signal, AlertCircle, Radio } from 'lucide-react'
+import { Plane, Battery, Signal, AlertCircle, Radio, Lock, Zap, X, ExternalLink } from 'lucide-react'
+import type { BBox } from '@/lib/yolo'
 
 interface Drone { id: string; model: string; status: string; battery: number; region: string }
 
@@ -18,15 +16,32 @@ interface EdgeStats {
   fps: number
 }
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[9px] uppercase tracking-widest" style={{ color: 'rgba(16,185,129,0.6)' }}>{label}</span>
-      <span className="text-sm font-mono font-bold" style={{ color: '#10b981' }}>{value}</span>
-      {sub && <span className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>{sub}</span>}
-    </div>
-  )
-}
+  import { useEffect, useRef } from 'react'
+  function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+    const ref = useRef<HTMLSpanElement>(null)
+    const prev = useRef(value)
+    useEffect(() => {
+      if (ref.current && prev.current !== value) {
+        ref.current.animate([
+          { opacity: 0.6, transform: 'scale(0.95)' },
+          { opacity: 1, transform: 'scale(1.08)' },
+          { opacity: 1, transform: 'scale(1)' }
+        ], {
+          duration: 400,
+          fill: 'forwards',
+          easing: 'cubic-bezier(0.4,0,0.2,1)'
+        })
+        prev.current = value
+      }
+    }, [value])
+    return (
+      <div className="flex flex-col gap-0.5 p-2 rounded-lg" style={{ background: 'rgba(16,185,129,0.07)', minWidth: 90 }}>
+        <span className="text-[9px] uppercase tracking-widest mb-0.5" style={{ color: 'rgba(16,185,129,0.6)' }}>{label}</span>
+        <span ref={ref} className="text-lg font-mono font-bold transition-all duration-300" style={{ color: '#10b981', letterSpacing: '0.01em' }}>{value}</span>
+        {sub && <span className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{sub}</span>}
+      </div>
+    )
+  }
 
 export default function DronePage() {
   const [drones, setDrones] = useState<Drone[]>([])
@@ -34,6 +49,37 @@ export default function DronePage() {
   const [feedMode, setFeedMode] = useState<'video' | 'webcam'>('video')
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const rafRef = useRef<number>(0)
+
+  // YOLO state
+  const [yoloReady, setYoloReady] = useState(false)
+  const [yoloError, setYoloError] = useState('')
+  const [boxes, setBoxes] = useState<BBox[]>([])
+  const [fps, setFps] = useState(0)
+  const [latencyMs, setLatencyMs] = useState(0)
+  const [videoSize, setVideoSize] = useState({ w: 1280, h: 720 })
+  const inferringRef = useRef(false)
+
+  // V1 RTSP / edge state
+  const [rtspUrl, setRtspUrl] = useState('')
+  const [slotId, setSlotId] = useState<string | null>(null)
+  const [streamStatus, setStreamStatus] = useState<'idle' | 'starting' | 'live' | 'stopping'>('idle')
+  const [edgeStats, setEdgeStats] = useState<EdgeStats | null>(null)
+  const [statsErr, setStatsErr] = useState<string | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Simple plan resolution from /api/billing/me (no SSR needed)
+  const [plan, setPlan] = useState<string>('starter')
+  const [loadingPlan, setLoadingPlan] = useState(true)
+  useEffect(() => {
+    fetch('/api/billing/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (j?.plan) setPlan(j.plan) })
+      .catch(() => {})
+      .finally(() => setLoadingPlan(false))
+  }, [])
+
+  const canIngest = plan === 'pro' || plan === 'team' || plan === 'enterprise'
 
   // NEPA integration state
   const { user } = useSupabaseUser()
@@ -182,7 +228,70 @@ export default function DronePage() {
     setFeedMode('video')
     setBoxes([])
   }
-  useEffect(() => () => streamRef.current?.getTracks().forEach(t => t.stop()), [])
+  useEffect(() => () => {
+    cancelAnimationFrame(rafRef.current)
+    streamRef.current?.getTracks().forEach(t => t.stop())
+  }, [])
+
+  // ---------- RTSP edge stream -------------------------------------------
+
+  const startPolling = useCallback((id: string) => {
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/edge/stats/${id}`)
+        if (!r.ok) { setStatsErr(`stats ${r.status}`); return }
+        const s: EdgeStats = await r.json()
+        setEdgeStats(s)
+        setStatsErr(null)
+      } catch (e) { setStatsErr((e as Error).message) }
+    }, 2000)
+  }, [])
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+  }, [])
+
+  useEffect(() => () => stopPolling(), [stopPolling])
+
+  async function startRtsp() {
+    if (!rtspUrl.trim()) return
+    setStreamStatus('starting')
+    try {
+      const r = await fetch('/api/edge/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: rtspUrl.trim() }),
+      })
+      const j = await r.json()
+      if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`)
+      setSlotId(j.slot_id)
+      setStreamStatus('live')
+      startPolling(j.slot_id)
+    } catch (e) {
+      alert('Failed to start stream: ' + (e as Error).message)
+      setStreamStatus('idle')
+    }
+  }
+
+  async function stopRtsp() {
+    if (!slotId) return
+    setStreamStatus('stopping')
+    stopPolling()
+    try {
+      await fetch(`/api/edge/close/${slotId}`, { method: 'POST' })
+    } catch {}
+    setSlotId(null)
+    setEdgeStats(null)
+    setStreamStatus('idle')
+  }
+
+  // ---------- render -------------------------------------------------------
+
+  const p50inf = edgeStats?.p50_ms?.inference ?? null
+  const p95inf = edgeStats?.p95_ms?.inference ?? null
+  const p95full = edgeStats
+    ? Object.values(edgeStats.p95_ms).reduce((a, b) => a + b, 0)
+    : null
 
   return (
     <main className="min-h-dvh pt-16 pb-12 px-4" style={{ background: '#070e1a', color: 'white' }}>
@@ -276,8 +385,8 @@ export default function DronePage() {
 
           {/* Latency HUD */}
           {streamStatus === 'live' && (
-            <div className="mt-3 rounded-lg px-3 py-2 flex gap-6 flex-wrap"
-              style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <div className="mt-3 rounded-xl px-3 py-3 flex gap-4 flex-wrap items-stretch"
+              style={{ background: 'rgba(16,185,129,0.10)', border: '1.5px solid rgba(16,185,129,0.22)', boxShadow: '0 2px 16px 0 rgba(16,185,129,0.08)' }}>
               <Stat
                 label="Full pipeline p95"
                 value={p95full !== null ? `${p95full.toFixed(1)} ms` : '—'}
@@ -297,7 +406,7 @@ export default function DronePage() {
                 value={edgeStats?.fps != null ? edgeStats.fps.toFixed(1) : '—'}
               />
               {statsErr && (
-                <span className="text-[10px] self-center" style={{ color: '#ef4444' }}>⚠ {statsErr}</span>
+                <span className="text-[10px] self-center" style={{ color: '#ef4444', alignSelf: 'flex-end' }}>⚠ {statsErr}</span>
               )}
             </div>
           )}
@@ -310,7 +419,7 @@ export default function DronePage() {
             <div className="relative" style={{ aspectRatio: '16/9', background: '#000' }}>
               <video
                 ref={videoRef}
-                src={feedMode === 'video' ? '/hero/world-model-stdp.mp4' : undefined}
+                src={feedMode === 'video' ? 'https://samplelib.com/mp4/sample-5s.mp4' : undefined}
                 autoPlay loop muted playsInline crossOrigin="anonymous"
                 onError={(e) => {
                   const v = e.currentTarget
@@ -512,6 +621,8 @@ export default function DronePage() {
         )}
         <p className="mt-4 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Click any 9-region tile on the live feed — actual pixels are captured and POSTed to <code>/api/nepa/inference/frame</code>.
+          {!canIngest && <> · <a href="/pricing" style={{ color: '#10b981' }}>Upgrade to Pro</a> for RTSP/SRT edge ingest.</>}
+          Attach live camera to enable YOLOv8n real-time object detection.
         </p>
       </section>
     </main>
