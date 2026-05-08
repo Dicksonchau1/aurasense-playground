@@ -68,28 +68,15 @@ export default function DronePage() {
   const [statsErr, setStatsErr] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Simple plan resolution from /api/billing/me (no SSR needed)
-  const [plan, setPlan] = useState<string>('starter')
-  const [loadingPlan, setLoadingPlan] = useState(true)
-  useEffect(() => {
-    fetch('/api/billing/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(j => { if (j?.plan) setPlan(j.plan) })
-      .catch(() => {})
-      .finally(() => setLoadingPlan(false))
-  }, [])
-
-  const canIngest = plan === 'pro' || plan === 'team' || plan === 'enterprise'
+  // Remove duplicate plan/canIngest state, use only from usePlan
+  const { user } = useSupabaseUser()
+  const { plan, loading: loadingPlan } = usePlan()
+  const canIngest = plan === 'pro_plus'
 
   // NEPA integration state
-  const { user } = useSupabaseUser()
-  const { plan } = usePlan()
   const [nepaLoadingRegion, setNepaLoadingRegion] = useState<number | null>(null)
   const [nepaError, setNepaError] = useState<string | null>(null)
   const [nepaOverlays, setNepaOverlays] = useState<Record<number, NEPAInferenceResponse>>({})
-
-  // Plan gating for RTSP ingest
-  const canIngest = plan === 'pro_plus'
   // Determine source type for NEPA (webcam or rtsp)
   const sourceType: 'webcam' | 'rtsp' = feedMode === 'webcam' ? 'webcam' : 'rtsp'
 
