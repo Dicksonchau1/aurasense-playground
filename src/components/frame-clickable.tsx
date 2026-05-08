@@ -12,11 +12,13 @@ interface Props {
   fullFrameOnClick?: boolean
   className?: string
   style?: React.CSSProperties
+  /** Callback for inference result */
+  onResult?: (result: any) => void
 }
 
 const REGIONS = ['NW','N','NE','W','C','E','SW','S','SE']
 
-export function FrameClickable({ children, source = 'feed', fullFrameOnClick, className, style }: Props) {
+export function FrameClickable({ children, source = 'feed', fullFrameOnClick, className, style, onResult }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
@@ -52,6 +54,7 @@ export function FrameClickable({ children, source = 'feed', fullFrameOnClick, cl
       if (!res.ok) throw new Error('Backend error: ' + res.status)
       const data = await res.json()
       setResult(data)
+      if (onResult) onResult(data)
       dispatchFrame(frame, source)
       setFlash(region ?? 'full')
       setTimeout(() => setFlash(null), 700)
