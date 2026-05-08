@@ -1,7 +1,9 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { FrameClickable } from '@/components/frame-clickable'
-import { Plane, Battery, Signal, AlertCircle, Radio } from 'lucide-react'
+import { YoloOverlay } from '@/components/yolo-overlay'
+import { Plane, Battery, Signal, AlertCircle, Radio, Zap } from 'lucide-react'
+import type { BBox } from '@/lib/yolo'
 
 interface Drone { id: string; model: string; status: string; battery: number; region: string }
 
@@ -27,6 +29,16 @@ export default function DronePage() {
   const [feedMode, setFeedMode] = useState<'video' | 'webcam'>('video')
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const rafRef = useRef<number>(0)
+
+  // YOLO state
+  const [yoloReady, setYoloReady] = useState(false)
+  const [yoloError, setYoloError] = useState('')
+  const [boxes, setBoxes] = useState<BBox[]>([])
+  const [fps, setFps] = useState(0)
+  const [latencyMs, setLatencyMs] = useState(0)
+  const [videoSize, setVideoSize] = useState({ w: 1280, h: 720 })
+  const inferringRef = useRef(false)
 
   useEffect(() => {
     fetch('/api/registry/drones').then(r => r.json()).then(j => setDrones(j?.data?.units ?? []))
@@ -104,7 +116,10 @@ export default function DronePage() {
     setFeedMode('video')
     setBoxes([])
   }
-  useEffect(() => () => streamRef.current?.getTracks().forEach(t => t.stop()), [])
+  useEffect(() => () => {
+    cancelAnimationFrame(rafRef.current)
+    streamRef.current?.getTracks().forEach(t => t.stop())
+  }, [])
 
   return (
     <main className="min-h-dvh pt-16 pb-12 px-4" style={{ background: '#070e1a', color: 'white' }}>
@@ -345,6 +360,7 @@ export default function DronePage() {
 
         <p className="mt-4 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Click any 9-region tile on the live feed — actual pixels are captured and POSTed to <code>/api/nepa/inference/frame</code>.
+          Attach live camera to enable YOLOv8n real-time object detection.
         </p>
       </section>
     </main>
