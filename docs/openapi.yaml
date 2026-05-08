@@ -1,0 +1,899 @@
+openapi: 3.1.0
+info:
+  title: AuraSense NEPA — Façade (SFSVC) API
+  version: 0.1.0
+  description: >
+    REST API for the SFSVC façade inspection module inside NEPA.
+    Covers drone registry, flight ops, ingest, SFSVC AI pipeline,
+    MBIS compliance reports, governance (calibration, regression, audit).
+servers:
+  - url: https://api.aurasensehk.com
+    description: Production
+  - url: https://staging-api.aurasensehk.com
+    description: Staging
+  - url: http://localhost:8080
+    description: Local
+
+tags:
+  - name: Drones
+  - name: Pilots
+  - name: Flights
+  - name: Buildings
+  - name: Jobs
+  - name: SFSVC
+  - name: Reports
+  - name: Governance
+  - name: Audit
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /v1/drones:
+    get:
+      tags: [Drones]
+      summary: List drones
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DroneList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Drones]
+      summary: Create drone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DroneCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Drone' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /v1/drones/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Drones]
+      summary: Get drone
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Drone' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Drones]
+      summary: Update drone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DroneUpdate' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Drone' }
+    delete:
+      tags: [Drones]
+      summary: Delete drone
+      responses:
+        '204': { description: Deleted }
+
+  /v1/drones/{id}/maintenance:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Drones]
+      summary: Log maintenance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MaintenanceCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Maintenance' }
+
+  /v1/pilots:
+    get:
+      tags: [Pilots]
+      summary: List pilots
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PilotList' }
+    post:
+      tags: [Pilots]
+      summary: Create pilot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PilotCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pilot' }
+
+  /v1/pilots/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    patch:
+      tags: [Pilots]
+      summary: Update pilot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PilotUpdate' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pilot' }
+
+  /v1/buildings:
+    get:
+      tags: [Buildings]
+      summary: List buildings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingList' }
+    post:
+      tags: [Buildings]
+      summary: Create building
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BuildingCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Building' }
+
+  /v1/buildings/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Buildings]
+      summary: Get building (with elevations)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildingDetail' }
+
+  /v1/flights:
+    get:
+      tags: [Flights]
+      summary: List flights
+      parameters:
+        - name: building_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FlightList' }
+    post:
+      tags: [Flights]
+      summary: >
+        Create flight plan.
+        Server validates drone + pilot certifications; rejects if expired.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FlightCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Flight' }
+        '422':
+          description: Cert or plan validation failed
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /v1/flights/{id}/start:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [Flights]
+      summary: Start flight
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Flight' }
+
+  /v1/flights/{id}/complete:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [Flights]
+      summary: Complete flight
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Flight' }
+
+  /v1/flights/{id}/abort:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [Flights]
+      summary: Abort flight
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Flight' }
+
+  /v1/jobs:
+    post:
+      tags: [Jobs]
+      summary: >
+        Create inspection job. Returns pre-signed upload URLs for
+        images and telemetry.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/JobCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobWithUploads' }
+
+  /v1/jobs/{id}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      tags: [Jobs]
+      summary: Get job status
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Job' }
+
+  /v1/jobs/{id}/ingest-complete:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [Jobs]
+      summary: Mark ingest complete and enqueue AI pipeline
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Job' }
+
+  /v1/jobs/{id}/process:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [SFSVC]
+      summary: Start / rerun SFSVC processing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                calibration_profile_id: { type: string, format: uuid }
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run_id: { type: string, format: uuid }
+                  job:    { $ref: '#/components/schemas/Job' }
+
+  /v1/jobs/{id}/defects:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      tags: [SFSVC]
+      summary: List defects for job
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: mbis_band
+          in: query
+          schema:
+            type: string
+            enum: [NO_IMMEDIATE_ACTION, REQUIRE_INVESTIGATION, REQUIRE_REPAIR, IMMINENTLY_DANGEROUS]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DefectList' }
+
+  /v1/jobs/{id}/map:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      tags: [SFSVC]
+      summary: Get façade risk map (tile URLs + defect GeoJSON)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FacadeMap' }
+
+  /v1/jobs/{id}/report:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [Reports]
+      summary: Generate MBIS HTML + PDF report
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Report' }
+
+  /v1/reports/{id}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      tags: [Reports]
+      summary: Get report metadata and signed asset URLs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Report' }
+
+  /v1/reports/{id}/sign:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [Reports]
+      summary: Registered Inspector signs the report
+      responses:
+        '200':
+          description: Signed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Report' }
+
+  /v1/calibration-profiles:
+    get:
+      tags: [Governance]
+      summary: List calibration profiles
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalibrationProfileList' }
+    post:
+      tags: [Governance]
+      summary: Create calibration profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CalibrationProfileCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalibrationProfile' }
+
+  /v1/calibration-profiles/{id}/regression:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [Governance]
+      summary: Run regression suite against pinned dataset
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegressionRun' }
+
+  /v1/calibration-profiles/{id}/promote:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      tags: [Governance]
+      summary: Promote profile (requires passing regression run)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CalibrationProfile' }
+        '409':
+          description: Regression not passed
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /v1/audit-logs:
+    get:
+      tags: [Audit]
+      summary: Query audit logs
+      parameters:
+        - name: entity
+          in: query
+          schema: { type: string }
+        - name: entity_id
+          in: query
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditLogList' }
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    OrgId:
+      name: org_id
+      in: query
+      schema: { type: string, format: uuid }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Not Found
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    BadRequest:
+      description: Bad Request
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+
+    Problem:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        request_id: { type: string }
+
+    Page:
+      type: object
+      properties:
+        next_cursor: { type: string, nullable: true }
+        count: { type: integer }
+
+    MbisBand:
+      type: string
+      enum:
+        - NO_IMMEDIATE_ACTION
+        - REQUIRE_INVESTIGATION
+        - REQUIRE_REPAIR
+        - IMMINENTLY_DANGEROUS
+
+    Drone:
+      type: object
+      required: [id, org_id, model, serial, status]
+      properties:
+        id: { type: string, format: uuid }
+        org_id: { type: string, format: uuid }
+        model: { type: string }
+        serial: { type: string }
+        cert_no: { type: string }
+        insurance_expiry: { type: string, format: date }
+        firmware_version: { type: string }
+        status:
+          type: string
+          enum: [active, maintenance, retired]
+        last_flight_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    DroneCreate:
+      type: object
+      required: [model, serial]
+      properties:
+        model: { type: string }
+        serial: { type: string }
+        cert_no: { type: string }
+        insurance_expiry: { type: string, format: date }
+        firmware_version: { type: string }
+
+    DroneUpdate:
+      allOf:
+        - $ref: '#/components/schemas/DroneCreate'
+
+    DroneList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Drone' }
+
+    Maintenance:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        drone_id: { type: string, format: uuid }
+        type: { type: string }
+        note: { type: string }
+        performed_by: { type: string, format: uuid }
+        performed_at: { type: string, format: date-time }
+        next_due_at: { type: string, format: date-time, nullable: true }
+
+    MaintenanceCreate:
+      type: object
+      required: [type, performed_at]
+      properties:
+        type: { type: string }
+        note: { type: string }
+        performed_at: { type: string, format: date-time }
+        next_due_at: { type: string, format: date-time }
+
+    Pilot:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        org_id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        license_no: { type: string }
+        license_expiry: { type: string, format: date }
+        medical_expiry: { type: string, format: date }
+        recurrent_training_at: { type: string, format: date }
+
+    PilotCreate:
+      type: object
+      required: [user_id, license_no, license_expiry]
+      properties:
+        user_id: { type: string, format: uuid }
+        license_no: { type: string }
+        license_expiry: { type: string, format: date }
+        medical_expiry: { type: string, format: date }
+        recurrent_training_at: { type: string, format: date }
+
+    PilotUpdate:
+      $ref: '#/components/schemas/PilotCreate'
+
+    PilotList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Pilot' }
+
+    Building:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        org_id: { type: string, format: uuid }
+        address: { type: string }
+        coords:
+          type: object
+          properties:
+            lat: { type: number }
+            lng: { type: number }
+        year_built: { type: integer }
+        height_m: { type: number }
+        mbis_cycle: { type: string }
+        owner_org: { type: string }
+
+    BuildingCreate:
+      type: object
+      required: [address, coords]
+      properties:
+        address: { type: string }
+        coords:
+          type: object
+          properties:
+            lat: { type: number }
+            lng: { type: number }
+        year_built: { type: integer }
+        height_m: { type: number }
+        mbis_cycle: { type: string }
+        owner_org: { type: string }
+
+    BuildingDetail:
+      allOf:
+        - $ref: '#/components/schemas/Building'
+        - type: object
+          properties:
+            elevations:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  face: { type: string, enum: [N, E, S, W] }
+                  mesh_ref: { type: string }
+                  plan_ref: { type: string }
+
+    BuildingList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Building' }
+
+    Flight:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        drone_id: { type: string, format: uuid }
+        pilot_id: { type: string, format: uuid }
+        building_id: { type: string, format: uuid }
+        flight_plan: { type: object }
+        weather: { type: object }
+        caa_permit_ref: { type: string }
+        status:
+          type: string
+          enum: [planned, started, completed, aborted]
+        started_at: { type: string, format: date-time, nullable: true }
+        ended_at: { type: string, format: date-time, nullable: true }
+
+    FlightCreate:
+      type: object
+      required: [drone_id, pilot_id, building_id, flight_plan]
+      properties:
+        drone_id: { type: string, format: uuid }
+        pilot_id: { type: string, format: uuid }
+        building_id: { type: string, format: uuid }
+        flight_plan: { type: object }
+        weather: { type: object }
+        caa_permit_ref: { type: string }
+
+    FlightList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Flight' }
+
+    JobCreate:
+      type: object
+      required: [flight_id]
+      properties:
+        flight_id: { type: string, format: uuid }
+        calibration_profile_id: { type: string, format: uuid }
+
+    Job:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        building_id: { type: string, format: uuid }
+        flight_id: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [created, ingesting, processing, completed, failed]
+        calibration_profile_id: { type: string, format: uuid }
+        model_version: { type: string }
+        started_at: { type: string, format: date-time, nullable: true }
+        finished_at: { type: string, format: date-time, nullable: true }
+        progress: { type: number, minimum: 0, maximum: 1 }
+
+    JobWithUploads:
+      allOf:
+        - $ref: '#/components/schemas/Job'
+        - type: object
+          properties:
+            uploads:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      upload_url: { type: string, format: uri }
+                      object_key: { type: string }
+                telemetry:
+                  type: object
+                  properties:
+                    upload_url: { type: string, format: uri }
+                    object_key: { type: string }
+
+    Defect:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        job_id: { type: string, format: uuid }
+        elevation_id: { type: string, format: uuid }
+        type:
+          type: string
+          enum: [crack, bulging, leakage, spalling, seepage, deformation]
+        bbox:
+          type: object
+          properties:
+            x: { type: number }
+            y: { type: number }
+            w: { type: number }
+            h: { type: number }
+        centroid:
+          type: object
+          properties:
+            lat: { type: number }
+            lng: { type: number }
+            z: { type: number }
+        severity_score: { type: number }
+        mbis_band: { $ref: '#/components/schemas/MbisBand' }
+        chemical_scores:
+          type: object
+          properties:
+            ph: { type: number }
+            chloride_ingress: { type: number }
+        image_refs:
+          type: array
+          items: { type: string }
+
+    DefectList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Defect' }
+
+    FacadeMap:
+      type: object
+      properties:
+        job_id: { type: string, format: uuid }
+        building_id: { type: string, format: uuid }
+        tiles:
+          type: array
+          items:
+            type: object
+            properties:
+              elevation_id: { type: string, format: uuid }
+              tile_url: { type: string, format: uri }
+        defects_geojson: { type: object }
+
+    Report:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        job_id: { type: string, format: uuid }
+        html_url: { type: string, format: uri }
+        pdf_url: { type: string, format: uri }
+        ri_user_id: { type: string, format: uuid, nullable: true }
+        signed_at: { type: string, format: date-time, nullable: true }
+        version: { type: integer }
+        content_hash: { type: string }
+
+    CalibrationProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        model_version: { type: string }
+        params: { type: object }
+        status:
+          type: string
+          enum: [draft, tested, promoted, retired]
+        created_by: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+
+    CalibrationProfileCreate:
+      type: object
+      required: [model_version, params]
+      properties:
+        model_version: { type: string }
+        params: { type: object }
+
+    CalibrationProfileList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/CalibrationProfile' }
+
+    RegressionRun:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        calibration_profile_id: { type: string, format: uuid }
+        dataset_id: { type: string }
+        metrics: { type: object }
+        passed: { type: boolean }
+        created_at: { type: string, format: date-time }
+
+    AuditLog:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        actor_id: { type: string, format: uuid }
+        action: { type: string }
+        entity: { type: string }
+        entity_id: { type: string, format: uuid }
+        before_hash: { type: string }
+        after_hash: { type: string }
+        ip: { type: string }
+        user_agent: { type: string }
+        created_at: { type: string, format: date-time }
+
+    AuditLogList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/AuditLog' }
