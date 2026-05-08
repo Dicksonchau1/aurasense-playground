@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules/
 .next/
 .vercel/
@@ -26,3 +27,6 @@ nepa_runtime/nepa_pb2_grpc.py
 Thumbs.db
 .vercel
 .env*.local
+=======
+node_modules
+>>>>>>> cc9d6d4 (Refactor code structure for improved readability and maintainability)
