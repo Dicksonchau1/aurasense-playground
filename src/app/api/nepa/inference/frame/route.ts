@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { envelope, sha256 } from '@/lib/nepa'
+import { decideGate } from '@/lib/nepa/gating'
 import { inferFrameSafe } from '@/lib/runtime'
 import { publish } from '@/lib/runtime/anomaly-bus'
 import { checkQuota, recordUsage } from '@/lib/billing/quota'
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
 
   // Real runtime (with mock fallback)
   const result = await inferFrameSafe(buf, { source, region, userId })
+  const gate = decideGate(result)
 
   const data = {
     pipeline: 'frame-multi' as const,
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
     stdp:        result.stdp,
     world_model: result.world_model,
     runtime:     result.runtime,
+    gate,
     note: 'No biometric / facial recognition.',
   }
 
@@ -88,12 +91,12 @@ export async function POST(req: NextRequest) {
   // Record usage AFTER successful inference
   if (userId) await recordUsage(userId, 1, bytes, 0)
 
-  // Live-publish anomaly
-  if (data.world_model.anomaly_flag) {
+  // Live-publish anomaly: either world-model anomaly_flag OR a hard gate decision
+  if (data.world_model.anomaly_flag || gate.state === 'interrupt_for_safety') {
     publish(userId ?? 'anon-local', {
       id: 'anom_' + crypto.randomBytes(4).toString('hex'),
-      kind: 'prediction_error_spike',
-      score: Math.max(...data.detections.map(d => d.score), 0),
+      kind: gate.state === 'interrupt_for_safety' ? 'gate_interrupt' : 'prediction_error_spike',
+      score: gate.top_detection_score,
       region, source, ts_ms: Date.now(),
       pred_err: data.world_model.prediction_error,
     })

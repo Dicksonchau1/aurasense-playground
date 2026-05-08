@@ -1,40 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { envelope, jitter, sha256 } from '@/lib/nepa'
+import { envelope, sha256 } from '@/lib/nepa'
+import { decideGate } from '@/lib/nepa/gating'
+import { inferFrameSafe, inferVideoSafe } from '@/lib/runtime'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+const MAX_BYTES = Number(process.env.NEPA_MAX_UPLOAD_BYTES ?? 10 * 1024 * 1024)
+
+/**
+ * World-model prediction view. Returns the world_model slice plus the gate
+ * decision so callers can act without re-running the gating layer.
+ * Replaces the pre-audit jitter() mock (AUDIT_2026_05.md §1).
+ */
 export async function POST(req: NextRequest) {
   const t = Date.now()
   let filename = 'unknown'
   let bytes = 0
-  let videoSha = ''
+  let mediaSha = ''
+  let kind: 'image' | 'video' = 'image'
+  let buf = Buffer.alloc(0)
 
   try {
     const form = await req.formData()
-    const file = form.get('video') as File | null
+    const image = form.get('image') as File | null
+    const video = form.get('video') as File | null
+    const file = image ?? video
     if (file) {
+      kind = image ? 'image' : 'video'
       filename = file.name
-      const buf = Buffer.from(await file.arrayBuffer())
+      buf = Buffer.from(await file.arrayBuffer())
       bytes = buf.length
-      videoSha = sha256(buf)
+      if (bytes > MAX_BYTES) {
+        return NextResponse.json(
+          { ok: false, error: 'payload_too_large', max_bytes: MAX_BYTES, bytes },
+          { status: 413 },
+        )
+      }
+      mediaSha = sha256(buf)
     }
   } catch { /* */ }
+
+  const result = bytes === 0
+    ? null
+    : kind === 'image'
+      ? await inferFrameSafe(buf, { source: 'world-model-route', region: 'FULL' })
+      : await inferVideoSafe(buf, { filename })
+
+  const gate = result ? decideGate(result) : null
 
   return NextResponse.json(envelope({
     pipeline: 'world-model',
     filename,
     bytes,
-    video_sha256: videoSha,
-    horizon_frames: 16,
-    latent_dim: 256,
-    prediction_error: jitter(0.04, 0.18),
-    anomaly_flag: Math.random() > 0.85,
-    next_state_summary: 'stable_dynamics',
+    media_kind: kind,
+    media_sha256: mediaSha,
+    world_model: result?.world_model ?? null,
+    gate,
+    runtime: result?.runtime ?? 'none',
     note: 'Latent dynamics prior · spatiotemporal rollout.',
   }, t))
 }
 
 export async function GET() {
-  return NextResponse.json({ ok: true, hint: 'POST multipart/form-data with field "video"' })
+  return NextResponse.json({
+    ok: true,
+    hint: 'POST multipart/form-data with field "image" or "video"',
+    max_bytes: MAX_BYTES,
+  })
 }

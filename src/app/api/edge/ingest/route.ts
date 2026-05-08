@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { edgeIngestUrl } from '@/lib/edge'
 import { QUOTAS } from '@/lib/billing/plans'
+import { QUOTAS, planForUser } from '@/lib/billing/plans'
+import { admin } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,6 +23,14 @@ export async function POST(req: NextRequest) {
 
   // Plan gate: only pro / team / enterprise may ingest RTSP
   const quota = QUOTAS[plan as keyof typeof QUOTAS] ?? QUOTAS.starter
+  const { data: row } = await admin()
+    .from('user_plans')
+    .select('plan')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const plan = planForUser(row?.plan)
+
+  const quota = QUOTAS[plan]
   if (!quota.features.rtsp_ingest) {
     return NextResponse.json(
       { error: 'rtsp_ingest is a paid feature', upgrade: '/pricing' },
@@ -55,6 +65,17 @@ export async function POST(req: NextRequest) {
     status: 'active',
     metadata: { plan, target_fps: body?.target_fps ?? 15 },
   })
+  // Best-effort log to streams table; ignored if table is missing.
+  try {
+    await admin().from('streams').insert({
+      user_id: user.id,
+      kind: 'rtsp',
+      source_url: url,
+      edge_session_id: slot.slot_id,
+      status: 'active',
+      metadata: { plan, target_fps: body?.target_fps ?? 15 },
+    })
+  } catch {}
 
   return NextResponse.json({ slot_id: slot.slot_id })
 }

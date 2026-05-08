@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useEffect, useState, useCallback } from 'react'
-import { Circle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Circle, Save } from 'lucide-react'
 import { useCamera } from '@/hooks/use-camera'
 import { usePose } from '@/hooks/use-pose'
 import { useAudioSignals } from '@/hooks/use-audio-signals'
@@ -22,12 +23,13 @@ import {
 const ZERO_LANES = { posture: 0, gaze: 0, framing: 0, pacing: 75 }
 
 export default function RehearsePage() {
+  const router = useRouter()
   const { videoRef, stream, error, isActive, start, stop } = useCamera()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { landmarks } = usePose(videoRef, isActive)
   const { pacingScore } = useAudioSignals(stream, isActive)
   const { irisLeft, irisRight } = useFaceLandmarks(videoRef, isActive)
-  const { isRecording, startRecording, stopRecording } = useRecording(videoRef, canvasRef)
+  const { isRecording, isSupported: recordingSupported, startRecording, stopRecording } = useRecording(videoRef, canvasRef)
   const { open: openMembership } = useMembershipDrawer()
   const consistencyRef = useRef(new ConsistencyTracker())
 
@@ -38,6 +40,12 @@ export default function RehearsePage() {
   const [activeLanes, setActiveLanes] = useState(
     () => new Set(['posture', 'gaze', 'framing', 'pacing'])
   )
+  const [saving, setSaving] = useState(false)
+  const sessionStartRef = useRef<number>(Date.now())
+
+  useEffect(() => {
+    if (isActive) sessionStartRef.current = Date.now()
+  }, [isActive])
 
   // ⌘↵ / Ctrl↵ toggles session
   useEffect(() => {
@@ -90,6 +98,71 @@ export default function RehearsePage() {
     })
   }, [])
 
+  // Session save: snapshot → Supabase storage → insert row → navigate
+  async function handleSaveSession() {
+    if (saving) return
+    setSaving(true)
+    try {
+      let snapshotUrl: string | null = null
+
+      // Capture snapshot from video element via html2canvas-like canvas trick
+      const video = videoRef.current
+      if (video && video.readyState >= 2) {
+        const snapCanvas = document.createElement('canvas')
+        snapCanvas.width = video.videoWidth || 640
+        snapCanvas.height = video.videoHeight || 360
+        const ctx = snapCanvas.getContext('2d')
+        if (ctx) {
+          ctx.save()
+          ctx.scale(-1, 1)
+          ctx.drawImage(video, -snapCanvas.width, 0, snapCanvas.width, snapCanvas.height)
+          ctx.restore()
+          const blob = await new Promise<Blob | null>(res => snapCanvas.toBlob(res, 'image/jpeg', 0.85))
+          if (blob) {
+            const { createClient } = await import('@/lib/supabase/client')
+            const sb = createClient()
+            const { data: { user } } = await sb.auth.getUser()
+            if (user) {
+              const path = `${user.id}/${Date.now()}.jpg`
+              const { data: uploadData, error: uploadErr } = await sb.storage
+                .from('snapshots')
+                .upload(path, blob, { contentType: 'image/jpeg', upsert: false })
+              if (!uploadErr && uploadData) {
+                const { data: { publicUrl } } = sb.storage.from('snapshots').getPublicUrl(uploadData.path)
+                snapshotUrl = publicUrl
+              }
+            }
+          }
+        }
+      }
+
+      const duration_sec = Math.round((Date.now() - sessionStartRef.current) / 1000)
+      const res = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lane: 'rehearse',
+          envelope: envelopeScore,
+          consistency,
+          lanes,
+          snapshot_url: snapshotUrl,
+          duration_sec,
+        }),
+      })
+      const json = await res.json()
+      if (json.id) {
+        router.push(`/rehearse/${json.id}`)
+      } else {
+        // Not logged in — navigate to login
+        router.push('/login')
+      }
+    } catch (e) {
+      console.error('Save session failed', e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', height: 'calc(100dvh - 3rem)', overflow: 'hidden' }}>
       {/* Input panel */}
@@ -134,7 +207,7 @@ export default function RehearsePage() {
               transform: 'scaleX(-1)',
             }}
           />
-          {!isActive && (
+          {!isActive && !error && (
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -146,8 +219,9 @@ export default function RehearsePage() {
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 24px',
             }}>
-              <p style={{ color: '#ef4444', fontSize: 13, padding: '0 20px', textAlign: 'center' }}>{error}</p>
+              <p style={{ color: '#ef4444', fontSize: 13, textAlign: 'center' }}>{error}</p>
             </div>
           )}
           {isRecording && (
@@ -190,7 +264,7 @@ export default function RehearsePage() {
           onOpenMembership={openMembership}
         />
 
-        {/* CTA row + Record button */}
+        {/* CTA row + Record button (hidden on Safari iOS where captureStream is unsupported) */}
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1 }}>
             <CtaPill
@@ -200,7 +274,7 @@ export default function RehearsePage() {
               onStop={stop}
             />
           </div>
-          {isActive && (
+          {isActive && recordingSupported && (
             <button
               onClick={isRecording ? stopRecording : startRecording}
               title={isRecording ? 'Stop & download recording' : 'Record session as .webm'}
@@ -222,6 +296,25 @@ export default function RehearsePage() {
                 }}
               />
               {isRecording ? 'Stop' : 'Record'}
+            </button>
+          )}
+          {isActive && (
+            <button
+              onClick={handleSaveSession}
+              disabled={saving}
+              title="Save session & get shareable link"
+              style={{
+                padding: '0 14px', borderRadius: 12,
+                border: '1px solid rgba(59,130,246,0.35)',
+                background: saving ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.12)',
+                color: '#60a5fa',
+                fontSize: 12, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 6,
+                cursor: saving ? 'not-allowed' : 'pointer', flexShrink: 0,
+              }}
+            >
+              <Save className="w-3 h-3" />
+              {saving ? 'Saving…' : 'Save'}
             </button>
           )}
         </div>
