@@ -2,6 +2,7 @@
 import React, { useRef, useState } from 'react'
 import { captureVideoFrame, regionRect } from '@/lib/capture-frame'
 import { dispatchFrame } from '@/lib/nepa-bus'
+import { useRouter } from 'next/navigation'
 import { Crosshair, Loader2 } from 'lucide-react'
 
 interface Props {
@@ -20,6 +21,8 @@ export function FrameClickable({ children, source = 'feed', fullFrameOnClick, cl
   const [hover, setHover] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [flash, setFlash] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [result, setResult] = useState<any>(null)
 
   function findVideo(): HTMLVideoElement | null {
     return wrapRef.current?.querySelector('video') ?? null
@@ -31,15 +34,30 @@ export function FrameClickable({ children, source = 'feed', fullFrameOnClick, cl
     if (!video.videoWidth) { console.warn('[FrameClickable] video not ready'); return }
 
     setBusy(region ?? 'full')
+    setError(null)
+    setResult(null)
     try {
       const rect = region ? regionRect(region, video.videoWidth, video.videoHeight) : undefined
       const frame = await captureVideoFrame(video, { region: rect, quality: 0.85 })
+      // POST to backend
+      const res = await fetch('/api/nepa/inference/frame', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: frame.dataUrl,
+          source,
+          region: region ?? 'full',
+        }),
+      })
+      if (!res.ok) throw new Error('Backend error: ' + res.status)
+      const data = await res.json()
+      setResult(data)
       dispatchFrame(frame, source)
       setFlash(region ?? 'full')
       setTimeout(() => setFlash(null), 700)
     } catch (err) {
       console.error('[FrameClickable] capture failed', err)
-      alert('Frame capture failed: ' + (err as Error).message)
+      setError((err as Error).message)
     } finally {
       setBusy(null)
     }
@@ -53,8 +71,19 @@ export function FrameClickable({ children, source = 'feed', fullFrameOnClick, cl
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
+
       {children}
 
+      {error && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-red-900 text-red-200 px-3 py-1 rounded shadow text-xs font-mono">
+          {error}
+        </div>
+      )}
+      {result && (
+        <div className="absolute top-2 right-2 z-30 bg-emerald-900 text-emerald-200 px-3 py-1 rounded shadow text-xs font-mono max-w-xs overflow-x-auto">
+          <pre className="whitespace-pre-wrap break-all">{JSON.stringify(result, null, 2)}</pre>
+        </div>
+      )}
       {fullFrameOnClick ? (
         <button
           onClick={() => grab()}
