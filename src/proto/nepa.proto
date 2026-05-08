@@ -1,0 +1,71 @@
+syntax = "proto3";
+package nepa.v1;
+
+service NepaRuntime {
+  rpc InferFrame    (FrameRequest)  returns (InferenceResult);
+  rpc InferVideo    (VideoRequest)  returns (InferenceResult);
+  rpc StreamAnomalies(StreamRequest) returns (stream Anomaly);
+  rpc Health        (HealthRequest) returns (HealthResponse);
+}
+
+message FrameRequest {
+  bytes  image_jpeg = 1;
+  string source     = 2;
+  string region     = 3;
+  string user_id    = 4;
+}
+
+message VideoRequest {
+  bytes  video_mp4 = 1;
+  string filename  = 2;
+  string user_id   = 3;
+}
+
+message Detection {
+  string class = 1;
+  float  score = 2;
+  repeated int32 bbox = 3;        // [x, y, w, h]
+}
+
+message StdpStats {
+  float spike_rate_hz     = 1;
+  float sparsity          = 2;
+  int32 plasticity_events = 3;
+  float energy_w          = 4;
+}
+
+message WorldModelStats {
+  float horizon_frames    = 1;
+  float prediction_error  = 2;
+  bool  anomaly_flag      = 3;
+  int32 latent_dim        = 4;
+}
+
+message InferenceResult {
+  repeated Detection detections = 1;
+  StdpStats          stdp       = 2;
+  WorldModelStats    world      = 3;
+  int32              latency_ms = 4;
+  string             runtime    = 5;   // "jetson-orin-nx" | "triton-x86" ...
+}
+
+message StreamRequest { string user_id = 1; }
+
+message Anomaly {
+  string id        = 1;
+  string kind      = 2;
+  float  score     = 3;
+  string region    = 4;
+  string source    = 5;
+  int64  ts_ms     = 6;
+  float  pred_err  = 7;
+}
+
+message HealthRequest  {}
+message HealthResponse {
+  bool   ok           = 1;
+  string runtime      = 2;
+  string version      = 3;
+  float  uptime_s     = 4;
+  int32  queue_depth  = 5;
+}

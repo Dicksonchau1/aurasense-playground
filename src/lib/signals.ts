@@ -23,9 +23,27 @@ export function gazeScore(lm: Landmark[]): number {
   return Math.max(0, Math.min(100, 100 - yaw * 600))
 }
 
+/** Gaze score using MediaPipe FaceLandmarker iris landmarks (468-477).
+ *  Falls back to pose-based gazeScore when iris data is unavailable. */
+export function gazeScoreFromIris(
+  irisLeft: { x: number; y: number } | null,
+  irisRight: { x: number; y: number } | null,
+  lm: Landmark[]
+): number {
+  if (!irisLeft || !irisRight) return gazeScore(lm)
+  const irisMidX = (irisLeft.x + irisRight.x) / 2
+  const deviation = Math.abs(irisMidX - 0.5)
+  return Math.max(0, Math.min(100, 100 - deviation * 400))
+}
+
 export function envelope(lanes: { posture: number; gaze: number; framing: number; pacing: number }): number {
   const w = { posture: 0.3, gaze: 0.25, framing: 0.2, pacing: 0.25 }
-  return Math.round(lanes.posture * w.posture + lanes.gaze * w.gaze + lanes.framing * w.framing + lanes.pacing * w.pacing)
+  return Math.round(
+    lanes.posture * w.posture +
+    lanes.gaze * w.gaze +
+    lanes.framing * w.framing +
+    lanes.pacing * w.pacing
+  )
 }
 
 export class ConsistencyTracker {

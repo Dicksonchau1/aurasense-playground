@@ -1,0 +1,16 @@
+[Unit]
+Description=NEPA HTTP bridge (gRPC → HTTP)
+After=network-online.target nepa-runtime.service
+Requires=nepa-runtime.service
+
+[Service]
+Type=simple
+User=jetson
+WorkingDirectory=/home/jetson/aurasense-playground/nepa_runtime
+EnvironmentFile=/etc/nepa/bridge.env
+ExecStart=/usr/bin/python3 bridge/http_bridge.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

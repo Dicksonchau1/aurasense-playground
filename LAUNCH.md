@@ -15,3 +15,6 @@ playground.aurasensehk.com/rehearse
 - No session persistence — scores reset on page refresh
 - Drone page is a waitlist placeholder
 - Aura Avatar and Lip-sync detector are locked teasers (V2)
+
+## Audit
+- 2026-05 audit completed (see AUDIT_2026_05.md, tag audit-2026-05).

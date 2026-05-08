@@ -1,89 +1,151 @@
 'use client'
-import { useState } from 'react'
-import {
-  Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
-} from '@/components/ui/drawer'
+import React, { createContext, useContext, useState, useCallback } from 'react'
 
-interface MembershipDrawerProps {
-  open: boolean
-  onClose: () => void
+type PlanKey = 'starter' | 'pro' | 'team' | 'enterprise'
+
+interface DrawerCtx {
+  open: (planName?: string) => void
+  close: () => void
+  isOpen: boolean
 }
 
-export function MembershipDrawer({ open, onClose }: MembershipDrawerProps) {
-  const [plan, setPlan] = useState<'solo' | 'career'>('solo')
+const Ctx = createContext<DrawerCtx | null>(null)
+
+export function useMembershipDrawer(): DrawerCtx {
+  const ctx = useContext(Ctx)
+  if (!ctx) return { open: () => {}, close: () => {}, isOpen: false }
+  return ctx
+}
+
+const PLANS: Array<{ key: PlanKey; name: string; price: string; cta: string }> = [
+  { key: 'starter',    name: 'Starter',    price: 'Free',         cta: 'Current plan' },
+  { key: 'pro',        name: 'NEPA Pro',   price: 'HK$ 388/mo',   cta: 'Upgrade' },
+  { key: 'team',       name: 'Team',       price: 'HK$ 1288/mo',  cta: 'Start trial' },
+  { key: 'enterprise', name: 'Enterprise', price: 'Custom',       cta: 'Contact sales' },
+]
+
+export function MembershipDrawerProvider({ children }: { children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const open = useCallback((_planName?: string) => setIsOpen(true), [])
+  const close = useCallback(() => setIsOpen(false), [])
+
+  async function checkout(plan: PlanKey) {
+    if (plan === 'starter') return
+    if (plan === 'enterprise') {
+      window.location.href = 'mailto:sales@aurasensehk.com?subject=Enterprise%20inquiry'
+      return
+    }
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ plan, annual: false }),
+      })
+      const text = await res.text()
+      let j: any = {}
+      try { j = text ? JSON.parse(text) : {} } catch {}
+
+      if (res.ok && j.ok && j.url) {
+        window.location.href = j.url
+        return
+      }
+      if (res.status === 401 || j.error === 'auth_required') {
+        window.location.href = `/portal?signin=1&plan=${plan}`
+        return
+      }
+      if (j.error === 'stripe_not_configured' || j.error === 'supabase_not_configured') {
+        alert('Billing setup incomplete. Contact support@aurasensehk.com')
+        return
+      }
+      alert(`Checkout error: ${j.error ?? 'HTTP ' + res.status}${j.detail ? '\n' + j.detail : ''}`)
+    } catch (err) {
+      alert('Checkout failed: ' + (err as Error).message)
+    }
+  }
 
   return (
-    <Drawer open={open} onOpenChange={o => !o && onClose()} direction="right">
-      <DrawerContent
-        className="fixed right-0 top-0 bottom-0 w-full max-w-sm rounded-none flex flex-col"
-        style={{ background: 'var(--panel)', borderColor: 'var(--border)', borderLeft: '1px solid var(--border)' }}
+    <Ctx.Provider value={{ open, close, isOpen }}>
+      {children}
+
+      {isOpen && (
+        <div
+          onClick={close}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 60,
+          }}
+        />
+      )}
+
+      <aside
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 61,
+          width: 'min(440px, 100vw)',
+          background: '#070e1a',
+          borderLeft: '1px solid rgba(16,185,129,0.2)',
+          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.3s',
+          padding: '24px',
+          color: 'white',
+          overflowY: 'auto',
+        }}
       >
-        <DrawerHeader className="border-b pb-4" style={{ borderColor: 'var(--border)' }}>
-          <DrawerTitle style={{ color: 'var(--text)' }}>Rehearse Pro</DrawerTitle>
-          <DrawerDescription style={{ color: 'var(--muted)' }}>
-            Unlock the full practice environment
-          </DrawerDescription>
-        </DrawerHeader>
-
-        <div className="p-6 space-y-6 flex-1 overflow-auto">
-          <div>
-            <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--text)' }}>
-              Unlock Aura Avatar — live strategic conversation with your AI interviewer.
-            </p>
-            <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              Diagnostic report with auditable history. Face anomalies cross-checked against tone of speech, with full personalized perception analytics.
-            </p>
-          </div>
-
-          <div className="border rounded-xl p-4" style={{ borderColor: 'var(--border)' }}>
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
-              Individual plan — HK$108 / month
-            </p>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="plan" checked={plan === 'solo'}
-                  onChange={() => setPlan('solo')} style={{ accentColor: 'var(--accent-green)' }} />
-                <span className="text-sm" style={{ color: 'var(--text)' }}>Solo</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="plan" checked={plan === 'career'}
-                  onChange={() => setPlan('career')} style={{ accentColor: 'var(--accent-green)' }} />
-                <span className="text-sm" style={{ color: 'var(--muted)' }}>Career services (10 seats)</span>
-              </label>
-            </div>
-          </div>
-
-          <a
-            href="mailto:hello@aurasensehk.com?subject=Rehearse%20Pro%20trial"
-            className="block w-full py-3 rounded-xl text-center text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ background: 'var(--accent-green)', color: '#000' }}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#10b981' }}>Upgrade AuraSense</h2>
+          <button
+            onClick={close}
+            style={{ color: 'rgba(255,255,255,0.5)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            Start free 14-day trial
-          </a>
-
-          <a
-            href="mailto:hello@aurasensehk.com?subject=Rehearse%20Pro%20trial"
-            className="block w-full py-3 rounded-xl text-center text-sm font-medium border transition-opacity hover:opacity-80"
-            style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-          >
-            See full plan comparison
-          </a>
-
-          <p className="text-xs text-center" style={{ color: 'var(--muted)' }}>
-            Nothing leaves your device. All processing happens in your browser.
-          </p>
+            Close
+          </button>
         </div>
-      </DrawerContent>
-    </Drawer>
-  )
-}
 
-// TODO: V0 agent collision artifact — proper provider wiring pending.
-export function useMembershipDrawer() {
-  return {
-    isOpen: false,
-    open: (_label?: string) => {},
-    close: () => {},
-    toggle: () => {},
-  };
+        {PLANS.map(p => (
+          <div
+            key={p.key}
+            style={{
+              padding: 16,
+              marginBottom: 12,
+              borderRadius: 12,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <strong>{p.name}</strong>
+              <span style={{ color: '#10b981', fontFamily: 'monospace' }}>{p.price}</span>
+            </div>
+            <button
+              onClick={() => checkout(p.key)}
+              disabled={p.key === 'starter'}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: 8,
+                background: p.key === 'starter' ? 'rgba(255,255,255,0.05)' : 'rgba(16,185,129,0.15)',
+                color: p.key === 'starter' ? 'rgba(255,255,255,0.5)' : '#10b981',
+                border: '1px solid rgba(16,185,129,0.3)',
+                cursor: p.key === 'starter' ? 'default' : 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              {p.cta}
+            </button>
+          </div>
+        ))}
+
+        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 16 }}>
+          Prices in HKD. Cancel anytime. AuraSense Ltd, Kowloon HK.
+        </p>
+      </aside>
+    </Ctx.Provider>
+  )
 }

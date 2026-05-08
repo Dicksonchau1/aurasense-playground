@@ -1,0 +1,20 @@
+{
+  "name": "aurasense-nepa-runtime",
+  "imageName": "aurasense/nepa-runtime:latest",
+  "containerDiskInGb": 20,
+  "volumeInGb": 0,
+  "ports": "8080/http",
+  "env": [
+    { "key": "NEPA_BACKEND",       "value": "onnx" },
+    { "key": "NEPA_MODEL_PATH",    "value": "/models/nepa_frame.onnx" },
+    { "key": "NEPA_RUNTIME_TOKEN", "value": "{{SECRET_TOKEN}}" },
+    { "key": "NEPA_NODE_ID",       "value": "runpod-{{POD_ID}}" }
+  ],
+  "gpuTypeIdList": ["NVIDIA RTX A4000", "NVIDIA RTX 3090"],
+  "minMemoryInGb": 8,
+  "minVcpuCount": 4,
+  "supportPublicIp": true,
+  "startJupyter": false,
+  "startSsh": false,
+  "dockerArgs": ""
+}

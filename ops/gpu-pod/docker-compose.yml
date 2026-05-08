@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  nepa-runtime:
+    build:
+      context: ../..
+      dockerfile: ops/gpu-pod/Dockerfile
+    image: aurasense/nepa-runtime:latest
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      NEPA_BACKEND: onnx
+      NEPA_MODEL_PATH: /models/nepa_frame.onnx
+      NEPA_RUNTIME_TOKEN: ${NEPA_RUNTIME_TOKEN}
+      NEPA_NODE_ID: gpu-pod-${HOSTNAME:-1}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./models:/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "Authorization: Bearer ${NEPA_RUNTIME_TOKEN}", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
