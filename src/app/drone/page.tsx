@@ -16,7 +16,7 @@ interface EdgeStats {
   fps: number
 }
 
-  import { useEffect, useRef } from 'react'
+  // (removed duplicate import)
   function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
     const ref = useRef<HTMLSpanElement>(null)
     const prev = useRef(value)
