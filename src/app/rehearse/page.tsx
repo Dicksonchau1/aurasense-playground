@@ -1,5 +1,13 @@
 'use client'
 import { useRef, useEffect, useState, useCallback } from 'react'
+const FACADE_IMAGES = {
+  residential: 'https://picsum.photos/seed/hk-residential-tower/1200/800',
+  commercial:  'https://picsum.photos/seed/hk-commercial-glass/1200/800',
+  heritage:    'https://picsum.photos/seed/hk-heritage-concrete/1200/800',
+  industrial:  'https://picsum.photos/seed/hk-industrial-factory/1200/800',
+};
+  const [facadeMode, setFacadeMode] = useState(false)
+  const [facadeType, setFacadeType] = useState('residential')
 import { useRouter } from 'next/navigation'
 import { Circle, Save } from 'lucide-react'
 import { useCamera } from '@/hooks/use-camera'
@@ -72,11 +80,18 @@ export default function RehearsePage() {
     if (!ctx) return
     ctx.clearRect(0, 0, w, h)
 
-    // Animate grid fade-in
-    if (activeLanes.has('grid')) {
+    // Facade overlay grid (if enabled)
+    if (facadeMode) {
       ctx.save()
       ctx.globalAlpha = 0.7
       drawFramingGrid(ctx, w, h)
+      ctx.restore()
+      // Idle label
+      ctx.save()
+      ctx.fillStyle = 'rgba(63,184,192,0.4)'
+      ctx.font = `500 12px 'JetBrains Mono', monospace`
+      ctx.textAlign = 'center'
+      ctx.fillText('NEPA v1 · Façade Ready · Press ▶ Run Inspection', w/2, h - 20)
       ctx.restore()
     }
 
@@ -94,7 +109,7 @@ export default function RehearsePage() {
     ctx.lineWidth = 4
     ctx.strokeRect(2, 2, w - 4, h - 4)
     ctx.restore()
-  }, [landmarks, activeLanes, videoRef])
+  }, [landmarks, activeLanes, videoRef, facadeMode])
 
   // Compute scores on each landmark update
   useEffect(() => {
@@ -185,12 +200,9 @@ export default function RehearsePage() {
   }
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100dvh - 3rem)', overflow: 'hidden' }}>
+    <div className="flex h-[calc(100dvh-3rem)] overflow-hidden bg-neutral-950">
       {/* Input panel */}
-      <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column',
-        padding: '16px 20px', gap: 12, overflowY: 'auto', minWidth: 0,
-      }}>
+      <div className="flex flex-col flex-1 min-w-0 gap-3 py-4 px-5 overflow-y-auto">
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>NEPA Playground</span>
@@ -206,57 +218,60 @@ export default function RehearsePage() {
         </div>
 
         {/* 16:9 video + canvas overlay */}
-        <div style={{
-          position: 'relative', width: '100%', aspectRatio: '16/9',
-          borderRadius: 12, overflow: 'hidden',
-          background: '#111111', border: '1px solid #262626', flexShrink: 0,
-        }}>
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-emerald-900 bg-neutral-900 flex-shrink-0">
+          {/* Facade image (if overlay enabled) */}
+          {facadeMode && (
+            <img
+              src={FACADE_IMAGES[facadeType]}
+              alt="Facade"
+              className="absolute inset-0 w-full h-full object-cover z-0"
+              style={{ filter: 'brightness(0.85) blur(0.5px)' }}
+              draggable={false}
+            />
+          )}
           <video
             ref={videoRef}
             autoPlay playsInline muted
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'cover', transform: 'scaleX(-1)',
-            }}
+            className="absolute inset-0 w-full h-full object-cover z-10"
+            style={{ transform: 'scaleX(-1)' }}
           />
           <canvas
             ref={canvasRef}
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              transform: 'scaleX(-1)',
-            }}
+            className="absolute inset-0 w-full h-full z-20 pointer-events-none"
+            style={{ transform: 'scaleX(-1)' }}
           />
+          {/* Overlay: camera not active */}
           {!isActive && !error && (
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <p style={{ color: '#737373', fontSize: 14 }}>Enable camera to begin</p>
+            <div className="absolute inset-0 flex items-center justify-center z-30">
+              <p className="text-neutral-400 text-sm">Enable camera to begin</p>
             </div>
           )}
+          {/* Overlay: error */}
           {error && (
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '0 24px',
-            }}>
-              <p style={{ color: '#ef4444', fontSize: 13, textAlign: 'center' }}>{error}</p>
+            <div className="absolute inset-0 flex items-center justify-center z-30 px-6">
+              <p className="text-red-400 text-xs text-center">{error}</p>
             </div>
           )}
+          {/* Overlay: recording */}
           {isRecording && (
-            <div style={{
-              position: 'absolute', top: 10, left: 10,
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'rgba(0,0,0,0.6)', borderRadius: 6, padding: '4px 8px',
-            }}>
-              <Circle
-                className="w-2.5 h-2.5 animate-pulse"
-                style={{ color: '#ef4444', fill: '#ef4444' }}
-              />
-              <span style={{ fontSize: 11, color: '#f5f5f5' }}>REC</span>
+            <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 rounded px-2 py-1 z-30">
+              <Circle className="w-2.5 h-2.5 animate-pulse text-red-500 fill-red-500" />
+              <span className="text-xs text-white">REC</span>
             </div>
+          )}
+        </div>
+        {/* Facade overlay controls */}
+        <div className="flex items-center gap-3 mt-1">
+          <label className="flex items-center gap-2 text-xs text-neutral-400">
+            <input type="checkbox" checked={facadeMode} onChange={e => setFacadeMode(e.target.checked)} className="accent-emerald-500" />
+            Facade Overlay
+          </label>
+          {facadeMode && (
+            <select value={facadeType} onChange={e => setFacadeType(e.target.value)} className="text-xs rounded border border-emerald-900 bg-neutral-900 text-neutral-200 px-2 py-1">
+              {Object.keys(FACADE_IMAGES).map(type => (
+                <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+              ))}
+            </select>
           )}
         </div>
 
@@ -342,12 +357,7 @@ export default function RehearsePage() {
       </div>
 
       {/* Metrics panel */}
-      <div style={{
-        width: 384, flexShrink: 0,
-        borderLeft: '1px solid #262626',
-        background: '#111111',
-        overflowY: 'auto',
-      }}>
+      <div className="w-96 flex-shrink-0 border-l border-emerald-900 bg-neutral-900 overflow-y-auto">
         <MetricsPanel
           envelope={isActive ? envelopeScore : 0}
           consistency={isActive ? consistency : 100}

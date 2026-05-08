@@ -345,7 +345,7 @@ export default function DronePage() {
             <FrameClickable source={`drone-${active}`} style={{ aspectRatio: '16/9', background: '#000' }}>
               <video
                 ref={videoRef}
-                src={feedMode === 'video' ? '/hero/world-model-stdp.mp4' : undefined}
+                src={feedMode === 'video' ? 'https://samplelib.com/mp4/sample-5s.mp4' : undefined}
                 autoPlay loop muted playsInline crossOrigin="anonymous"
                 onError={(e) => {
                   const v = e.currentTarget
