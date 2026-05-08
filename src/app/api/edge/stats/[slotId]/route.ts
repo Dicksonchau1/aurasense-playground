@@ -14,12 +14,14 @@ export async function GET(
   const { data: { user } } = await sb.auth.getUser()
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 })
 
-  const { data: sub } = await sb
-    .from('subscriptions')
+  const { admin } = await import('@/lib/supabase/admin')
+  const { planForUser } = await import('@/lib/billing/plans')
+  const { data: row } = await admin()
+    .from('user_plans')
     .select('plan')
     .eq('user_id', user.id)
     .maybeSingle()
-  const plan = (sub?.plan as string) ?? 'starter'
+  const plan = planForUser(row?.plan)
 
   try {
     const stats = await edgeStats(user.id, plan, slotId)
