@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react'
-import { FrameClickable } from '@/components/drone/frame-clickable'
+import { FrameClickable } from '@/components/frame-clickable'
+import { YoloOverlay } from '@/components/yolo-overlay'
 import { NEPAOverlay } from '@/components/drone/nepa-overlay'
 import { useSupabaseUser } from '@/lib/auth/useSupabaseUser'
 import { usePlan } from '@/lib/billing/usePlan'
@@ -99,6 +100,11 @@ export default function DronePage() {
   }
   // Store latest inference result from backend
   const [inferenceResult, setInferenceResult] = useState<any>(null)
+  // Store backend BBox[] for overlay
+  const [backendBoxes, setBackendBoxes] = useState([])
+  // Toggle for continuous backend inference
+  const [autoInfer, setAutoInfer] = useState(false)
+  const autoInferRef = useRef(false)
 
   useEffect(() => {
     fetch('/api/registry/drones').then(r => r.json()).then(j => setDrones(j?.data?.units ?? []))
@@ -316,12 +322,59 @@ export default function DronePage() {
               <div className="absolute inset-0 pointer-events-none">
                 {feedMode === 'webcam' && yoloReady && (
                   <YoloOverlay
-                    boxes={boxes}
+                    boxes={backendBoxes.length > 0 ? backendBoxes : boxes}
                     videoWidth={videoSize.w}
                     videoHeight={videoSize.h}
                     style={{ zIndex: 10 }}
                   />
                 )}
+                              {/* Hidden full-frame FrameClickable for backend POSTs and overlay */}
+                              <FrameClickable
+                                source={`drone-${active}`}
+                                fullFrameOnClick
+                                style={{ display: 'none' }}
+                                onResult={result => {
+                                  // Convert backend result to BBox[] if possible
+                                  if (result && Array.isArray(result.detections)) {
+                                    const bboxes = result.detections.map((det, i) => ({
+                                      x1: det.x1,
+                                      y1: det.y1,
+                                      x2: det.x2,
+                                      y2: det.y2,
+                                      classId: det.classId ?? 0,
+                                      className: det.className ?? 'object',
+                                      confidence: det.confidence ?? 1,
+                                    }))
+                                    setBackendBoxes(bboxes)
+                                  } else {
+                                    setBackendBoxes([])
+                                  }
+                                }}
+                              />
+                        {/* Toggle for continuous backend inference */}
+                        <div className="flex items-center gap-2 mt-2">
+                          <label className="text-xs font-mono flex items-center gap-1">
+                            <input type="checkbox" checked={autoInfer} onChange={e => { setAutoInfer(e.target.checked); autoInferRef.current = e.target.checked; }} />
+                            Continuous backend inference
+                          </label>
+                          {autoInfer && <span className="text-xs text-emerald-400">Running…</span>}
+                        </div>
+                  // Continuous backend inference effect
+                  useEffect(() => {
+                    let interval: any = null
+                    async function inferLoop() {
+                      if (!autoInferRef.current) return
+                      // Find the hidden FrameClickable and trigger a full-frame grab
+                      const btn = document.querySelector('[aria-label="Capture full frame for NEPA inference"]') as HTMLButtonElement
+                      if (btn) btn.click()
+                    }
+                    if (autoInfer) {
+                      interval = setInterval(inferLoop, 1500) // every 1.5s
+                    } else {
+                      if (interval) clearInterval(interval)
+                    }
+                    return () => { if (interval) clearInterval(interval) }
+                  }, [autoInfer, active])
                 <NEPAOverlay overlays={nepaOverlays} />
               </div>
               {/* Clickable grid for NEPA region capture */}
