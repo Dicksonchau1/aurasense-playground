@@ -1,0 +1,10 @@
+// Global styles for Playground v1
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: theme('colors.background');
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
