@@ -1,0 +1,15 @@
+:root {
+  --bg-0:   #09090b;
+  --bg-1:   #18181b;
+  --bg-2:   #27272a;
+  --fg-0:   #fafafa;
+  --fg-1:   #a1a1aa;
+  --fg-2:   #71717a;
+  --accent: #0ea5e9;
+  --ok:     #10b981;
+  --warn:   #f59e0b;
+  --err:    #f43f5e;
+  --grid:   rgba(255,255,255,0.04);
+  --radius: 1rem;
+  --mono:   "JetBrains Mono", ui-monospace, monospace;
+}
