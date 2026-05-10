@@ -1,3 +1,4 @@
+import React from 'react'
 export default function Footer() {
   return (
     <footer className="w-full bg-surface border-t border-border py-4 px-8 text-xs flex flex-col md:flex-row items-center justify-between gap-2 fixed bottom-0 left-0 z-50">

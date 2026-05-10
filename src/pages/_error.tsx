@@ -1,3 +1,4 @@
+import React from 'react'
 // Custom error page for error states
 export default function ErrorPage({ errorCode, message }: { errorCode?: number; message?: string }) {
   return (

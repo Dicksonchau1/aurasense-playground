@@ -1,3 +1,4 @@
+import React from 'react'
 export default function Header() {
   return (
     <header className="w-full bg-surface border-b border-border py-4 px-8 flex items-center justify-between">
