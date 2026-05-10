@@ -1,0 +1,69 @@
+[23:25:44.280] [INFO] storybook v10.3.6
+[23:25:53.448] [DEBUG] Getting package.json info for /home/jetson/aurasense-playground-1/package.json...
+[23:25:53.494] [WARN] You are currently using Storybook [1m10.3.6[22m but you have packages which are incompatible with it:
+
+- @storybook/addon-essentials@8.6.14 which depends on 8.6.14
+ Repo: https://github.com/storybookjs/storybook/tree/next/code/addons/essentials
+- @storybook/addon-interactions@8.6.14 which depends on 8.6.14
+ Repo: https://github.com/storybookjs/storybook/tree/next/code/addons/interactions
+
+Please consider updating your packages or contacting the maintainers for compatibility details.
+
+For more details on compatibility guidance, see:
+https://github.com/storybookjs/storybook/issues/32836
+[23:25:53.717] [ERROR] [38;2;241;97;97mSB_CORE-SERVER_0002 (CriticalPresetLoadError): Storybook failed to load the following preset: @storybook/react-vite/preset.
+
+Please check whether your setup is correct, the Storybook dependencies (and their peer dependencies) are installed correctly and there are no package version clashes.
+
+If you believe this is a bug, please open an issue on Github.
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@storybook/react-vite' imported from /home/jetson/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/_node-chunks/chunk-OWMIR4VJ.js
+    at packageResolve (node:internal/modules/esm/resolve:873:9)
+    at moduleResolve (node:internal/modules/esm/resolve:946:18)
+    at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+    at nextResolve (node:internal/modules/esm/hooks:864:28)
+    at Hooks.resolve (node:internal/modules/esm/hooks:306:30)
+    at MessagePort.handleMessage (node:internal/modules/esm/worker:196:24)
+    at [nodejs.internal.kHybridDispatch] (node:internal/event_target:831:20)
+    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)
+
+More info: 
+[39m
+    at loadPreset (file:///home/jetson/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/_node-chunks/chunk-H4PWFMMO.js:10081:13)
+    at async Promise.all (index 0)
+    at async loadPresets (file:///home/jetson/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/_node-chunks/chunk-H4PWFMMO.js:10090:73)
+    at async getPresets (file:///home/jetson/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/_node-chunks/chunk-H4PWFMMO.js:10121:23)
+    at async buildDevStandalone (file:///home/jetson/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/core-server/index.js:7967:52)
+    at async withTelemetry (file:///home/jetson/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/_node-chunks/chunk-UYONHJJP.js:225:12)
+    at async dev (file:///home/jetson/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/bin/core.js:2736:3)
+    at async _Command.<anonymous> (file:///home/jetson/.npm/_npx/6fe9a9991b157df1/node_modules/storybook/dist/bin/core.js:2806:92)
+[23:25:53.756] [WARN] Broken build, fix the error above.
+You may need to refresh the browser.
+[23:25:54.023] [WARN]   Failed to load preset: {"name":"/home/jetson/aurasense-playground-1/node_modules/@storybook/addon-essentials/dist/preset.js"} on level 2
+[23:25:54.027] [ERROR] [38;2;241;97;97mError: Cannot find module 'storybook/internal/common'
+Require stack:
+- ./node_modules/@storybook/addon-essentials/dist/preset.js[39m
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+    at Module._load (node:internal/modules/cjs/loader:1038:27)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (./node_modules/@storybook/addon-essentials/dist/preset.js:4:14)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at cjsLoader (node:internal/modules/esm/translators:298:15)
+[23:25:54.038] [WARN]   Failed to load preset: {"name":"/home/jetson/aurasense-playground-1/node_modules/@storybook/addon-interactions/dist/preset.js"} on level 2
+[23:25:54.041] [ERROR] [38;2;241;97;97mError: Cannot find module 'storybook/internal/common'
+Require stack:
+- ./node_modules/@storybook/addon-interactions/dist/preset.js[39m
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+    at Module._load (node:internal/modules/cjs/loader:1038:27)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (./node_modules/@storybook/addon-interactions/dist/preset.js:4:14)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at cjsLoader (node:internal/modules/esm/translators:298:15)
