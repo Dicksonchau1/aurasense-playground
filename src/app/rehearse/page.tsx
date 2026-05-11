@@ -1,14 +1,7 @@
 'use client'
 import { useRef, useEffect, useState, useCallback } from 'react'
-const FACADE_IMAGES = {
-  residential: 'https://picsum.photos/seed/hk-residential-tower/1200/800',
-  commercial:  'https://picsum.photos/seed/hk-commercial-glass/1200/800',
-  heritage:    'https://picsum.photos/seed/hk-heritage-concrete/1200/800',
-  industrial:  'https://picsum.photos/seed/hk-industrial-factory/1200/800',
-};
-  const [facadeMode, setFacadeMode] = useState(false)
-  const [facadeType, setFacadeType] = useState('residential')
 import { useRouter } from 'next/navigation'
+import AuraCoach from '@/components/aura-coach'
 import { Circle, Save } from 'lucide-react'
 import { useCamera } from '@/hooks/use-camera'
 import { usePose } from '@/hooks/use-pose'
@@ -30,6 +23,13 @@ import {
 
 const ZERO_LANES = { posture: 0, gaze: 0, framing: 0, pacing: 75 }
 
+const FACADE_IMAGES: Record<string, string> = {
+  residential: 'https://picsum.photos/seed/hk-residential-tower/1200/800',
+  commercial: 'https://picsum.photos/seed/hk-commercial-glass/1200/800',
+  heritage: 'https://picsum.photos/seed/hk-heritage-concrete/1200/800',
+  industrial: 'https://picsum.photos/seed/hk-industrial-factory/1200/800',
+}
+
 export default function RehearsePage() {
   const router = useRouter()
   const { videoRef, stream, error, isActive, start, stop } = useCamera()
@@ -49,6 +49,8 @@ export default function RehearsePage() {
     () => new Set(['posture', 'gaze', 'framing', 'pacing'])
   )
   const [saving, setSaving] = useState(false)
+  const [facadeMode, setFacadeMode] = useState(false)
+  const [facadeType, setFacadeType] = useState<string>('residential')
   const sessionStartRef = useRef<number>(Date.now())
 
   useEffect(() => {
@@ -366,6 +368,24 @@ export default function RehearsePage() {
           isActive={isActive}
         />
       </div>
+      {isActive && (
+        <AuraCoach
+          scenario="who-handwash"
+          step={Math.max(1, Math.floor((envelopeScore / 100) * 6))}
+          totalSteps={6}
+          kpi={{
+            coverage: Math.round(lanes.framing),
+            steadiness: Math.round(lanes.posture),
+            compliance: Math.round(consistency),
+            audit_confidence: 90,
+            anomalies_count: drift > 30 ? 2 : 0,
+          }}
+          recentVerdicts={[]}
+          sessionId={`rehearse-${sessionStartRef.current}`}
+          tier="nursing"
+          position="right"
+        />
+      )}
     </div>
   )
 }

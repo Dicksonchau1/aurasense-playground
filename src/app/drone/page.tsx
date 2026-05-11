@@ -1,5 +1,9 @@
 'use client'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import AuraCoach from '@/components/aura-coach'
+import { FrameClickable } from '@/components/drone/frame-clickable'
 import { NEPAOverlay } from '@/components/drone/nepa-overlay'
+import { YoloOverlay } from '@/components/drone/yolo-overlay'
 import { useSupabaseUser } from '@/lib/auth/useSupabaseUser'
 import { usePlan } from '@/lib/billing/usePlan'
 import { captureRegionAsBlob } from '@/lib/nepa/frameCapture'
@@ -134,7 +138,7 @@ export default function DronePage() {
   // Store latest inference result from backend
   const [inferenceResult, setInferenceResult] = useState<any>(null)
   // Store backend BBox[] for overlay
-  const [backendBoxes, setBackendBoxes] = useState([])
+  const [backendBoxes, setBackendBoxes] = useState<BBox[]>([])
   // Toggle for continuous backend inference
   const [autoInfer, setAutoInfer] = useState(false)
   const autoInferRef = useRef(false)
@@ -239,6 +243,20 @@ export default function DronePage() {
   }, [])
 
   useEffect(() => () => stopPolling(), [stopPolling])
+
+  // Continuous backend inference effect — when `autoInfer` is on, click the
+  // hidden full-frame capture button every 1.5s to drive the NEPA pipeline.
+  useEffect(() => {
+    if (!autoInfer) return
+    const interval = setInterval(() => {
+      if (!autoInferRef.current) return
+      const btn = document.querySelector(
+        '[aria-label="Capture full frame for NEPA inference"]'
+      ) as HTMLButtonElement | null
+      if (btn) btn.click()
+    }, 1500)
+    return () => clearInterval(interval)
+  }, [autoInfer])
 
   async function startRtsp() {
     if (!rtspUrl.trim()) return
@@ -424,53 +442,20 @@ export default function DronePage() {
                     style={{ zIndex: 10 }}
                   />
                 )}
-                              {/* Hidden full-frame FrameClickable for backend POSTs and overlay */}
-                              <FrameClickable
-                                source={`drone-${active}`}
-                                fullFrameOnClick
-                                style={{ display: 'none' }}
-                                onResult={result => {
-                                  // Convert backend result to BBox[] if possible
-                                  if (result && Array.isArray(result.detections)) {
-                                    const bboxes = result.detections.map((det, i) => ({
-                                      x1: det.x1,
-                                      y1: det.y1,
-                                      x2: det.x2,
-                                      y2: det.y2,
-                                      classId: det.classId ?? 0,
-                                      className: det.className ?? 'object',
-                                      confidence: det.confidence ?? 1,
-                                    }))
-                                    setBackendBoxes(bboxes)
-                                  } else {
-                                    setBackendBoxes([])
-                                  }
-                                }}
-                              />
-                        {/* Toggle for continuous backend inference */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <label className="text-xs font-mono flex items-center gap-1">
-                            <input type="checkbox" checked={autoInfer} onChange={e => { setAutoInfer(e.target.checked); autoInferRef.current = e.target.checked; }} />
-                            Continuous backend inference
-                          </label>
-                          {autoInfer && <span className="text-xs text-emerald-400">Running…</span>}
-                        </div>
-                  // Continuous backend inference effect
-                  useEffect(() => {
-                    let interval: any = null
-                    async function inferLoop() {
-                      if (!autoInferRef.current) return
-                      // Find the hidden FrameClickable and trigger a full-frame grab
-                      const btn = document.querySelector('[aria-label="Capture full frame for NEPA inference"]') as HTMLButtonElement
-                      if (btn) btn.click()
-                    }
-                    if (autoInfer) {
-                      interval = setInterval(inferLoop, 1500) // every 1.5s
-                    } else {
-                      if (interval) clearInterval(interval)
-                    }
-                    return () => { if (interval) clearInterval(interval) }
-                  }, [autoInfer, active])
+                <div className="flex items-center gap-2 mt-2 pointer-events-auto">
+                  <label className="text-xs font-mono flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={autoInfer}
+                      onChange={e => {
+                        setAutoInfer(e.target.checked)
+                        autoInferRef.current = e.target.checked
+                      }}
+                    />
+                    Continuous backend inference
+                  </label>
+                  {autoInfer && <span className="text-xs text-emerald-400">Running…</span>}
+                </div>
                 <NEPAOverlay overlays={nepaOverlays} />
               </div>
               {/* Clickable grid for NEPA region capture */}
@@ -612,6 +597,16 @@ export default function DronePage() {
           Attach live camera to enable YOLOv8n real-time object detection.
         </p>
       </section>
+      <AuraCoach
+        scenario="fall-risk-tug"
+        step={1}
+        totalSteps={1}
+        kpi={{ coverage: 78, steadiness: 82, compliance: 86, audit_confidence: 90, anomalies_count: 0 }}
+        recentVerdicts={[]}
+        sessionId="drone-fleet-demo"
+        tier="enterprise"
+        position="right"
+      />
     </main>
   )
 }

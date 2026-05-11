@@ -12,6 +12,7 @@ import {
   type NepaBlockKey,
   type NepaDetection,
 } from '@/lib/playground-types'
+import AuraCoach from '@/components/aura-coach'
 
 interface BillingMe {
   ok: boolean
@@ -158,6 +159,16 @@ export default function PlaygroundPage() {
         open={paywallFor != null}
         reasonBlock={paywallFor}
         onClose={() => setPaywallFor(null)}
+      />
+      <AuraCoach
+        scenario="who-handwash"
+        step={1}
+        totalSteps={6}
+        kpi={{ coverage: 70, steadiness: 75, compliance: 70, audit_confidence: 85, anomalies_count: 0 }}
+        recentVerdicts={[]}
+        sessionId="playground-demo"
+        tier={(billing?.plan === 'pro' || billing?.plan === 'team') ? 'nursing' : billing?.plan === 'enterprise' ? 'enterprise' : 'free'}
+        position="right"
       />
     </main>
   )

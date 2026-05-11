@@ -6,7 +6,7 @@ export interface FrameClickableProps {
   row: number
   col: number
   /** reference to the live video element */
-  videoRef: React.RefObject<HTMLVideoElement>
+  videoRef: React.RefObject<HTMLVideoElement | null>
   onClickRegion: (opts: { region: NEPARegionMeta }) => void
 }
 
