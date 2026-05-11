@@ -1,9 +1,10 @@
 var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_global-error/page.js")
-R.c("server/chunks/ssr/[root-of-the-server]__0plpk7f._.js")
-R.c("server/chunks/ssr/node_modules_next_dist_esm_build_templates_app-page_0rc3ul_.js")
-R.c("server/chunks/ssr/[root-of-the-server]__0.62j3a._.js")
-R.c("server/chunks/ssr/[root-of-the-server]__0hkri2w._.js")
-R.c("server/chunks/ssr/node_modules_next_dist_client_components_builtin_global-error_0lgvd_..js")
-R.c("server/chunks/ssr/_next-internal_server_app__global-error_page_actions_0k77kol.js")
-R.m(42378)
-module.exports=R.m(42378).exports
+R.c("server/chunks/ssr/[root-of-the-server]__08tjikm._.js")
+R.c("server/chunks/ssr/0~os_0rpeh4d._.js")
+R.c("server/chunks/ssr/0~os_next_dist_esm_build_templates_app-page_0ba8h9x.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0hudshl._.js")
+R.c("server/chunks/ssr/0~os_next_dist_0mh0e.t._.js")
+R.c("server/chunks/ssr/0~os_next_dist_client_components_builtin_global-error_0bho_5r.js")
+R.c("server/chunks/ssr/aurasense-platform__next-internal_server_app__global-error_page_actions_124o4ns.js")
+R.m(18647)
+module.exports=R.m(18647).exports

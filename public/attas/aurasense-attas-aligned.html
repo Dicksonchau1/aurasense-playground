@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AuraSense · Attas</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root{--bg:#0a0e15;--surface:#0d1117;--surface2:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--faint:#484f58;--acc:#22d3ee;--acc2:#a78bfa;--acc3:#d946ef;--suc:#3fb950;--warn:#f59e0b;--err:#f85149;--elt:#f59e0b;--elt-hl:rgba(245,158,11,.1);--mono:'Geist Mono','JetBrains Mono',ui-monospace,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;font-size:13px;overflow:hidden;height:100vh}
+.shell{display:grid;grid-template-columns:56px 1fr 44px;height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 0}
+.nav-item{width:40px;height:40px;border:none;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;display:grid;place-items:center}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.main{overflow:hidden;position:relative;display:flex;flex-direction:column}
+.stage{flex:1;position:relative;display:grid;grid-template-columns:1fr 280px;gap:12px;padding:12px}
+.scene{background:radial-gradient(ellipse at center,#1a1335 0%,#0a0e15 70%);border:1px solid var(--border);border-radius:12px;position:relative;overflow:hidden}
+.scene svg{width:100%;height:100%}
+.iso-ground{fill:url(#groundGrad);stroke:rgba(167,139,250,.3);stroke-width:1}
+.tower-label{fill:var(--muted);font-family:var(--mono);font-size:10px}
+.scan-beam{stroke:var(--acc);stroke-width:1;opacity:.5;stroke-dasharray:3 4}
+.rail{display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.panel-hd{padding:8px 10px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;justify-content:space-between;border-bottom:1px solid var(--border)}
+.accent{color:var(--acc3)}
+.close{cursor:pointer;color:var(--faint)}
+.panel-bd{padding:10px}
+.drone-twin{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.drone-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center}
+.drone-card .lbl{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px}
+.reg-list{list-style:none}
+.reg-list li{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--surface2);font-size:11px}
+.reg-list small{display:block;color:var(--faint);font-size:9px}
+.globe-mini svg{width:100%;height:auto}
+.mission-stage{flex:1;display:none;grid-template-columns:200px 1fr 220px;gap:8px;padding:12px}
+[data-view='mission'] .stage{display:none}
+[data-view='mission'] .mission-stage{display:grid}
+[data-view='mission'] .kpi-strip{display:none}
+[data-view='mission'] .wp-bar{display:flex}
+[data-view='hero'] .wp-bar{display:none}
+.mp-left,.mp-right{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;overflow-y:auto;font-size:11px}
+.sel{margin-bottom:8px}
+.sel label{display:block;font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:3px;text-transform:uppercase}
+.sel select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 6px;border-radius:4px;font-size:11px}
+.asset-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:8px}
+.asset-card .id{font-family:var(--mono);font-size:14px;font-weight:700}
+.asset-card .sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:6px}
+.asset-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;color:var(--muted)}
+.asset-row svg{width:12px;height:12px}
+#leaflet-map{width:100%;height:100%;min-height:400px;border:1px solid var(--border);border-radius:8px}
+.grp-hd{font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;justify-content:space-between}
+.row{display:flex;justify-content:space-between;padding:4px 0;font-size:10px;color:var(--muted)}
+.led{width:8px;height:8px;border-radius:50%;background:var(--suc);box-shadow:0 0 4px var(--suc)}
+.led.r{background:var(--err);box-shadow:0 0 4px var(--err)}
+.wp-bar{display:none;flex-direction:column;gap:6px;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.cmd-bar{display:flex;gap:6px;align-items:center}
+.cmd-bar input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:var(--mono);font-size:11px}
+.playctl{display:flex;gap:2px}
+.playctl button{width:26px;height:26px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:4px;cursor:pointer;display:grid;place-items:center}
+.playctl svg{width:12px;height:12px}
+.wp-table table{width:100%;border-collapse:collapse;font-size:10px}
+.wp-table th,.wp-table td{text-align:left;padding:3px 6px;border-bottom:1px solid var(--surface2);color:var(--muted)}
+.wp-table tr.sel td{background:var(--elt-hl);color:var(--elt)}
+.cell-acc{color:var(--acc)}
+.kpi-strip{display:flex;border-top:1px solid var(--border);background:var(--surface)}
+.kpi-cell{flex:1;padding:10px 14px;border-right:1px solid var(--border)}
+.kpi-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.kpi-val{font-family:var(--mono);font-size:18px;font-weight:700;margin-top:2px}
+.kpi-val .sub{font-size:10px;font-weight:400;color:var(--muted);margin-left:4px}
+.scrubber{display:flex;gap:8px;align-items:center;padding:6px 12px;border-top:1px solid var(--border);background:var(--surface)}
+.scrubber button{width:26px;height:26px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:4px;cursor:pointer;display:grid;place-items:center}
+.scrubber .time{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.scrubber .track{flex:1;height:20px;position:relative}
+.ticks{display:flex;justify-content:space-between;align-items:center;height:100%}
+.ticks span{width:1px;height:6px;background:var(--faint)}
+.ticks span.lg{height:12px;background:var(--muted)}
+.filmstrip{display:flex;gap:4px;padding:6px 12px;border-top:1px solid var(--border);background:var(--surface);align-items:center}
+.strip-nav{width:22px;height:50px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:4px;cursor:pointer}
+.strip-track{flex:1;display:flex;gap:4px;overflow-x:auto}
+.strip-cell{width:70px;height:50px;border:1px solid var(--border);border-radius:4px;flex-shrink:0;background:var(--surface2)}
+.strip-cell.tower{background:linear-gradient(135deg,#1a1335,#d946ef22)}
+.strip-cell.map{background:linear-gradient(135deg,#0a0e15,#22d3ee22)}
+.action-rail{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 0}
+.action-rail button{width:30px;height:30px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:6px;cursor:pointer;display:grid;place-items:center}
+.action-rail button:hover{color:var(--text)}
+.heart{color:var(--err)!important}
+.main-tabs{display:flex;gap:4px;padding:6px 12px;background:var(--surface);border-bottom:1px solid var(--border)}
+.main-tabs button{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:10px;font-family:var(--mono);text-transform:uppercase}
+.main-tabs button.on{background:var(--acc3);color:#fff;border-color:var(--acc3)}
+.wx-pill{background:var(--surface2);border:1px solid var(--border);padding:4px 8px;border-radius:99px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.wx-pill b{color:var(--text);font-weight:600}
+</style>
+</head>
+<body data-view="hero">
+<div class="shell">
+  <aside class="sidebar">
+    <button class="nav-item"><i data-lucide="layout-grid"></i></button>
+    <button class="nav-item" data-view-btn="hero"><i data-lucide="building-2"></i></button>
+    <button class="nav-item" data-view-btn="mission"><i data-lucide="map"></i></button>
+    <button class="nav-item"><i data-lucide="shield-check"></i></button>
+    <button class="nav-item"><i data-lucide="wind"></i></button>
+    <button class="nav-item"><i data-lucide="film"></i></button>
+  </aside>
+  <main class="main">
+    <div class="main-tabs">
+      <button class="on" data-view-btn="hero">Enterprise Ops</button>
+      <button data-view-btn="mission">Studio Planner</button>
+      <span style="flex:1"></span>
+      <span class="wx-pill">Wind <b>14 km/h NE</b></span>
+    </div>
+    <div class="stage">
+      <div class="scene" id="scene">
+        <svg viewBox="0 0 800 560" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a1335" stop-opacity=".9"/>
+              <stop offset="1" stop-color="#0a0e15" stop-opacity=".4"/>
+            </linearGradient>
+            <linearGradient id="iccFace" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#d946ef" stop-opacity=".85"/>
+              <stop offset="1" stop-color="#a78bfa" stop-opacity=".55"/>
+            </linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="6"/></filter>
+          </defs>
+          <polygon class="iso-ground" points="180,440 620,440 720,500 80,500"/>
+          <polygon fill="url(#iccFace)" points="380,140 440,140 440,430 380,430"/>
+          <text class="tower-label" x="410" y="125" text-anchor="middle" fill="#d946ef" font-weight="700">ICC · Atlas</text>
+          <line class="scan-beam" x1="410" y1="140" x2="180" y2="490"/>
+          <line class="scan-beam" x1="410" y1="140" x2="620" y2="490"/>
+        </svg>
+      </div>
+      <div class="rail">
+        <div class="panel">
+          <div class="panel-hd"><span>WindSeer <span class="accent">CFD</span></span><span class="close">×</span></div>
+          <div class="panel-bd"><div class="drone-twin">
+            <div class="drone-card"><div class="lbl">DR-A</div></div>
+            <div class="drone-card"><div class="lbl">DR-E</div></div>
+          </div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><span>Atlas <span class="accent">DCI</span></span></div>
+          <div class="panel-bd"><ul class="reg-list" id="reg-list">
+            <li><i data-lucide="cpu"></i><div>Jetson Orin Nano<small>Edge</small></div></li>
+          </ul></div>
+        </div>
+      </div>
+    </div>
+    <div class="mission-stage">
+      <aside class="mp-left">
+        <div class="asset-card"><div class="id">K11</div><div class="sub">DR-A</div></div>
+      </aside>
+      <div style="position:relative"><div id="leaflet-map"></div></div>
+      <aside class="mp-right">
+        <div class="grp-hd"><span>RID</span></div>
+        <div class="row">Open Drone ID <span class="led"></span></div>
+        <div class="row">GCS GPS <span class="led"></span></div>
+      </aside>
+    </div>
+    <div class="wp-bar">
+      <div class="cmd-bar"><input value="Command"><div class="playctl">
+        <button><i data-lucide="play"></i></button>
+        <button><i data-lucide="pause"></i></button>
+        <button><i data-lucide="square"></i></button>
+      </div></div>
+    </div>
+    <div class="kpi-strip">
+      <div class="kpi-cell"><div class="kpi-lbl">Active Drones</div><div class="kpi-val">3 <span class="sub">Active 2</span></div></div>
+      <div class="kpi-cell"><div class="kpi-lbl">Missions Today</div><div class="kpi-val">12 <span class="sub">Geofence 0</span></div></div>
+      <div class="kpi-cell"><div class="kpi-lbl">Avg p95 Latency</div><div class="kpi-val">188ms</div></div>
+      <div class="kpi-cell"><div class="kpi-lbl">Signed Verdicts</div><div class="kpi-val" style="color:var(--suc)">1,247</div></div>
+      <div class="kpi-cell"><div class="kpi-lbl">Facades Inspected</div><div class="kpi-val">12</div></div>
+    </div>
+    <div class="scrubber">
+      <button class="play"><i data-lucide="pause"></i></button>
+      <span class="time">0:00 → 0:10</span>
+      <div class="track"><div class="ticks" id="ticks"></div></div>
+      <button class="mute"><i data-lucide="volume-x"></i></button>
+    </div>
+    <div class="filmstrip">
+      <button class="strip-nav">‹</button>
+      <div class="strip-track" id="strip"></div>
+      <button class="strip-nav">›</button>
+    </div>
+  </main>
+  <aside class="action-rail">
+    <button class="heart"><i data-lucide="heart"></i></button>
+    <button><i data-lucide="refresh-cw"></i></button>
+    <button><i data-lucide="download"></i></button>
+    <button><i data-lucide="upload"></i></button>
+  </aside>
+</div>
+<script>
+lucide.createIcons();
+const root = document.documentElement;
+document.querySelectorAll('[data-view-btn]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.main-tabs button').forEach(x=>x.classList.remove('on'));
+    if(b.closest('.main-tabs')) b.classList.add('on');
+    document.body.setAttribute('data-view', b.dataset.viewBtn);
+    if(b.dataset.viewBtn==='mission') setTimeout(initLeaflet, 60);
+  });
+});
+const ticks = document.getElementById('ticks');
+for(let i=0;i<40;i++){const s=document.createElement('span'); if(i%5===0) s.classList.add('lg'); ticks.appendChild(s);}
+const strip = document.getElementById('strip');
+for(let i=0;i<18;i++){const c=document.createElement('div'); c.className='strip-cell ' + (i%3===2?'map':'tower'); strip.appendChild(c);}
+let leafletMap=null;
+function initLeaflet(){
+  if(leafletMap) return;
+  const HOME=[22.3193,114.1694];
+  leafletMap = L.map('leaflet-map',{zoomControl:false,attributionControl:false}).setView(HOME,14);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(leafletMap);
+  const wps=[[22.330,114.150],[22.328,114.165],[22.322,114.175],[22.318,114.182],[22.315,114.170]];
+  L.polyline([HOME,...wps], {color:'#22d3ee',weight:2.5,opacity:.9,dashArray:'4 5'}).addTo(leafletMap);
+  wps.forEach((p,i)=>{
+    L.marker(p,{icon:L.divIcon({className:'',html:`<div style="width:22px;height:22px;border-radius:50%;background:#f59e0b;border:2px solid #fff;color:#000;font:700 11px/22px sans-serif;text-align:center">${i+1}</div>`,iconSize:[22,22]})}).addTo(leafletMap);
+  });
+}
+async function api(path){ try{const r=await fetch('/api'+path,{credentials:'include'}); return r.ok?r.json():null;}catch(e){return null;} }
+async function bootstrap(){
+  const kpis = await api('/kpis/today');
+  if(kpis){
+    const cells=document.querySelectorAll('.kpi-val');
+    if(cells[0]) cells[0].innerHTML = `${kpis.active} <span class="sub">Active ${kpis.flying}</span>`;
+    if(cells[1]) cells[1].innerHTML = `${kpis.missions} <span class="sub">Geofence ${kpis.breaches}</span>`;
+    if(cells[2]) cells[2].innerHTML = `${kpis.p95}ms`;
+    if(cells[3]) cells[3].innerHTML = `${kpis.verdicts}`;
+    if(cells[4]) cells[4].innerHTML = `${kpis.facades}`;
+  }
+  const reg = await api('/atlas/registry?site=ICC');
+  if(reg){
+    document.getElementById('reg-list').innerHTML = reg.map(r=>`<li><i data-lucide="${r.icon||'cpu'}"></i><div>${r.title}<small>${r.sub||''}</small></div></li>`).join('');
+    lucide.createIcons();
+  }
+  const wx = await api('/wx/current?loc=kowloon');
+  if(wx){ document.querySelector('.wx-pill b').textContent = `${wx.speed} km/h ${wx.dir}`; }
+}
+bootstrap();
+console.log('[Attas] ready ·', new Date().toISOString());
+</script>
+</body>
+</html>
