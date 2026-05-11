@@ -1,7 +1,10 @@
 'use client'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { FrameClickable } from '@/components/frame-clickable'
-import { YoloOverlay } from '@/components/yolo-overlay'
+import { NEPAOverlay } from '@/components/drone/nepa-overlay'
+import { useSupabaseUser } from '@/lib/auth/useSupabaseUser'
+import { usePlan } from '@/lib/billing/usePlan'
+import { captureRegionAsBlob } from '@/lib/nepa/frameCapture'
+import { postNEPAFrame } from '@/lib/nepa/inferenceClient'
+import type { NEPARegionMeta, NEPAInferenceResponse } from '@/types/nepa'
 import { Plane, Battery, Signal, AlertCircle, Radio, Lock, Zap, X, ExternalLink } from 'lucide-react'
 import type { BBox } from '@/lib/yolo'
 
@@ -13,7 +16,7 @@ interface EdgeStats {
   fps: number
 }
 
-  import { useEffect, useRef } from 'react'
+  // (removed duplicate import)
   function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
     const ref = useRef<HTMLSpanElement>(null)
     const prev = useRef(value)
@@ -65,18 +68,76 @@ export default function DronePage() {
   const [statsErr, setStatsErr] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Simple plan resolution from /api/billing/me (no SSR needed)
-  const [plan, setPlan] = useState<string>('starter')
-  const [loadingPlan, setLoadingPlan] = useState(true)
-  useEffect(() => {
-    fetch('/api/billing/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(j => { if (j?.plan) setPlan(j.plan) })
-      .catch(() => {})
-      .finally(() => setLoadingPlan(false))
-  }, [])
+  // Remove duplicate plan/canIngest state, use only from usePlan
+  const { user } = useSupabaseUser()
+  const { plan, loading: loadingPlan } = usePlan()
+  const canIngest = plan === 'pro_plus'
 
-  const canIngest = plan === 'pro' || plan === 'team' || plan === 'enterprise'
+  // NEPA integration state
+  const [nepaLoadingRegion, setNepaLoadingRegion] = useState<number | null>(null)
+  const [nepaError, setNepaError] = useState<string | null>(null)
+  const [nepaOverlays, setNepaOverlays] = useState<Record<number, NEPAInferenceResponse>>({})
+  // Determine source type for NEPA (webcam or rtsp)
+  const sourceType: 'webcam' | 'rtsp' = feedMode === 'webcam' ? 'webcam' : 'rtsp'
+
+  async function handleRegionInference(region: NEPARegionMeta, source: 'webcam' | 'rtsp') {
+    setNepaError(null)
+    // Plan gating: RTSP + backend only for Pro+
+    if (source === 'rtsp' && plan !== 'pro_plus') {
+      setNepaError('RTSP inference is available on Pro+ plans only.')
+      return
+    }
+    const video = videoRef.current
+    if (!video) {
+      setNepaError('No active video feed.')
+      return
+    }
+    setNepaLoadingRegion(region.index)
+    try {
+      const blob = await captureRegionAsBlob(video, region)
+      if (!blob) {
+        setNepaError('Unable to capture frame from video.')
+        setNepaLoadingRegion(null)
+        return
+      }
+      const result = await postNEPAFrame(blob, {
+        source,
+        region,
+        userId: user?.id ?? undefined,
+      })
+      if (!result.ok || !result.data) {
+        setNepaError(result.error ?? 'Inference failed.')
+      } else {
+        setNepaOverlays((prev) => ({
+          ...prev,
+          [region.index]: result.data!,
+        }))
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unexpected error'
+      setNepaError(msg)
+    } finally {
+      setNepaLoadingRegion(null)
+    }
+  }
+
+  // Dev/test hook: run NEPA inference on all tiles (dev only)
+  const isDev = process.env.NODE_ENV === 'development'
+  async function testInferenceAllTiles() {
+    if (!isDev) return
+    for (let index = 0; index < 9; index++) {
+      const row = Math.floor(index / 3)
+      const col = index % 3
+      await handleRegionInference({ row, col, index }, sourceType)
+    }
+  }
+  // Store latest inference result from backend
+  const [inferenceResult, setInferenceResult] = useState<any>(null)
+  // Store backend BBox[] for overlay
+  const [backendBoxes, setBackendBoxes] = useState([])
+  // Toggle for continuous backend inference
+  const [autoInfer, setAutoInfer] = useState(false)
+  const autoInferRef = useRef(false)
 
   useEffect(() => {
     fetch('/api/registry/drones').then(r => r.json()).then(j => setDrones(j?.data?.units ?? []))
@@ -342,10 +403,10 @@ export default function DronePage() {
           {/* Live feed */}
           <div className="rounded-2xl overflow-hidden"
             style={{ border: '1px solid rgba(16,185,129,0.2)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
-            <FrameClickable source={`drone-${active}`} style={{ aspectRatio: '16/9', background: '#000' }}>
+            <div className="relative" style={{ aspectRatio: '16/9', background: '#000' }}>
               <video
                 ref={videoRef}
-                src={feedMode === 'video' ? '/hero/world-model-stdp.mp4' : undefined}
+                src={feedMode === 'video' ? 'https://samplelib.com/mp4/sample-5s.mp4' : undefined}
                 autoPlay loop muted playsInline crossOrigin="anonymous"
                 onError={(e) => {
                   const v = e.currentTarget
@@ -353,15 +414,91 @@ export default function DronePage() {
                 }}
                 className="w-full h-full object-cover"
               />
-              {/* YOLO bounding box overlay — only active in webcam mode */}
-              {feedMode === 'webcam' && yoloReady && (
-                <YoloOverlay
-                  boxes={boxes}
-                  videoWidth={videoSize.w}
-                  videoHeight={videoSize.h}
-                  style={{ zIndex: 10 }}
-                />
-              )}
+              {/* Overlay container: YOLO + NEPA overlays */}
+              <div className="absolute inset-0 pointer-events-none">
+                {feedMode === 'webcam' && yoloReady && (
+                  <YoloOverlay
+                    boxes={backendBoxes.length > 0 ? backendBoxes : boxes}
+                    videoWidth={videoSize.w}
+                    videoHeight={videoSize.h}
+                    style={{ zIndex: 10 }}
+                  />
+                )}
+                              {/* Hidden full-frame FrameClickable for backend POSTs and overlay */}
+                              <FrameClickable
+                                source={`drone-${active}`}
+                                fullFrameOnClick
+                                style={{ display: 'none' }}
+                                onResult={result => {
+                                  // Convert backend result to BBox[] if possible
+                                  if (result && Array.isArray(result.detections)) {
+                                    const bboxes = result.detections.map((det, i) => ({
+                                      x1: det.x1,
+                                      y1: det.y1,
+                                      x2: det.x2,
+                                      y2: det.y2,
+                                      classId: det.classId ?? 0,
+                                      className: det.className ?? 'object',
+                                      confidence: det.confidence ?? 1,
+                                    }))
+                                    setBackendBoxes(bboxes)
+                                  } else {
+                                    setBackendBoxes([])
+                                  }
+                                }}
+                              />
+                        {/* Toggle for continuous backend inference */}
+                        <div className="flex items-center gap-2 mt-2">
+                          <label className="text-xs font-mono flex items-center gap-1">
+                            <input type="checkbox" checked={autoInfer} onChange={e => { setAutoInfer(e.target.checked); autoInferRef.current = e.target.checked; }} />
+                            Continuous backend inference
+                          </label>
+                          {autoInfer && <span className="text-xs text-emerald-400">Running…</span>}
+                        </div>
+                  // Continuous backend inference effect
+                  useEffect(() => {
+                    let interval: any = null
+                    async function inferLoop() {
+                      if (!autoInferRef.current) return
+                      // Find the hidden FrameClickable and trigger a full-frame grab
+                      const btn = document.querySelector('[aria-label="Capture full frame for NEPA inference"]') as HTMLButtonElement
+                      if (btn) btn.click()
+                    }
+                    if (autoInfer) {
+                      interval = setInterval(inferLoop, 1500) // every 1.5s
+                    } else {
+                      if (interval) clearInterval(interval)
+                    }
+                    return () => { if (interval) clearInterval(interval) }
+                  }, [autoInfer, active])
+                <NEPAOverlay overlays={nepaOverlays} />
+              </div>
+              {/* Clickable grid for NEPA region capture */}
+              <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none">
+                {Array.from({ length: 9 }).map((_, idx) => {
+                  const row = Math.floor(idx / 3)
+                  const col = idx % 3
+                  const loading = nepaLoadingRegion === idx
+                  return (
+                    <div key={idx} className="relative pointer-events-auto border border-transparent">
+                      <FrameClickable
+                        row={row}
+                        col={col}
+                        videoRef={videoRef}
+                        onClickRegion={({ region }) =>
+                          handleRegionInference(region, sourceType)
+                        }
+                      />
+                      {loading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <span className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              {/* Existing YOLO/NEPA status overlays */}
               <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded text-[9px] font-mono pointer-events-none"
                 style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
                 {active} · {feedMode === 'webcam' ? 'WEBRTC' : slotId ? 'RTSP' : '4K'} · {slotId && edgeStats ? `${edgeStats.fps.toFixed(0)}fps` : '30fps'}
@@ -395,7 +532,7 @@ export default function DronePage() {
                   YOLO: {yoloError}
                 </div>
               )}
-            </FrameClickable>
+            </div>
           </div>
 
           {/* Fleet list + inference stats */}
@@ -456,6 +593,19 @@ export default function DronePage() {
           </div>
         </div>
 
+        {nepaError && (
+          <div className="mt-2 rounded-lg border border-red-800 bg-red-950/60 px-3 py-2 text-[11px] font-mono text-red-300">
+            {nepaError}
+          </div>
+        )}
+        {isDev && (
+          <button
+            onClick={testInferenceAllTiles}
+            className="text-[10px] font-mono text-zinc-500 underline underline-offset-2 mt-2"
+          >
+            DEV: Run NEPA on all tiles
+          </button>
+        )}
         <p className="mt-4 text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Click any 9-region tile on the live feed — actual pixels are captured and POSTed to <code>/api/nepa/inference/frame</code>.
           {!canIngest && <> · <a href="/pricing" style={{ color: '#10b981' }}>Upgrade to Pro</a> for RTSP/SRT edge ingest.</>}
