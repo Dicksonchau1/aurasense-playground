@@ -29,4 +29,9 @@ Thumbs.db
 .env*.local
 =======
 node_modules
+**/.turbo
+**/node_modules
+**/.next
+**/dist
+.env.local
 >>>>>>> cc9d6d4 (Refactor code structure for improved readability and maintainability)
