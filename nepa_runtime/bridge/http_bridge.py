@@ -1,7 +1,28 @@
+async def ready(req):
+    t0 = time.time()
+    method = "GET"
+    endpoint = "/ready"
+    request_id = req.get("request_id")
+    try:
+        with REQUEST_LATENCY.labels(method, endpoint).time():
+            stub_instance = await stub()
+            h = await stub_instance.Health(nepa_pb2.HealthRequest())
+        if not h.ok:
+            raise Exception("gRPC health not ok")
+        status = 200
+        logger.info("ready", route="ready", status=status, node=NODE_ID, request_id=request_id)
+        REQUEST_COUNT.labels(method, endpoint, status).inc()
+        return web.json_response({"ok": True, "node": NODE_ID})
+    except Exception as e:
+        status = 503
+        logger.error("ready", route="ready", status=status, error=str(e), node=NODE_ID, request_id=request_id)
+        REQUEST_COUNT.labels(method, endpoint, status).inc()
+        return web.json_response({"ok": False, "error": str(e), "node": NODE_ID}, status=503)
 """HTTP bridge: VPS → this bridge → local gRPC runtime."""
 from __future__ import annotations
 import os, sys, json, time, asyncio, pathlib
 from typing import Optional
+from .logger import logger
 import grpc
 from aiohttp import web
 
@@ -66,15 +87,36 @@ def _result_dict(r):
 
 
 async def health(req):
-    if (d := _check_auth(req)): return d
-    h = await (await stub()).Health(nepa_pb2.HealthRequest())
-    return web.json_response({
-        "ok": h.ok, "runtime": h.runtime, "version": h.version,
-        "uptime_s": h.uptime_s, "queue_depth": h.queue_depth, "node": NODE_ID,
-    })
+    t0 = time.time()
+    method = "GET"
+    endpoint = "/health"
+    request_id = req.get("request_id")
+    try:
+        if (d := _check_auth(req)):
+            status = 401
+            REQUEST_COUNT.labels(method, endpoint, status).inc()
+            logger.info("health", route="health", status=status, duration_ms=int((time.time()-t0)*1000), request_id=request_id)
+            return d
+        with REQUEST_LATENCY.labels(method, endpoint).time():
+            h = await (await stub()).Health(nepa_pb2.HealthRequest())
+        status = 200
+        logger.info("health", route="health", status=status, duration_ms=int((time.time()-t0)*1000), request_id=request_id)
+        REQUEST_COUNT.labels(method, endpoint, status).inc()
+        return web.json_response({
+            "ok": h.ok, "runtime": h.runtime, "version": h.version,
+            "uptime_s": h.uptime_s, "queue_depth": h.queue_depth, "node": NODE_ID,
+        })
+    except Exception as e:
+        status = 500
+        REQUEST_COUNT.labels(method, endpoint, status).inc()
+        logger.error("health", route="health", status=status, error=str(e), duration_ms=int((time.time()-t0)*1000), request_id=request_id)
+        return web.json_response({"ok": False, "error": str(e), "node": NODE_ID}, status=500)
 
 async def infer_frame(req):
-    if (d := _check_auth(req)): return d
+    t0 = time.time()
+    if (d := _check_auth(req)):
+        logger.info("infer_frame", route="infer_frame", status=401, duration_ms=int((time.time()-t0)*1000))
+        return d
     reader = await req.multipart()
     image_bytes = b""; source = ""; region = ""; user_id = ""
     async for part in reader:
@@ -84,6 +126,7 @@ async def infer_frame(req):
         elif part.name == "user_id": user_id = (await part.text()).strip()
     r = await (await stub()).InferFrame(nepa_pb2.FrameRequest(
         image_jpeg=bytes(image_bytes), source=source, region=region, user_id=user_id))
+    logger.info("infer_frame", route="infer_frame", status=200, duration_ms=int((time.time()-t0)*1000), user_id=user_id, region=region, source=source)
     return web.json_response(_result_dict(r))
 
 async def infer_video(req):
@@ -119,8 +162,13 @@ async def stream_anomalies(req):
     return response
 
 def make_app():
-    app = web.Application(client_max_size=50 * 1024 * 1024)
+    from .sentry_middleware import sentry_error_middleware
+    from .metrics import metrics
+    from .request_id_middleware import request_id_middleware
+    app = web.Application(client_max_size=50 * 1024 * 1024, middlewares=[request_id_middleware, sentry_error_middleware])
     app.router.add_get ("/health",           health)
+    app.router.add_get ("/ready",            ready)
+    app.router.add_get ("/metrics",          metrics)
     app.router.add_post("/infer/frame",      infer_frame)
     app.router.add_post("/infer/video",      infer_video)
     app.router.add_get ("/stream/anomalies", stream_anomalies)

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
+import { HriInboxMount } from "@/hri/HriInboxMount";
 import { Analytics } from '@vercel/analytics/react'
-import { MembershipDrawerProvider } from '@/components/membership-drawer'
-import { NavBar } from '@/components/nav-bar'
-import { AppSidebar } from '@/components/app-sidebar'
+import { MembershipDrawerProvider } from '@/membership-drawer'
+import { NavBar } from '@/nav-bar'
+import { AppSidebar } from '@/app-sidebar'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -38,6 +39,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </MembershipDrawerProvider>
         <Analytics />
+        {/* Mount HRI Inbox */}
+        <HriInboxMount />
       </body>
     </html>
   )

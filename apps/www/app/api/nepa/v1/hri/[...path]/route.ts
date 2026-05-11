@@ -37,7 +37,33 @@ async function forward(req: NextRequest, params: { path: string[] }) {
   });
 }
 
-export const GET = (req: NextRequest, ctx: { params: { path: string[] } }) => forward(req, ctx.params);
+import { logger, getRequestId } from "@/lib/logger";
+
+  const t0 = Date.now();
+  const requestId = getRequestId(req);
+  try {
+    const res = await forward(req, ctx.params);
+    logger.info({
+      route: "hri_proxy",
+      path: ctx.params.path.join("/"),
+      method: req.method,
+      status: res.status,
+      duration_ms: Date.now() - t0,
+      requestId,
+    });
+    return res;
+  } catch (err) {
+    logger.error({
+      route: "hri_proxy",
+      path: ctx.params.path.join("/"),
+      method: req.method,
+      error: err instanceof Error ? err.message : String(err),
+      duration_ms: Date.now() - t0,
+      requestId,
+    });
+    return new NextResponse(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+  }
+};
 export const POST = (req: NextRequest, ctx: { params: { path: string[] } }) => forward(req, ctx.params);import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";

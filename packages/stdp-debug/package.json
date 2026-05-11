@@ -1,0 +1,17 @@
+{
+  "name": "@aurasense/stdp-debug",
+  "version": "0.1.0",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {}
+}

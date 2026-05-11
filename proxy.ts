@@ -38,4 +38,4 @@ export const config = {
     '/api/billing/:path*',
     '/api/edge/:path*',
   ],
-}
+};

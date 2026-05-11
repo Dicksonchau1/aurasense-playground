@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { WhyAmIAskedSparkline } from '@/components/WhyAmIAskedSparkline';
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
@@ -24,6 +25,7 @@ export default function HomePage() {
           NEPA inference, <span style={{ color: '#10b981' }}>live</span>.
         </h1>
 
+
         <p
           className="mt-4 text-sm md:text-base max-w-md mx-auto"
           style={{ color: 'rgba(255,255,255,0.65)' }}
@@ -31,6 +33,11 @@ export default function HomePage() {
           A minimal sandbox for the AuraSense NEPA runtime. Try the live drone feed,
           rehearse a scene, or open the agent in the corner.
         </p>
+
+        <div className="my-8 flex flex-col items-center">
+          <h2 className="text-lg font-semibold mb-2">Why am I being asked?</h2>
+          <WhyAmIAskedSparkline />
+        </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link

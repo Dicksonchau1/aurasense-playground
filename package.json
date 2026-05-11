@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.2.0",
   "packageManager": "pnpm@9.0.0",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -12,8 +15,16 @@
     "test": "turbo run test"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "turbo": "^2.0.0",
-    "typescript": "^5.4.0",
-    "@types/node": "^20.0.0"
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@vercel/analytics": "^2.0.1",
+    "lucide-react": "^1.14.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.3.0"
   }
 }

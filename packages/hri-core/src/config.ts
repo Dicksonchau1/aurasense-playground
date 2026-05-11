@@ -4,7 +4,7 @@ export interface HriCoreConfig {
 }
 
 let _config: HriCoreConfig = {
-  nepaApiUrl: process.env.NEXT_PUBLIC_NEPA_API_URL ?? "http://localhost:8000",
+  nepaApiUrl: process.env.NEXT_PUBLIC_NEPA_API_URL ?? "",
 };
 
 export function configureHriCore(cfg: Partial<HriCoreConfig>) {
