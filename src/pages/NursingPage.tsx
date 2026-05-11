@@ -91,9 +91,7 @@ export default function NursingPage() {
         </div>
         <ol className="space-y-2 text-sm">
           {result.stepResults.map((r, i) => (
-            
-              className="flex items-center justify-between"
-            >
+            <li key={i} className="flex items-center justify-between">
               <span className="text-white/80">
                 {i + 1}. {r.step.label}
               </span>

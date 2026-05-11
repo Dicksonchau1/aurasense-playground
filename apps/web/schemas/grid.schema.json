@@ -1,0 +1,35 @@
+{
+  "$id": "grid.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "axes": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 16,
+      "items": { "$ref": "axes.schema.json" }
+    },
+    "sampling": {
+      "type": "object",
+      "properties": {
+        "strategy": { "type": "string", "enum": ["grid", "lhs", "importance"] },
+        "base_runs": { "type": "integer", "minimum": 50, "maximum": 50000 },
+        "seeds_per_cell": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "importance_resample": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "extra_runs": { "type": "integer", "minimum": 0, "maximum": 5000 },
+            "target_axis": { "type": "string" }
+          },
+          "required": ["enabled", "extra_runs"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["strategy", "base_runs", "seeds_per_cell"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["axes", "sampling"],
+  "additionalProperties": false
+}

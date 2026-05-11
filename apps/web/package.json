@@ -1,0 +1,28 @@
+{
+  "name": "aurasense-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "4.0.0",
+    "@observablehq/plot": "0.6.0",
+    "@supabase/ssr": "0.5.0",
+    "@tanstack/react-query": "5.0.0",
+    "deck.gl": "9.0.0",
+    "eslint": "^10.3.0",
+    "lucide-react": "^1.14.0",
+    "next": "14.2.0",
+    "next-intl": "3.0.0",
+    "react": "18.3.0",
+    "react-dom": "18.3.0",
+    "react-map-gl": "^8.1.1",
+    "tailwindcss": "3.4.0",
+    "zustand": "4.5.0"
+  }
+}
