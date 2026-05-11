@@ -1,15 +1,47 @@
 'use client'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Mail, Globe } from 'lucide-react'
+import { tierForEmail, tierLabel, type Tier } from '@/lib/auth/domain-router'
+import { Mail, Globe, Stethoscope, Plane, Sparkles } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
+
+const TIER_HINTS: Record<Tier, { label: string; lede: string; icon: React.ElementType; accent: string }> = {
+  free: {
+    label: 'Free Demo',
+    lede: 'You will land on the public playground — 3 sessions/day, watermarked.',
+    icon: Sparkles,
+    accent: '#22d3ee',
+  },
+  nursing: {
+    label: 'Healthcare / Education',
+    lede: 'You will land on Aura-Rehearse-Nurse with the full WHO + clinical scenario suite.',
+    icon: Stethoscope,
+    accent: '#10b981',
+  },
+  enterprise: {
+    label: 'Enterprise / Government',
+    lede: 'You will land on Aura-Fleet — mission planner, Atlas inspection twin, signed audit chain.',
+    icon: Plane,
+    accent: '#a78bfa',
+  },
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Live preview of which tier this email will resolve to. Pure client-side
+  // inference — the real assignment happens in /auth/callback after sign-in.
+  const previewTier = useMemo<Tier | null>(() => {
+    if (!email.includes('@') || email.length < 5) return null
+    return tierForEmail(email)
+  }, [email])
+
+  const hint = previewTier ? TIER_HINTS[previewTier] : null
+  const HintIcon = hint?.icon
 
   async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault()
@@ -41,14 +73,16 @@ export default function LoginPage() {
       padding: '24px 16px',
     }}>
       <div style={{
-        width: '100%', maxWidth: 400,
+        width: '100%', maxWidth: 420,
         background: '#111111', border: '1px solid #262626',
         borderRadius: 16, padding: '32px 28px',
       }}>
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>Sign in to AuraSense</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>
+            Sign in to AuraSense
+          </h1>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '6px 0 0' }}>
-            Save sessions, share replays, and track progress.
+            One sign-up, three surfaces. We route you to the right one based on your work email.
           </p>
         </div>
 
@@ -60,37 +94,71 @@ export default function LoginPage() {
             <p style={{ fontSize: 14, color: '#10b981', margin: 0 }}>
               ✓ Magic link sent to <strong>{email}</strong>. Check your inbox.
             </p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '8px 0 0' }}>
+              Tier on arrival: <strong style={{ color: hint?.accent }}>{hint?.label ?? tierLabel('free')}</strong>
+            </p>
           </div>
         ) : (
           <>
             <form onSubmit={sendMagicLink} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>Email address</label>
+                <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>
+                  Work email
+                </label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="you@hospital.org.hk"
+                  autoComplete="email"
                   style={{
-                    background: '#0a0a0a', border: '1px solid #333',
+                    background: '#0a0a0a',
+                    border: `1px solid ${hint ? hint.accent + '55' : '#333'}`,
                     borderRadius: 8, padding: '10px 12px',
                     color: '#f5f5f5', fontSize: 14, outline: 'none',
+                    transition: 'border-color 180ms ease',
                   }}
                 />
               </div>
+
+              {hint && HintIcon && (
+                <div style={{
+                  display: 'flex', gap: 10, padding: '10px 12px',
+                  borderRadius: 8,
+                  background: `${hint.accent}10`,
+                  border: `1px solid ${hint.accent}33`,
+                }}>
+                  <HintIcon size={16} color={hint.accent} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{
+                      fontSize: 11, fontFamily: 'ui-monospace,SFMono-Regular,monospace',
+                      letterSpacing: '0.06em', textTransform: 'uppercase',
+                      color: hint.accent, fontWeight: 700,
+                    }}>
+                      → {hint.label}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.4 }}>
+                      {hint.lede}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <p style={{ fontSize: 12, color: '#ef4444', margin: 0 }}>{error}</p>
               )}
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !email}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   padding: '11px', borderRadius: 10, fontSize: 14, fontWeight: 600,
                   background: loading ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.15)',
                   border: '1px solid rgba(16,185,129,0.35)', color: '#10b981',
-                  cursor: loading ? 'not-allowed' : 'pointer',
+                  cursor: loading || !email ? 'not-allowed' : 'pointer',
+                  opacity: !email ? 0.6 : 1,
                 }}
               >
                 <Mail className="w-4 h-4" />
@@ -124,6 +192,7 @@ export default function LoginPage() {
           <a href="/terms" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Terms</a>
           {' '}and{' '}
           <a href="/privacy" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Privacy Policy</a>.
+          {' '}See <a href="/pricing" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>pricing</a>.
         </p>
       </div>
     </div>
