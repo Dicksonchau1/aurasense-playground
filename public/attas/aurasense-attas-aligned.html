@@ -47,7 +47,23 @@
     <div style="flex:2;min-width:0">
       <!-- PHASE B2: 3D Map container -->
       <div id="map3d" style="width:100%;height:420px;border-radius:8px;margin-bottom:12px"></div>
-      <!-- PHASE B4: Waypoint planner panel -->
+
+      <!-- PHASE C1: Camera tile with crack/defect overlay -->
+      <div style="position:relative;width:100%;height:340px;margin-bottom:16px">
+        <video id="cam" autoplay muted loop playsinline
+          src="/attas/assets/facade-demo.mp4"
+          style="width:100%;height:100%;object-fit:cover;border-radius:6px"></video>
+        <canvas id="cam-ai"
+          style="position:absolute;inset:0;pointer-events:none;border-radius:6px"></canvas>
+        <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.65);padding:4px 8px;border-radius:4px;font-size:10px">
+          <span style="color:#ef4444">■</span> Crack &nbsp;
+          <span style="color:#f59e0b">■</span> Spall &nbsp;
+          <span style="color:#22d3ee">■</span> Stain
+        </div>
+        <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.65);padding:4px 8px;border-radius:4px;font-size:10px;font-family:var(--mono)">
+          NEPA · <span id="inf-ms">188</span> ms
+        </div>
+      </div>
       <div id="wp-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <span style="font-size:11px;font-weight:600">Waypoint <span class="accent">Planner</span></span>
@@ -417,6 +433,66 @@
     </div>
   </div>
   <script>
+        // PHASE C2: AI Defect Detection Overlay
+        if (ATTAS_FLAGS.enableCrackAI) {
+          const DEFECTS = [
+            {id:'D-0471', cls:'crack', conf:0.94, bbox:[0.21,0.34,0.38,0.42], sev:'HIGH'},
+            {id:'D-0472', cls:'crack', conf:0.88, bbox:[0.55,0.18,0.64,0.28], sev:'HIGH'},
+            {id:'D-0473', cls:'spall', conf:0.81, bbox:[0.70,0.60,0.82,0.74], sev:'MED'},
+            {id:'D-0474', cls:'stain', conf:0.76, bbox:[0.10,0.70,0.22,0.82], sev:'LOW'},
+          ];
+          const COL = {crack:'#ef4444', spall:'#f59e0b', stain:'#22d3ee'};
+
+          function drawDefects(dets) {
+            const cv = document.getElementById('cam-ai');
+            const vid = document.getElementById('cam');
+            if(!cv || !vid) return;
+            cv.width  = vid.clientWidth;
+            cv.height = vid.clientHeight;
+            const ctx = cv.getContext('2d');
+            ctx.clearRect(0,0,cv.width,cv.height);
+            ctx.lineWidth = 2; ctx.font = '10px monospace';
+            dets.forEach(d => {
+              const [x1,y1,x2,y2] = d.bbox;
+              const x=x1*cv.width, y=y1*cv.height, w=(x2-x1)*cv.width, h=(y2-y1)*cv.height;
+              ctx.strokeStyle = COL[d.cls];
+              ctx.strokeRect(x,y,w,h);
+              ctx.fillStyle = COL[d.cls];
+              ctx.fillRect(x, y-14, 110, 14);
+              ctx.fillStyle = '#000';
+              ctx.fillText(`${d.cls.toUpperCase()} ${(d.conf*100).toFixed(0)}% ${d.id}`, x+3, y-3);
+            });
+          }
+
+          // jitter mock detections at 400ms; Phase D will swap to fetchJSON
+          setInterval(() => {
+            const jitter = DEFECTS.map(d => ({
+              ...d,
+              bbox: d.bbox.map(v => Math.max(0, Math.min(0.95, v + (Math.random()-0.5)*0.003)))
+            }));
+            if (!ATTAS_FLAGS.useMock) return;
+            drawDefects(jitter);
+            emitMerkleLeaf(jitter[Math.floor(Math.random()*jitter.length)]);
+          }, 400);
+        }
+
+        // PHASE C2: Merkle leaf emit (works even before full chain wiring)
+        function emitMerkleLeaf(d) {
+          const payload = JSON.stringify({ts:Date.now(), id:d.id, cls:d.cls, conf:d.conf});
+          crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload)).then(h => {
+            const hex = [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
+            const feed = document.getElementById('merkle-feed');
+            if(!feed) return;
+            const row = document.createElement('div');
+            row.className = 'merkle-row';
+            row.textContent = `0x${hex.slice(0,12)}… · ${d.cls} · ${d.id}`;
+            feed.prepend(row);
+            if(feed.children.length > 10) feed.lastChild.remove();
+            // increment verdict counter
+            const cnt = document.getElementById('merk-count');
+            if(cnt) cnt.textContent = String(parseInt(cnt.textContent||'31')+1);
+          });
+        }
     // PHASE 0: Feature flag block
     const ATTAS_FLAGS = {
       useMock:       true,   // flip to false in Phase D after API stubs are ready
