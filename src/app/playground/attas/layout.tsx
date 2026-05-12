@@ -14,7 +14,7 @@ export default async function AttasLayout({ children }: { children: ReactNode })
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/auth/login?redirect=/playground/attas');
+  if (!user) redirect('/login?redirect=/playground/attas');
 
   const { data: profile } = await supabase
     .from('user_plans').select('plan').eq('user_id', user.id).maybeSingle();

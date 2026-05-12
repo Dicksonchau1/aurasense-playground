@@ -15,7 +15,7 @@ export default async function PlaygroundLayout({ children }: { children: ReactNo
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/auth/login?redirect=/playground');
+  if (!user) redirect('/login?redirect=/playground');
 
   const { data: profile } = await supabase
     .from('user_plans').select('plan').eq('user_id', user.id).maybeSingle();

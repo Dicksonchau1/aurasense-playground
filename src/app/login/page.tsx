@@ -1,131 +1,40 @@
 'use client'
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Mail, Globe } from 'lucide-react'
-
-export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [password, setPassword] = useState('')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  async function sendMagicLink(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true); setError('')
+    setErr(''); setBusy(true)
     const sb = createClient()
-    const { error: err } = await sb.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
-    setLoading(false)
-    if (err) { setError(err.message); return }
-    setSent(true)
-  }
-
-  async function signInWithGoogle() {
-    setError('')
-    const sb = createClient()
-    const { error: err } = await sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-    if (err) setError(err.message)
+    const { error } = await sb.auth.signInWithPassword({ email, password })
+    setBusy(false)
+    if (error) { setErr(error.message); return }
+    const params = new URLSearchParams(window.location.search)
+    window.location.href = params.get('redirect') ?? '/'
   }
 
   return (
-    <div style={{
-      minHeight: 'calc(100dvh - 3rem)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '24px 16px',
-    }}>
-      <div style={{
-        width: '100%', maxWidth: 400,
-        background: '#111111', border: '1px solid #262626',
-        borderRadius: 16, padding: '32px 28px',
-      }}>
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>Sign in to AuraSense</h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '6px 0 0' }}>
-            Save sessions, share replays, and track progress.
-          </p>
-        </div>
-
-        {sent ? (
-          <div style={{
-            padding: '16px', borderRadius: 10,
-            background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
-          }}>
-            <p style={{ fontSize: 14, color: '#10b981', margin: 0 }}>
-              ✓ Magic link sent to <strong>{email}</strong>. Check your inbox.
-            </p>
-          </div>
-        ) : (
-          <>
-            <form onSubmit={sendMagicLink} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>Email address</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  style={{
-                    background: '#0a0a0a', border: '1px solid #333',
-                    borderRadius: 8, padding: '10px 12px',
-                    color: '#f5f5f5', fontSize: 14, outline: 'none',
-                  }}
-                />
-              </div>
-              {error && (
-                <p style={{ fontSize: 12, color: '#ef4444', margin: 0 }}>{error}</p>
-              )}
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '11px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-                  background: loading ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.15)',
-                  border: '1px solid rgba(16,185,129,0.35)', color: '#10b981',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                }}
-              >
-                <Mail className="w-4 h-4" />
-                {loading ? 'Sending…' : 'Send magic link'}
-              </button>
-            </form>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
-              <div style={{ flex: 1, height: 1, background: '#262626' }} />
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>or</span>
-              <div style={{ flex: 1, height: 1, background: '#262626' }} />
-            </div>
-
-            <button
-              onClick={signInWithGoogle}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '11px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-                background: '#18181b', border: '1px solid #333', color: '#f5f5f5',
-                cursor: 'pointer',
-              }}
-            >
-              <Globe className="w-4 h-4" />
-              Continue with Google
-            </button>
-          </>
-        )}
-
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 20, textAlign: 'center' }}>
-          By signing in you agree to our{' '}
-          <a href="/terms" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Terms</a>
-          {' '}and{' '}
-          <a href="/privacy" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Privacy Policy</a>.
-        </p>
-      </div>
-    </div>
+    <main style={{ minHeight: '100vh', background: '#070e1a', color: '#e6edf3', display: 'grid', placeItems: 'center', fontFamily: 'system-ui' }}>
+      <form onSubmit={onSubmit} style={{ background: '#0d1117', border: '1px solid #30363d', borderRadius: 12, padding: 28, width: 360 }}>
+        <p style={{ fontSize: 10, letterSpacing: 3, color: '#34d399', textTransform: 'uppercase', margin: 0 }}>AuraSense</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: '6px 0 18px' }}>Sign in</h1>
+        abel style={{ display: 'block', fontSize: 11, color: '#8b949e', marginBottom: 4 }}>Email</label>
+        <input value={email} onChange={e => setEmail(e.target.value)} type="email" required style={{ width: '100%', padding: '10px 12px', background: '#161b22', border: '1px solid #30363d', borderRadius: 6, color: '#e6edf3', marginBottom: 12, fontSize: 13 }} />
+        abel style={{ display: 'block', fontSize: 11, color: '#8b949e', marginBottom: 4 }}>Password</label>
+        <input value={password} onChange={e => setPassword(e.target.value)} type="password" required style={{ width: '100%', padding: '10px 12px', background: '#161b22', border: '1px solid #30363d', borderRadius: 6, color: '#e6edf3', marginBottom: 16, fontSize: 13 }} />
+        {err ? <p style={{ color: '#f85149', fontSize: 12, marginBottom: 12 }}>{err}</p> : null}
+        <button type="submit" disabled={busy} style={{ width: '100%', padding: '10px', background: '#10b981', color: '#062017', border: 'none', borderRadius: 6, fontWeight: 700, cursor: busy ? 'wait' : 'pointer' }}>
+          {busy ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+    </main>
   )
 }
