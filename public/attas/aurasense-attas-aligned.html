@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AuraSense ATTAS Aligned</title>
   <link rel="stylesheet" href="/attas/attas-base.css">
+  <!-- PHASE B: MapLibre GL + deck.gl CDN -->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/deck.gl@9.0.0/dist.min.js"></script>
 </head>
 <body>
   <style>
@@ -39,7 +43,34 @@
     .merkle-row{font-size:9px;font-family:var(--mono);color:var(--muted);padding:2px 0;
       border-bottom:1px solid var(--border)}
   </style>
-  <div class="rail">
+  <div style="display:flex;gap:24px">
+    <div style="flex:2;min-width:0">
+      <!-- PHASE B2: 3D Map container -->
+      <div id="map3d" style="width:100%;height:420px;border-radius:8px;margin-bottom:12px"></div>
+      <!-- PHASE B4: Waypoint planner panel -->
+      <div id="wp-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;font-weight:600">Waypoint <span class="accent">Planner</span></span>
+          <div style="display:flex;gap:6px">
+            <button id="btn-sim-flight" style="font-size:9px;padding:3px 8px;background:var(--acc);border:none;color:#000;border-radius:3px;cursor:pointer">▶ Simulate</button>
+            <button id="btn-export-mission" style="font-size:9px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:3px;cursor:pointer">↓ Export .plan</button>
+            <button id="btn-clear-wps" style="font-size:9px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);color:var(--err);border-radius:3px;cursor:pointer">✕ Clear</button>
+          </div>
+        </div>
+        <table id="wp-table" style="width:100%;font-size:10px;border-collapse:collapse">
+          <thead>
+            <tr style="color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.5px">
+              <th style="text-align:left;padding:3px">ID</th>
+              <th style="text-align:left;padding:3px">Label</th>
+              <th style="text-align:right;padding:3px">Alt</th>
+              <th style="text-align:right;padding:3px">Action</th>
+            </tr>
+          </thead>
+          <tbody id="wp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="rail" style="flex:1">
     <!-- 1 · WindSeer CFD (keep existing, add collapse) -->
     <div class="panel">
       <div class="panel-hd">
@@ -394,6 +425,127 @@
       enableRecorder:true,   // MediaRecorder export
     };
     // ...integration script will be appended in later phases...
+    // PHASE B3: 3D Mission Map
+    document.addEventListener('DOMContentLoaded', function() {
+      if (ATTAS_FLAGS.enable3D) {
+        const WAYPOINTS = [
+          {id:'WP-01', label:'Takeoff / Home',       coords:[114.1694, 22.3193], alt:25,  action:'TAKEOFF'},
+          {id:'WP-02', label:'Façade North Scan',    coords:[114.1698, 22.3197], alt:55,  action:'SCAN'},
+          {id:'WP-03', label:'Thermal Sweep',        coords:[114.1701, 22.3199], alt:70,  action:'THERMAL'},
+          {id:'WP-04', label:'Crack Verification',   coords:[114.1704, 22.3196], alt:45,  action:'DEFECT_VERIFY'},
+          {id:'WP-05', label:'RTH',                  coords:[114.1694, 22.3193], alt:25,  action:'RTH'},
+        ];
+        const GEOFENCES = [
+          {name:'Site Envelope', color:[34,211,238,60],
+           poly:[[114.1690,22.3190],[114.1710,22.3190],[114.1710,22.3205],[114.1690,22.3205]]},
+          {name:'Restricted Zone', color:[239,68,68,60],
+           poly:[[114.1715,22.3195],[114.1730,22.3195],[114.1730,22.3210],[114.1715,22.3210]]},
+        ];
+        const map = new maplibregl.Map({
+          container: 'map3d',
+          style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+          center: [114.1697, 22.3196],
+          zoom: 17, pitch: 55, bearing: -20, antialias: true
+        });
+        map.on('load', () => {
+          map.addLayer({
+            id:'buildings', source:'openmaptiles', 'source-layer':'building', type:'fill-extrusion', minzoom:14,
+            paint:{
+              'fill-extrusion-color':'#1e293b',
+              'fill-extrusion-height':['coalesce',['get','render_height'],10],
+              'fill-extrusion-base':['coalesce',['get','render_min_height'],0],
+              'fill-extrusion-opacity':0.88
+            }
+          });
+          const overlay = new deck.MapboxOverlay({layers: buildDeckLayers(WAYPOINTS, GEOFENCES)});
+          map.addControl(overlay);
+          window._deckOverlay = overlay;
+          window._mapWaypoints = WAYPOINTS;
+          map.on('click', (e) => {
+            const newWP = {
+              id:`WP-0${WAYPOINTS.length+1}`,
+              label:`Custom ${WAYPOINTS.length+1}`,
+              coords:[e.lngLat.lng, e.lngLat.lat], alt:60, action:'SCAN'
+            };
+            WAYPOINTS.splice(WAYPOINTS.length-1, 0, newWP);
+            overlay.setProps({layers: buildDeckLayers(WAYPOINTS, GEOFENCES)});
+            updateWaypointTable(WAYPOINTS);
+          });
+        });
+        function buildDeckLayers(wps, geos) {
+          return [
+            new deck.PolygonLayer({
+              id:'geofences', data:geos,
+              getPolygon:d=>d.poly, getFillColor:d=>d.color, getLineColor:[255,255,255,100],
+              lineWidthMinPixels:1, pickable:true
+            }),
+            new deck.PathLayer({
+              id:'flight-path',
+              data:[{path: wps.map(w=>[...w.coords, w.alt])}],
+              getColor:[34,211,238,200], getWidth:3, widthUnits:'pixels'
+            }),
+            new deck.ScatterplotLayer({
+              id:'wp-dots', data:wps,
+              getPosition:d=>[...d.coords, d.alt],
+              getRadius:d=>d.action==='RTH'?16:10,
+              getFillColor:d=>d.action==='RTH'?[248,113,113,230]:[167,139,250,230],
+              pickable:true
+            }),
+            new deck.TextLayer({
+              id:'wp-labels', data:wps,
+              getPosition:d=>[...d.coords, d.alt+20],
+              getText:d=>d.label, getSize:11, getColor:[255,255,255,220],
+              getTextAnchor:'middle', getAlignmentBaseline:'bottom'
+            }),
+          ];
+        }
+        document.getElementById('btn-sim-flight')?.addEventListener('click', () => {
+          let step = 0;
+          const wps = window._mapWaypoints;
+          const interval = setInterval(() => {
+            if (step >= wps.length) { clearInterval(interval); return; }
+            const wp = wps[step];
+            map.flyTo({center: wp.coords, zoom: 17.5, pitch:55, bearing:-20, duration:2000, essential:true});
+            step++;
+          }, 2200);
+        });
+        window.updateWaypointTable = function(wps) {
+          const tb = document.getElementById('wp-tbody');
+          if(!tb) return;
+          tb.innerHTML = wps.map(w=>`
+            <tr style="border-top:1px solid var(--border)">
+              <td style="padding:3px;color:var(--acc);font-family:var(--mono)">${w.id}</td>
+              <td style="padding:3px">
+                ${w.label}
+              </td>
+              <td style="padding:3px;text-align:right;font-family:var(--mono)">${w.alt} m</td>
+              <td style="padding:3px;text-align:right;color:var(--muted)">${w.action}</td>
+            </tr>`).join('');
+        }
+        document.getElementById('btn-export-mission')?.addEventListener('click', () => {
+          const plan = {
+            fileType:'Plan', groundStation:'ATTAS', version:1,
+            mission:{items: (window._mapWaypoints||[]).map((w,i)=>({
+              type:'SimpleItem', autoContinue:true, coordinate:[w.coords[1],w.coords[0],w.alt],
+              command:i===0?22:16, params:[0,0,0,0]
+            }))}
+          };
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([JSON.stringify(plan,null,2)],{type:'application/json'}));
+          a.download = `attas-mission-${Date.now()}.plan`;
+          a.click();
+        });
+        document.getElementById('btn-clear-wps')?.addEventListener('click', () => {
+          if(window._mapWaypoints) {
+            window._mapWaypoints.length = 0;
+            window._deckOverlay?.setProps({layers:buildDeckLayers([],[])});
+            updateWaypointTable([]);
+          }
+        });
+        // Initial table render
+        window.updateWaypointTable(WAYPOINTS);
+      }
+    });
     // PHASE A2: Collapse toggle
     document.querySelectorAll('.panel-hd').forEach(h =>
       h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed'))
