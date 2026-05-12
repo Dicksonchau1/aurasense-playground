@@ -18,7 +18,7 @@ export default async function PlaygroundLayout({ children }: { children: ReactNo
   if (!user) redirect('/auth/login?redirect=/playground');
 
   const { data: profile } = await supabase
-    .from('profiles').select('plan').eq('id', user.id).single();
+    .from('user_plans').select('plan').eq('user_id', user.id).maybeSingle();
   if (!profile || !ALLOWED_PLANS.includes(profile.plan as Plan)) {
     redirect('/pricing?reason=playground');
   }

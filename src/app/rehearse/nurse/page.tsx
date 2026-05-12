@@ -256,7 +256,7 @@ export default function NurseRehearsePage() {
                 <>
                   <h4 style={{ fontSize: 12, color: '#34d399', margin: '0 0 6px' }}>Strengths</h4>
                   <ul style={{ fontSize: 12, color: '#8b949e', paddingLeft: 18, margin: '0 0 12px' }}>
-                    {feedback.strengths.map((s: string, i: number) => >{s}</li>)}
+                    {feedback.strengths.map((s: string, i: number) => <li key={i}>{s}</li>)}
                   </ul>
                 </>
               ) : null}
@@ -264,7 +264,7 @@ export default function NurseRehearsePage() {
                 <>
                   <h4 style={{ fontSize: 12, color: '#f59e0b', margin: '0 0 6px' }}>Improve</h4>
                   <ul style={{ fontSize: 12, color: '#8b949e', paddingLeft: 18, margin: 0 }}>
-                    {feedback.improvements.map((s: string, i: number) => >{s}</li>)}
+                    {feedback.improvements.map((s: string, i: number) => <li key={i}>{s}</li>)}
                   </ul>
                 </>
               ) : null}

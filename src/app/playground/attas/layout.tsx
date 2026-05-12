@@ -17,7 +17,7 @@ export default async function AttasLayout({ children }: { children: ReactNode })
   if (!user) redirect('/auth/login?redirect=/playground/attas');
 
   const { data: profile } = await supabase
-    .from('profiles').select('plan').eq('id', user.id).single();
+    .from('user_plans').select('plan').eq('user_id', user.id).maybeSingle();
   if (!profile || !PAID_PLANS.includes(profile.plan as PaidPlan)) {
     redirect('/pricing?reason=attas&plan=pro');
   }
