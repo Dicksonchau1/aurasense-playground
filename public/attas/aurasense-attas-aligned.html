@@ -8,7 +8,383 @@
   <link rel="stylesheet" href="/attas/attas-base.css">
 </head>
 <body>
-  <div id="attas-root">ATTAS baseline — integration in progress.</div>
+  <style>
+    /* ── Collapsible panel system ── */
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden}
+    .panel-hd{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;
+      font-size:11px;font-weight:600;cursor:pointer;user-select:none;letter-spacing:.4px}
+    .panel-bd{padding:8px 10px;border-top:1px solid var(--border)}
+    .panel.collapsed .panel-bd{display:none}
+    .pill-live{font-size:9px;color:var(--suc);display:inline-flex;align-items:center;gap:4px}
+    .pill-live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--suc);
+      animation:pulse 1.5s infinite}
+    .pill-sim{font-size:9px;color:var(--warn)}
+    .pill-ok{font-size:9px;color:var(--acc)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .mini-strip{display:grid;grid-template-columns:repeat(20,1fr);gap:1px;
+      height:32px;border-radius:4px;overflow:hidden}
+    .gauge-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:10px;margin-top:6px}
+    .gauge-row .k{color:var(--muted);font-size:9px}
+    .gauge-row .v{font-weight:700;font-family:var(--mono)}
+    .kv2{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px}
+    .kv2 .cell{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px}
+    .kv2 .cell .k{color:var(--muted);font-size:9px}
+    .kv2 .cell .v{font-weight:700;font-family:var(--mono)}
+    .bar-track{background:var(--surface2);border-radius:3px;height:6px;overflow:hidden;margin-top:4px}
+    .bar-fill{height:100%;border-radius:3px;transition:width .6s}
+    .anomaly-line{font-size:10px;color:var(--warn);margin-top:8px}
+    .hash-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+      padding:7px;font-family:var(--mono);font-size:9px;word-break:break-all;color:var(--acc);margin-top:6px}
+    .merkle-feed{max-height:80px;overflow-y:auto;margin-top:6px}
+    .merkle-row{font-size:9px;font-family:var(--mono);color:var(--muted);padding:2px 0;
+      border-bottom:1px solid var(--border)}
+  </style>
+  <div class="rail">
+    <!-- 1 · WindSeer CFD (keep existing, add collapse) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>WindSeer <span class="accent">CFD</span></span>
+        <span class="pill-live">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div class="kv2">
+          <div class="cell"><div class="k">DR-A · upwind</div><div class="v">14 km/h NE</div></div>
+          <div class="cell"><div class="k">DR-E · downwind</div><div class="v">9 km/h NE</div></div>
+          <div class="cell"><div class="k">Gust</div><div class="v">18 km/h</div></div>
+          <div class="cell"><div class="k">Crosswind</div><div class="v">4 km/h</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- 2 · Atlas DCI registry (keep existing) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>Atlas <span class="accent">DCI</span></span>
+        <span class="pill-ok">VERIFIED</span>
+      </div>
+      <div class="panel-bd">
+        <ul class="reg-list" id="reg-list">
+          <li><i data-lucide="map-pin"></i><div>Lead/Site<small>Seal ICC Registry</small></div></li>
+          <li><i data-lucide="building-2"></i><div>Atlas ICC Registry<small>Avg inference 188 ms</small></div></li>
+          <li><i data-lucide="cpu"></i><div>Jetson Orin Nano #1<small>Edge inference active</small></div></li>
+          <li><i data-lucide="cpu"></i><div>Jetson Orin Nano #2<small>Edge inference standby</small></div></li>
+        </ul>
+      </div>
+    </div>
+    <!-- 3 · LiDAR PointCloud (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>LiDAR <span class="accent">PointCloud</span></span>
+        <span class="pill-live">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">Livox Mid-360 · 200 k pts/s</div>
+        <div class="mini-strip" id="lidar-strip">
+          <!-- JS fills this with animated colour bars in Phase D; static fallback below -->
+          <div style="background:#0d1117"></div><div style="background:#1a2640"></div>
+          <div style="background:#22d3ee"></div><div style="background:#5cd9f0"></div>
+          <div style="background:#a78bfa"></div><div style="background:#d946ef"></div>
+          <div style="background:#d946ef"></div><div style="background:#a78bfa"></div>
+          <div style="background:#5cd9f0"></div><div style="background:#22d3ee"></div>
+          <div style="background:#22d3ee"></div><div style="background:#5cd9f0"></div>
+          <div style="background:#a78bfa"></div><div style="background:#d946ef"></div>
+          <div style="background:#d946ef"></div><div style="background:#a78bfa"></div>
+          <div style="background:#5cd9f0"></div><div style="background:#22d3ee"></div>
+          <div style="background:#1a2640"></div><div style="background:#0d1117"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px">
+          <span>0 m</span><span>density</span><span>50 m</span>
+        </div>
+        <div class="gauge-row" style="margin-top:8px">
+          <div><div class="k">Obstacles</div><div class="v" id="lidar-obs">14</div></div>
+          <div><div class="k">Nearest</div><div class="v" id="lidar-near">6.8 m</div></div>
+          <div><div class="k">Source</div><div class="v">NEPA</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- 4 · Thermal Heatmap (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>Thermal <span class="accent">Heatmap</span></span>
+        <span class="pill-live">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">FLIR Vue Pro R · radiometric</div>
+        <div style="background:linear-gradient(90deg,#1a1335,#a78bfa,#d946ef,#f59e0b,#fbbf24);
+                    height:18px;border-radius:3px"></div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:3px">
+          <span>Cold</span><span>Hot</span>
+        </div>
+        <div class="gauge-row">
+          <div><div class="k">Min</div><div class="v" id="th-min" style="color:var(--acc)">12.4 °C</div></div>
+          <div><div class="k">Avg</div><div class="v" id="th-avg">24.8 °C</div></div>
+          <div><div class="k">Max</div><div class="v" id="th-max" style="color:var(--err)">68.2 °C</div></div>
+        </div>
+        <div class="anomaly-line" id="th-anomaly">⚠ Hotspot anomaly · panel B7</div>
+      </div>
+    </div>
+    <!-- 5 · Chem Sensor Map (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>Chem <span class="accent">Sensor</span></span>
+        <span class="pill-live">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">SGP40 VOC · MH-Z19 CO₂ · MQ-9 CO</div>
+        <div class="kv2">
+          <div class="cell"><div class="k">VOC Index</div><div class="v" id="chem-voc">142</div></div>
+          <div class="cell"><div class="k">CO₂</div><div class="v" id="chem-co2">612 ppm</div></div>
+          <div class="cell"><div class="k">CO</div><div class="v" id="chem-co">3.2 ppm</div></div>
+          <div class="cell"><div class="k">Risk</div>
+            <div class="v" id="chem-risk" style="color:var(--suc)">LOW</div></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:6px">Plume radius: <span id="chem-radius">18 m</span></div>
+      </div>
+    </div>
+    <!-- 6 · Safety / Battery RTH (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>Safety <span class="accent">RTH</span></span>
+        <span class="pill-live">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div class="kv2">
+          <div class="cell"><div class="k">Battery</div>
+            <div class="v" id="rth-batt">62%</div>
+            <div class="bar-track"><div class="bar-fill" id="rth-batt-bar"
+              style="width:62%;background:var(--suc)"></div></div>
+          </div>
+          <div class="cell"><div class="k">RTH Reserve</div>
+            <div class="v" id="rth-reserve">28%</div>
+            <div class="bar-track"><div class="bar-fill" id="rth-res-bar"
+              style="width:28%;background:var(--warn)"></div></div>
+          </div>
+          <div class="cell"><div class="k">Time to Home</div><div class="v" id="rth-eta">4.2 min</div></div>
+          <div class="cell"><div class="k">Glide Slope</div><div class="v" id="rth-glide">6.5°</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--suc);margin-top:6px" id="rth-status">✓ RTH SAFE</div>
+      </div>
+    </div>
+    <!-- 7 · Wing Dynamics (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>Wing <span class="accent">Dynamics</span></span>
+        <span class="pill-live">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">IMU · NEPA STDP Control</div>
+        <div class="gauge-row">
+          <div><div class="k">Pitch</div><div class="v" id="imu-pitch">3.2°</div></div>
+          <div><div class="k">Roll</div><div class="v" id="imu-roll">−1.8°</div></div>
+          <div><div class="k">Yaw</div><div class="v" id="imu-yaw">42°</div></div>
+        </div>
+        <div class="kv2" style="margin-top:8px">
+          <div class="cell"><div class="k">Groundspeed</div><div class="v" id="imu-gs">18.4 m/s</div></div>
+          <div class="cell"><div class="k">Airspeed</div><div class="v" id="imu-as">21.1 m/s</div></div>
+          <div class="cell"><div class="k">Stall Margin</div><div class="v" id="imu-stall" style="color:var(--suc)">38%</div></div>
+          <div class="cell"><div class="k">Landing Target</div><div class="v" id="imu-land">16.5 m/s</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- 8 · AI Crack / Defect Detection (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>AI <span class="accent">Defect</span></span>
+        <span class="pill-live">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">NEPA Inference · 188 ms · Jetson</div>
+        <div class="kv2">
+          <div class="cell"><div class="k">Frames</div><div class="v" id="def-frames">450</div></div>
+          <div class="cell"><div class="k">Defects</div><div class="v" id="def-count" style="color:var(--err)">7</div></div>
+          <div class="cell"><div class="k">Critical</div><div class="v" id="def-crit" style="color:var(--err)">2</div></div>
+          <div class="cell"><div class="k">Confidence</div><div class="v" id="def-conf">94%</div></div>
+        </div>
+        <div id="def-list" style="margin-top:8px;font-size:9px;font-family:var(--mono)">
+          <div style="color:var(--err)">DEF-001 · CRACK · B7 · 94% · HIGH</div>
+          <div style="color:var(--warn)">DEF-002 · SPALL · C3 · 88% · MED</div>
+          <div style="color:var(--warn)">DEF-003 · STAIN · A1 · 76% · LOW</div>
+        </div>
+      </div>
+    </div>
+    <!-- 9 · Façade Inspection Progress (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>Façade <span class="accent">Inspection</span></span>
+        <span class="pill-live">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">MBIS Mode · Coda Receipts</div>
+        <div class="kv2">
+          <div class="cell"><div class="k">Panels Total</div><div class="v">96</div></div>
+          <div class="cell"><div class="k">Scanned</div><div class="v" id="fac-scanned">61</div></div>
+          <div class="cell"><div class="k">Defects</div><div class="v" id="fac-def" style="color:var(--err)">7</div></div>
+          <div class="cell"><div class="k">MBIS Ready</div><div class="v" style="color:var(--suc)">YES</div></div>
+        </div>
+        <div class="bar-track" style="margin-top:8px">
+          <div class="bar-fill" id="fac-bar" style="width:64%;background:var(--acc)"></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px">64% complete</div>
+      </div>
+    </div>
+    <!-- 10 · Photogrammetry / 3D Reconstruction (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>Photogrammetry <span class="accent">3D</span></span>
+        <span class="pill-sim">PROCESSING</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">Voda · Foda pipeline</div>
+        <div style="font-size:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="color:var(--muted)">Images</span><span id="ph-imgs">384</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span style="color:var(--muted)">Sparse cloud</span><span>87%</span>
+          </div>
+          <div class="bar-track" style="margin-bottom:6px">
+            <div class="bar-fill" style="width:87%;background:var(--acc)"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span style="color:var(--muted)">Mesh</span><span id="ph-mesh">61%</span>
+          </div>
+          <div class="bar-track" style="margin-bottom:6px">
+            <div class="bar-fill" id="ph-mesh-bar" style="width:61%;background:var(--violet)"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span style="color:var(--muted)">Texture</span><span>44%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:44%;background:var(--warn)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 11 · BVLOS / Remote ID (existing, enhanced) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>BVLOS <span class="accent">Remote ID</span></span>
+        <span class="pill-live">BROADCASTING</span>
+      </div>
+      <div class="panel-bd">
+        <div class="kv2">
+          <div class="cell"><div class="k">Aircraft ID</div><div class="v">DR-A7</div></div>
+          <div class="cell"><div class="k">Operator</div><div class="v">AuraSense</div></div>
+          <div class="cell"><div class="k">Pilot Station</div><div class="v">Kowloon</div></div>
+          <div class="cell"><div class="k">Broadcast</div><div class="v" style="color:var(--suc)">1 Hz</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--acc);margin-top:6px">BVLOS: Training / Demo mode</div>
+      </div>
+    </div>
+    <!-- 12 · HK CAD Geofence (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>HK CAD <span class="accent">Geofence</span></span>
+        <span class="pill-ok">GEO-AWARE</span>
+      </div>
+      <div class="panel-bd">
+        <div class="kv2">
+          <div class="cell"><div class="k">Zone</div><div class="v">Urban Env</div></div>
+          <div class="cell"><div class="k">Alt Cap</div><div class="v">90 m</div></div>
+          <div class="cell"><div class="k">Restricted</div><div class="v" style="color:var(--suc)">Clear</div></div>
+          <div class="cell"><div class="k">SOP</div><div class="v" style="color:var(--suc)">Active</div></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:6px">HKCAD · MBIS · Open Drone ID compliant</div>
+      </div>
+    </div>
+    <!-- 13 · HKO Weather (existing, enhanced) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>HKO <span class="accent">Weather</span></span>
+        <span class="pill-ok">LIVE</span>
+      </div>
+      <div class="panel-bd">
+        <div class="kv2">
+          <div class="cell"><div class="k">Temp</div><div class="v" id="wx-temp">27 °C</div></div>
+          <div class="cell"><div class="k">Wind</div><div class="v" id="wx-wind">14 NE</div></div>
+          <div class="cell"><div class="k">Visibility</div><div class="v" id="wx-vis">9 km</div></div>
+          <div class="cell"><div class="k">Rain</div><div class="v" id="wx-rain">0.0 mm/h</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--suc);margin-top:6px" id="wx-warn">✓ No active warnings</div>
+      </div>
+    </div>
+    <!-- 14 · Multi-vendor MAVLink Ingest (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>MAVLink <span class="accent">Ingest</span></span>
+        <span class="pill-ok">READY</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">Tailscale gateway · protocol layer</div>
+        <div id="mav-list" style="font-size:10px">
+          <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+            <span>PX4 / Pixhawk</span><span style="color:var(--suc)">LIVE</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+            <span>ArduPilot</span><span style="color:var(--acc)">READY</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+            <span>DJI Adapter</span><span style="color:var(--acc)">READY</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:3px 0">
+            <span>Autel / Parrot</span><span style="color:var(--muted)">STANDBY</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 15 · Merkle Audit Chain (NEW) -->
+    <div class="panel" id="p-merkle">
+      <div class="panel-hd">
+        <span>Merkle <span class="accent">Audit</span></span>
+        <span class="pill-ok">VERIFIED</span>
+      </div>
+      <div class="panel-bd">
+        <div class="hash-card" id="merkle-root">0x8fa3c2e9b71d4c5a…</div>
+        <div class="kv2" style="margin-top:6px">
+          <div class="cell"><div class="k">Batch</div><div class="v">MB-2026-05-12</div></div>
+          <div class="cell"><div class="k">Verdicts</div><div class="v" id="merk-count">31</div></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px">Last: RCPT-B7-CRACK-042</div>
+        <div class="merkle-feed" id="merkle-feed"></div>
+      </div>
+    </div>
+    <!-- 16 · Recording / Replay (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>Recording <span class="accent">Replay</span></span>
+        <span id="rec-status-pill" class="pill-sim">STANDBY</span>
+      </div>
+      <div class="panel-bd">
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button id="btn-rec" style="flex:1;background:var(--err);border:none;color:#fff;
+            border-radius:4px;padding:5px;font-size:10px;cursor:pointer">● REC</button>
+          <button id="btn-stop" style="flex:1;background:var(--surface2);border:1px solid var(--border);
+            color:var(--text);border-radius:4px;padding:5px;font-size:10px;cursor:pointer">■ STOP</button>
+          <button id="btn-replay" style="flex:1;background:var(--surface2);border:1px solid var(--border);
+            color:var(--acc);border-radius:4px;padding:5px;font-size:10px;cursor:pointer">▶ REPLAY</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted)">Duration: <span id="rec-timer">00:00</span></div>
+        <div class="bar-track" style="margin-top:4px">
+          <div class="bar-fill" id="rec-bar" style="width:0%;background:var(--err)"></div>
+        </div>
+      </div>
+    </div>
+    <!-- 17 · SAR Mission Mode (NEW) -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span>SAR <span class="accent">Mode</span></span>
+        <span class="pill-sim">STANDBY</span>
+      </div>
+      <div class="panel-bd">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">Search &amp; Rescue scenario</div>
+        <div class="kv2">
+          <div class="cell"><div class="k">Grid Cover</div><div class="v">72%</div></div>
+          <div class="cell"><div class="k">Thermal Hits</div><div class="v" style="color:var(--warn)">1</div></div>
+          <div class="cell"><div class="k">Confidence</div><div class="v">62%</div></div>
+          <div class="cell"><div class="k">Mode</div><div class="v" style="color:var(--muted)">STANDBY</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
   <script>
     // PHASE 0: Feature flag block
     const ATTAS_FLAGS = {
@@ -18,6 +394,10 @@
       enableRecorder:true,   // MediaRecorder export
     };
     // ...integration script will be appended in later phases...
+    // PHASE A2: Collapse toggle
+    document.querySelectorAll('.panel-hd').forEach(h =>
+      h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed'))
+    );
   </script>
 </body>
 </html>
