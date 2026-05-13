@@ -19,7 +19,7 @@ export async function GET(
     .select('plan')
     .eq('user_id', user.id)
     .maybeSingle()
-  const plan = (sub?.plan as string) ?? 'starter'
+  let plan = (sub?.plan as string) ?? 'starter'
   const { admin } = await import('@/lib/supabase/admin')
   const { planForUser } = await import('@/lib/billing/plans')
   const { data: row } = await admin()
@@ -27,7 +27,7 @@ export async function GET(
     .select('plan')
     .eq('user_id', user.id)
     .maybeSingle()
-  const plan = planForUser(row?.plan)
+  plan = planForUser(row?.plan)
 
   try {
     const stats = await edgeStats(user.id, plan, slotId)

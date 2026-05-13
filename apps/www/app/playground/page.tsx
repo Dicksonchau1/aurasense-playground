@@ -19,11 +19,16 @@ interface BillingMe {
   plan: 'starter' | 'pro' | 'team' | 'enterprise'
 }
 
+
 import Link from 'next/link'
+import { StatePill } from '@/components/ui/StatePill'
+import { FallbackRibbon } from '@/components/ui/FallbackRibbon'
 
 export default function PlaygroundPage() {
   // Platform-level status (could be extended with real backend health/KPI fetch)
   const [platformStatus] = useState<'live' | 'degraded' | 'offline'>('live')
+  // Example: fallback message if backend is unreachable
+  const [fallback, setFallback] = useState<string | null>(null)
   const [kpi, setKpi] = useState({
     sessions: 128,
     audits: 42,
@@ -45,17 +50,12 @@ export default function PlaygroundPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-wider ${
-              platformStatus === 'live'
-                ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
-                : platformStatus === 'degraded'
-                ? 'border-yellow-400/40 bg-yellow-400/10 text-yellow-300'
-                : 'border-rose-400/40 bg-rose-400/10 text-rose-300'
-            }`}>
-              {platformStatus}
-            </span>
+            <StatePill status={platformStatus} />
           </div>
         </header>
+
+        {/* Fallback ribbon for degraded/offline state */}
+        {fallback && <FallbackRibbon message={fallback} status={platformStatus === 'offline' ? 'offline' : 'degraded'} />}
 
         {/* KPI/Status summary strip */}
         <div className="flex flex-wrap gap-4 mb-8">

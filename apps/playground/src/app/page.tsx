@@ -1,36 +1,76 @@
+import Link from "next/link";
+import Card from "../components/shell/Card";
+
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
+const APPS = [
+  {
+    href: "/rehearse-3d",
+    title: "Rehearse-3D",
+    tagline: "Physics-grounded drone rehearsal at the timestamp.",
+    body: "Lawnmower sweep over a 3D building target. Live coverage, defect detection, AI verdicts, mission log. Built on NEPA runtime.",
+    badge: "Live",
+    badgeClass: "aura-badge-success",
+  },
+  {
+    href: "/attas",
+    title: "ATTAS Sandbox",
+    tagline: "Enterprise drone & mission operations.",
+    body: "Parameters, environment, drone specs, camera, view layers, FoV pins, effects, safety, audit, simulation. Every page live.",
+    badge: "Production",
+    badgeClass: "aura-badge",
+  },
+  {
+    href: "/robotics",
+    title: "Robotics",
+    tagline: "NEPA-beneath-actuation, low round-trip latency.",
+    body: "Edge runtime slots, fleet telemetry, audit chain. Physics is the dynamic calculation per timestamp — language only expresses.",
+    badge: "Edge",
+    badgeClass: "aura-badge",
+  },
+];
 
 export default function PlaygroundHome() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen gap-10 px-4">
-      <h1 className="text-4xl font-bold mb-2">AuraSense Playground</h1>
-      {/* System status strip */}
-      <div className="w-full max-w-2xl flex flex-row items-center justify-between bg-gray-800 rounded-lg px-6 py-2 mb-4 text-sm text-gray-200 shadow">
-        <span>System: <b className="text-green-400">Operational</b></span>
-        <span>KPI: <b>Live</b></span>
-        <span>Version: <b>v1.0</b></span>
-      </div>
-      {/* System description */}
-      <p className="max-w-xl text-center text-lg text-gray-300 mb-6">
-        AuraSense unifies human skill rehearsal and enterprise physical-world automation. Choose a module to begin.
-      </p>
-      {/* Module cards */}
-      <div className="flex flex-col md:flex-row gap-8 w-full max-w-3xl justify-center">
-        {/* Aura Rehearse Card */}
-        <div className="flex flex-col items-center bg-gray-900 rounded-xl shadow-lg p-8 w-full md:w-1/2">
-          <h2 className="text-2xl font-semibold mb-2">Aura Rehearse</h2>
-          <p className="text-gray-400 mb-4 text-center">Practice and assess clinical skills in real time. For learners and educators.</p>
-          <Link href="/rehearse" className="btn btn-primary w-full">Enter Aura Rehearse</Link>
+    <div className="space-y-6">
+      <header className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="aura-h1">AuraSense Playground</h1>
+          <p className="aura-sub mt-1">
+            Real-time perception grounded in physics. Choose an app to begin.
+          </p>
         </div>
-        {/* ATTAS SANDBOX Card */}
-        <div className="flex flex-col items-center bg-gray-900 rounded-xl shadow-lg p-8 w-full md:w-1/2">
-          <h2 className="text-2xl font-semibold mb-2">ATTAS SANDBOX</h2>
-          <p className="text-gray-400 mb-4 text-center">Enterprise drone and mission operations. Plan, simulate, and monitor missions.</p>
-          <Link href="/drone" className="btn btn-primary w-full">Open ATTAS SANDBOX</Link>
+        <div className="flex gap-2 items-center">
+          <span className="aura-badge aura-badge-success">System operational</span>
+          <span className="aura-badge">v1.0.0-rc.1</span>
         </div>
+      </header>
+
+      <div className="grid gap-5 md:grid-cols-3">
+        {APPS.map((app) => (
+          <Card key={app.href} className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className="aura-h2">{app.title}</h3>
+              <span className={app.badgeClass}>{app.badge}</span>
+            </div>
+            <p className="text-sm font-medium text-aura-text/80">{app.tagline}</p>
+            <p className="aura-sub flex-1">{app.body}</p>
+            <Link href={app.href} className="aura-btn aura-btn-primary mt-2">
+              Open {app.title} →
+            </Link>
+          </Card>
+        ))}
       </div>
-    </main>
+
+      <Card title="What you're looking at">
+        <p className="aura-sub">
+          Playground is AuraSense's real-time reference deployment. The fun part is the
+          real-time overlay and the simulation rehearsal mental environment built on top
+          of it. We grounded it in physics — only possible because our neuromorphic model
+          handles low round-trip latency. That is what gives actuation the real perception
+          it needs.
+        </p>
+      </Card>
+    </div>
   );
 }

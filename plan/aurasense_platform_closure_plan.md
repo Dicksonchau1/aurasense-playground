@@ -48,13 +48,13 @@ This implementation plan details the full closure pass for the AuraSense Platfor
 
 | Task     | Description                                                                                      | Completed | Date |
 | -------- | ------------------------------------------------------------------------------------------------ | --------- | ---- |
-| TASK-007 | Normalize state pills (live/degraded/offline), loading, and empty states across all surfaces      |           |      |
-| TASK-008 | Standardize audit badge language and session status naming                                       |           |      |
-| TASK-009 | Unify route naming, entry behavior, and theme handling                                           |           |      |
-| TASK-010 | Apply shared card/button/typography patterns                                                     |           |      |
-| TASK-011 | Implement fallback ribbons for backend unreachable states                                        |           |      |
-| TASK-012 | Standardize shell actions: open session, review trace, export, stop, reset                       |           |      |
-| TASK-013 | Validate cross-surface consistency and intentional degraded-mode experience                      |           |      |
+| TASK-007 | Normalize state pills (live/degraded/offline), loading, and empty states across all surfaces      | completed | 2026-05-13 |
+| TASK-008 | Standardize audit badge language and session status naming                                       | completed | 2026-05-13 |
+| TASK-009 | Unify route naming, entry behavior, and theme handling                                           | completed | 2026-05-13 |
+| TASK-010 | Apply shared card/button/typography patterns                                                     | completed | 2026-05-13 |
+| TASK-011 | Implement fallback ribbons for backend unreachable states                                        | completed | 2026-05-13 |
+| TASK-012 | Standardize shell actions: open session, review trace, export, stop, reset                       | completed | 2026-05-13 |
+| TASK-013 | Validate cross-surface consistency and intentional degraded-mode experience                      | completed | 2026-05-13 |
 
 ### Implementation Phase 3
 
@@ -62,7 +62,7 @@ This implementation plan details the full closure pass for the AuraSense Platfor
 
 | Task     | Description                                                                                      | Completed | Date |
 | -------- | ------------------------------------------------------------------------------------------------ | --------- | ---- |
-| TASK-014 | Implement real getUserMedia camera feed and MediaPipe Hands + Pose detection                     |           |      |
+| TASK-014 | Implement real getUserMedia camera feed and MediaPipe Hands + Pose detection                     | completed | 2026-05-14 |
 | TASK-015 | Wire all selected clinical scenarios with correct switching, rails, labels, and logic            |           |      |
 | TASK-016 | Implement dual-write persistence: Supabase (canonical) + NEPA (fire-and-forget/live post)        |           |      |
 | TASK-017 | Implement signed verdict/audit chain and instructor override/hold path                           |           |      |

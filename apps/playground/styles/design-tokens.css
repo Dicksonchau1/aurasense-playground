@@ -1,0 +1,266 @@
+@import url('https://api.fontshare.com/v2/css?f=satoshi@400,500,700&display=swap');
+
+:root {
+  --bg1: #6f86a2;
+  --bg2: #8ea1b9;
+  --panel: rgba(238, 242, 247, 0.9);
+  --glass: rgba(231, 236, 242, 0.78);
+  --line: rgba(83, 103, 126, 0.18);
+  --text: #111723;
+  --muted: #526074;
+  --accent: #5a7aa8;
+  --accent2: #3b5d8d;
+  --sel: #d8e7fb;
+  --success: #2e7d52;
+  --warn: #b45309;
+  --danger: #b91c1c;
+  --font: 'Satoshi', 'Inter', sans-serif;
+  --r: 14px;
+  --r-lg: 18px;
+  --r-sm: 10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: var(--font);
+  color: var(--text);
+  background: linear-gradient(160deg, #7a92ad, #9ab0c8);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px);
+  background-size: 52px 52px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* SHELL */
+.aura-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1480px, calc(100vw - 28px));
+  margin: 16px auto;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(245,247,250,0.97), rgba(224,230,238,0.9));
+  border: 1px solid rgba(255,255,255,0.7);
+  box-shadow: 0 28px 70px rgba(18,31,54,0.2), inset 0 1px 0 rgba(255,255,255,0.85);
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+.aura-shell-head {
+  padding: 18px 22px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.aura-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1a2a3e;
+}
+.aura-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(90,122,168,0.15);
+  color: var(--accent2);
+  border: 1px solid rgba(90,122,168,0.25);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* MENU (top tabs) */
+.aura-menu {
+  height: 48px;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,0.28);
+}
+.aura-tab {
+  padding: 10px 16px;
+  border-radius: 13px 13px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  font-weight: 500;
+  transition: all 0.16s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.aura-tab:hover {
+  background: rgba(255,255,255,0.4);
+  color: var(--text);
+}
+.aura-tab.active {
+  background: rgba(90,122,168,0.2);
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+}
+
+/* BODY */
+.aura-body {
+  padding: 24px;
+  min-height: 520px;
+}
+
+/* PANEL / CARD */
+.aura-panel {
+  background: var(--glass);
+  border: 1px solid rgba(255,255,255,0.58);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+}
+.aura-card {
+  background: linear-gradient(180deg, rgba(215,224,234,0.88), rgba(198,210,222,0.72));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+/* TYPOGRAPHY */
+.aura-h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1a2a3e;
+  margin-bottom: 6px;
+}
+.aura-h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a2a3e;
+  margin-bottom: 12px;
+}
+.aura-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+/* INPUTS */
+.aura-label {
+  display: block;
+  font-size: 12px;
+  color: #36465c;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.aura-field {
+  width: 100%;
+  height: 40px;
+  border-radius: 9px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(91,108,129,0.2);
+  padding: 0 12px;
+  color: #1a2533;
+  font-size: 14px;
+  font-family: var(--font);
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s;
+}
+.aura-field:focus {
+  outline: none;
+  border-color: rgba(90,122,168,0.55);
+  background: rgba(255,255,255,0.85);
+}
+.aura-field::placeholder { color: #8492a8; }
+
+/* BUTTONS */
+.aura-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  transition: all 0.16s ease;
+  min-height: 40px;
+}
+.aura-btn-primary {
+  background: var(--accent2);
+  color: white;
+  width: 100%;
+}
+.aura-btn-primary:hover { background: #2d4a6e; }
+.aura-btn-ghost {
+  background: rgba(255,255,255,0.5);
+  color: var(--text);
+  border: 1px solid rgba(91,108,129,0.22);
+}
+.aura-btn-ghost:hover { background: rgba(255,255,255,0.75); }
+
+/* LINKS */
+.aura-link {
+  color: var(--accent2);
+  text-decoration: none;
+  font-weight: 600;
+}
+.aura-link:hover { text-decoration: underline; }
+
+/* AUTH LAYOUT */
+.aura-auth-wrap {
+  display: grid;
+  place-items: center;
+  min-height: 480px;
+  padding: 24px;
+}
+.aura-auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--glass);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: var(--r-lg);
+  padding: 32px 28px;
+  box-shadow: 0 12px 32px rgba(18,31,54,0.12), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+.aura-auth-stack > * + * { margin-top: 14px; }
+.aura-auth-meta {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* SCORE PILL */
+.aura-score-pill {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(46,125,82,0.12);
+  color: var(--success);
+  border: 1px solid rgba(46,125,82,0.22);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* UTILS */
+.aura-row { display: flex; align-items: center; gap: 10px; }
+.aura-spacer { flex: 1; }

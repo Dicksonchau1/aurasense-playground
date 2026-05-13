@@ -1,55 +1,155 @@
-'use client'
-import { useRef, useEffect, useState, useCallback } from 'react'
-const FACADE_IMAGES = {
-  residential: 'https://picsum.photos/seed/hk-residential-tower/1200/800',
-  commercial:  'https://picsum.photos/seed/hk-commercial-glass/1200/800',
-  heritage:    'https://picsum.photos/seed/hk-heritage-concrete/1200/800',
-  industrial:  'https://picsum.photos/seed/hk-industrial-factory/1200/800',
-};
-  const [facadeMode, setFacadeMode] = useState(false)
-  const [facadeType, setFacadeType] = useState('residential')
-import { useRouter } from 'next/navigation'
-import { Circle, Save } from 'lucide-react'
-import { useCamera } from '@/components/hooks/use-camera'
-import { usePose } from '@/components/hooks/use-pose'
-import { useAudioSignals } from '@/components/hooks/use-audio-signals'
-import { useRecording } from '@/components/hooks/use-recording'
-import { useFaceLandmarks } from '@/components/hooks/use-face-landmarks'
-import { MetricsPanel } from '@/components/metrics-panel'
-import { LaneToggles } from '@/components/lane-toggles'
-import { CtaPill } from '@/components/cta-pill'
-import { useMembershipDrawer } from '@/components/membership-drawer'
-import { drawSkeleton, drawFramingGrid } from '@/lib/pose'
+'use client';
+
+'use client';
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { Circle, Save } from 'lucide-react';
+import { useCamera } from '@/components/hooks/use-camera';
+import { usePose } from '@/components/hooks/use-pose';
+import { useAudioSignals } from '@/components/hooks/use-audio-signals';
+import { useRecording } from '@/components/hooks/use-recording';
+import { useFaceLandmarks } from '@/components/hooks/use-face-landmarks';
+import { MetricsPanel } from '@/components/metrics-panel';
+import { LaneToggles } from '@/components/lane-toggles';
+import { CtaPill } from '@/components/cta-pill';
+import { useMembershipDrawer } from '@/components/membership-drawer';
+import { drawSkeleton, drawFramingGrid } from '@/lib/pose';
 import {
   postureScore,
   framingScore,
   gazeScoreFromIris,
   envelope,
   ConsistencyTracker,
-} from '@/lib/signals'
+} from '@/lib/signals';
+import { StatePill } from '@/components/ui/StatePill';
+import { FallbackRibbon } from '@/components/ui/FallbackRibbon';
 
-const ZERO_LANES = { posture: 0, gaze: 0, framing: 0, pacing: 75 }
+const SCENARIO_HINTS: Record<string, string[][]> = {
+  basic: [
+    ['Sanitize hands before patient contact.'],
+    ['Confirm patient identity using wristband and verbal check.'],
+    ['Introduce yourself and explain the procedure.'],
+    ['Measure and record vital signs: BP, HR, Temp, SpO2.'],
+    ['Document findings in the EHR.'],
+  ],
+  wound: [
+    ['Inspect wound for stage, exudate, infection.'],
+    ['Capture a clear wound photo for record.'],
+    ['Select appropriate dressing based on wound profile.'],
+    ['Apply dressing using aseptic technique.'],
+    ['Record intervention and review healing trajectory.'],
+  ],
+  mobility: [
+    ['Assess fall risk factors.'],
+    ['Evaluate patient mobility and gait.'],
+    ['Choose and fit assistive device if needed.'],
+    ['Supervise patient during walk.'],
+    ['Document outcome and recommendations.'],
+  ],
+  neuro: [
+    ['Check orientation to person, place, time.'],
+    ['Assess pupil size and reactivity.'],
+    ['Test limb strength and movement.'],
+    ['Evaluate speech clarity and comprehension.'],
+    ['Summarize findings and escalate if abnormal.'],
+  ],
+  custom: [
+    ['Custom step 1 instructions.'],
+    ['Custom step 2 instructions.'],
+    ['Custom step 3 instructions.'],
+    ['Custom step 4 instructions.'],
+    ['Custom step 5 instructions.'],
+  ],
+};
+
+const SCENARIO_STEPS: Record<string, string[]> = {
+  basic: [
+    'Hand Hygiene',
+    'Patient ID Check',
+    'Bedside Introduction',
+    'Vital Signs',
+    'Documentation',
+  ],
+  wound: [
+    'Wound Assessment',
+    'Photo Capture',
+    'Dressing Selection',
+    'Dressing Application',
+    'Record & Review',
+  ],
+  mobility: [
+    'Fall Risk Check',
+    'Mobility Assessment',
+    'Assistive Device',
+    'Supervised Walk',
+    'Outcome Record',
+  ],
+  neuro: [
+    'Orientation',
+    'Pupil Response',
+    'Motor Function',
+    'Speech',
+    'Summary',
+  ],
+  custom: [
+    'Custom Step 1',
+    'Custom Step 2',
+    'Custom Step 3',
+    'Custom Step 4',
+    'Custom Step 5',
+  ],
+};
+
+const FACADE_IMAGES = {
+  residential: 'https://picsum.photos/seed/hk-residential-tower/1200/800',
+  commercial:  'https://picsum.photos/seed/hk-commercial-glass/1200/800',
+  heritage:    'https://picsum.photos/seed/hk-heritage-concrete/1200/800',
+  industrial:  'https://picsum.photos/seed/hk-industrial-factory/1200/800',
+};
+
+const SCENARIOS = [
+  { key: 'basic', label: 'Basic Bedside' },
+  { key: 'wound', label: 'Wound Care' },
+  { key: 'mobility', label: 'Mobility Assessment' },
+  { key: 'neuro', label: 'Neuro Check' },
+  { key: 'custom', label: 'Custom Scenario' },
+];
+
+const ZERO_LANES = { posture: 0, gaze: 0, framing: 0, pacing: 75 };
 
 export default function RehearsePage() {
-  const router = useRouter()
-  const { videoRef, stream, error, isActive, start, stop } = useCamera()
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { landmarks } = usePose(videoRef, isActive)
-  const { pacingScore } = useAudioSignals(stream, isActive)
-  const { irisLeft, irisRight } = useFaceLandmarks(videoRef, isActive)
-  const { isRecording, isSupported: recordingSupported, startRecording, stopRecording } = useRecording(videoRef, canvasRef)
-  const { open: openMembership } = useMembershipDrawer()
-  const consistencyRef = useRef(new ConsistencyTracker())
+  const router = useRouter();
+  const { videoRef, stream, error, isActive, start, stop } = useCamera();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { landmarks } = usePose(videoRef, isActive);
+  const { pacingScore } = useAudioSignals(stream, isActive);
+  const { irisLeft, irisRight } = useFaceLandmarks(videoRef, isActive);
+  const { isRecording, isSupported: recordingSupported, startRecording, stopRecording } = useRecording(videoRef, canvasRef);
+  const { open: openMembership } = useMembershipDrawer();
+  const consistencyRef = useRef(new ConsistencyTracker());
 
-  const [lanes, setLanes] = useState(ZERO_LANES)
-  const [envelopeScore, setEnvelopeScore] = useState(0)
-  const [consistency, setConsistency] = useState(100)
-  const [drift, setDrift] = useState(0)
-  const [activeLanes, setActiveLanes] = useState(
-    () => new Set(['posture', 'gaze', 'framing', 'pacing'])
-  )
-  const [saving, setSaving] = useState(false)
-  const sessionStartRef = useRef<number>(Date.now())
+  const [lanes, setLanes] = useState(ZERO_LANES);
+  const [envelopeScore, setEnvelopeScore] = useState(0);
+  const [consistency, setConsistency] = useState(100);
+  const [drift, setDrift] = useState(0);
+  const [activeLanes, setActiveLanes] = useState(() => new Set(['posture', 'gaze', 'framing', 'pacing']));
+  const [saving, setSaving] = useState(false);
+  const sessionStartRef = useRef<number>(Date.now());
+  // Platform/session state for pill and fallback
+  const [sessionStatus, setSessionStatus] = useState<'live' | 'degraded' | 'offline' | 'empty'>('live');
+
+  // Step state (ensure only one definition)
+  const [scenario, setScenario] = useState('basic');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState(() => {
+    const obj: Record<string, boolean[]> = {};
+    for (const s of Object.keys(SCENARIO_STEPS)) {
+      obj[s] = Array(SCENARIO_STEPS[s].length).fill(false);
+    }
+    return obj;
+  });
+  // Only allow advancing if current step is marked complete
+  const canAdvance = completedSteps[scenario][currentStep];
 
   useEffect(() => {
     if (isActive) sessionStartRef.current = Date.now()
@@ -210,11 +310,77 @@ export default function RehearsePage() {
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Aura Rehearse</span>
         </div>
 
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>Aura Rehearse</h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '2px 0 0' }}>
-            Reflects. Rehearses. — Your private practice mirror. Nothing leaves your device.
-          </p>
+
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f5', margin: 0 }}>Aura Rehearse</h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '2px 0 0' }}>
+              Reflects. Rehearses. — Your private practice mirror. Nothing leaves your device.
+            </p>
+          </div>
+          <StatePill status={sessionStatus} />
+        </div>
+
+        {/* Scenario selection */}
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-xs text-neutral-400">Scenario:</span>
+          <select
+            value={scenario}
+            onChange={e => {
+              setScenario(e.target.value)
+              setCurrentStep(0)
+              // Optionally reset completed steps for new scenario
+              setCompletedSteps(prev => ({
+                ...prev,
+                [e.target.value]: prev[e.target.value].map(() => false),
+              }))
+            }}
+            className="text-xs rounded border border-emerald-900 bg-neutral-900 text-neutral-200 px-2 py-1"
+          >
+            {SCENARIOS.map(s => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Step rail for current scenario */}
+        <div className="flex items-center gap-2 mt-2">
+          {SCENARIO_STEPS[scenario].map((step, idx) => (
+            <button
+              key={step}
+              onClick={() => {
+                // Only allow navigating to next step if previous is complete or going backward
+                if (idx <= currentStep || completedSteps[scenario][idx - 1]) setCurrentStep(idx)
+              }}
+              className={`text-xs px-2 py-1 rounded border ${idx === currentStep ? 'bg-emerald-900 text-emerald-300 border-emerald-700 font-bold' : 'bg-neutral-900 text-neutral-300 border-neutral-700'} transition ${completedSteps[scenario][idx] ? 'ring-2 ring-emerald-400' : ''}`}
+              style={{ minWidth: 0, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: idx > currentStep && !completedSteps[scenario][idx - 1] ? 'not-allowed' : 'pointer', opacity: idx > currentStep && !completedSteps[scenario][idx - 1] ? 0.5 : 1 }}
+            >
+              {step}
+            </button>
+          ))}
+        </div>
+
+        {/* Scenario/step-specific instructions and validation */}
+        <div className="mb-2 mt-2 p-3 rounded bg-neutral-900 border border-emerald-900">
+          <div className="text-xs text-emerald-300 font-semibold mb-1">
+            {SCENARIO_STEPS[scenario][currentStep]}
+          </div>
+          <div className="text-xs text-neutral-300 mb-2">
+            {SCENARIO_HINTS[scenario][currentStep].map((hint, i) => (
+              <div key={i}>{hint}</div>
+            ))}
+          </div>
+          {!completedSteps[scenario][currentStep] && (
+            <button
+              className="text-xs px-3 py-1 rounded bg-emerald-800 text-white font-semibold border border-emerald-600 hover:bg-emerald-700 transition"
+              onClick={() => setCompletedSteps(prev => ({
+                ...prev,
+                [scenario]: prev[scenario].map((v, i) => i === currentStep ? true : v),
+              }))}
+            >
+              Complete Step
+            </button>
+          )}
         </div>
 
         {/* 16:9 video + canvas overlay */}
@@ -249,7 +415,7 @@ export default function RehearsePage() {
           {/* Overlay: error */}
           {error && (
             <div className="absolute inset-0 flex items-center justify-center z-30 px-6">
-              <p className="text-red-400 text-xs text-center">{error}</p>
+              <FallbackRibbon message={error} status="degraded" />
             </div>
           )}
           {/* Overlay: recording */}
@@ -306,13 +472,20 @@ export default function RehearsePage() {
             <CtaPill
               isActive={isActive}
               hasPermission={!error && !!stream}
-              onStart={start}
+              onStart={currentStep === SCENARIO_STEPS[scenario].length - 1 ? () => {
+                // Mark all steps as completed for this scenario
+                setCompletedSteps(prev => ({
+                  ...prev,
+                  [scenario]: prev[scenario].map(() => true),
+                }))
+                start()
+              } : undefined}
               onStop={stop}
             />
           </div>
           {isActive && recordingSupported && (
             <button
-              onClick={isRecording ? stopRecording : startRecording}
+              onClick={currentStep === SCENARIO_STEPS[scenario].length - 1 ? (isRecording ? stopRecording : startRecording) : undefined}
               title={isRecording ? 'Stop & download recording' : 'Record session as .webm'}
               style={{
                 padding: '0 14px', borderRadius: 12,
@@ -321,8 +494,10 @@ export default function RehearsePage() {
                 color: isRecording ? '#ef4444' : '#737373',
                 fontSize: 12, fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 6,
-                cursor: 'pointer', flexShrink: 0,
+                cursor: currentStep === SCENARIO_STEPS[scenario].length - 1 ? 'pointer' : 'not-allowed', flexShrink: 0,
+                opacity: currentStep === SCENARIO_STEPS[scenario].length - 1 ? 1 : 0.5,
               }}
+              disabled={currentStep !== SCENARIO_STEPS[scenario].length - 1}
             >
               <Circle
                 className="w-3 h-3"
@@ -336,8 +511,8 @@ export default function RehearsePage() {
           )}
           {isActive && (
             <button
-              onClick={handleSaveSession}
-              disabled={saving}
+              onClick={currentStep === SCENARIO_STEPS[scenario].length - 1 ? handleSaveSession : undefined}
+              disabled={saving || currentStep !== SCENARIO_STEPS[scenario].length - 1}
               title="Save session & get shareable link"
               style={{
                 padding: '0 14px', borderRadius: 12,
@@ -346,7 +521,8 @@ export default function RehearsePage() {
                 color: '#60a5fa',
                 fontSize: 12, fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 6,
-                cursor: saving ? 'not-allowed' : 'pointer', flexShrink: 0,
+                cursor: saving || currentStep !== SCENARIO_STEPS[scenario].length - 1 ? 'not-allowed' : 'pointer', flexShrink: 0,
+                opacity: currentStep === SCENARIO_STEPS[scenario].length - 1 ? 1 : 0.5,
               }}
             >
               <Save className="w-3 h-3" />
@@ -354,6 +530,13 @@ export default function RehearsePage() {
             </button>
           )}
         </div>
+
+        {/* Scenario gating warning */}
+        {currentStep !== SCENARIO_STEPS[scenario].length - 1 && (
+          <div className="mt-2 text-xs text-amber-400 font-semibold">
+            Complete all scenario steps before starting, recording, or saving the session.
+          </div>
+        )}
       </div>
 
       {/* Metrics panel */}

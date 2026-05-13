@@ -1,23 +1,20 @@
 import "../../styles/globals.css";
 import type { ReactNode } from "react";
 import { Providers } from "./providers";
-import Link from "next/link";
+import Shell from "../components/shell/Shell";
 import DemoScriptOverlay from "../components/DemoScriptOverlay";
+
+export const metadata = {
+  title: "AuraSense Playground",
+  description: "Rehearse-3D, ATTAS, Robotics — by AuraSense.",
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-brand text-white min-h-screen">
+      <body>
         <Providers>
-          <header className="flex justify-between items-center p-4 bg-brand-dark">
-            <Link href="/" className="text-xl font-bold">AuraSense Playground</Link>
-            <nav className="flex gap-4">
-              <Link href="/login">Login</Link>
-              <Link href="/register">Register</Link>
-              <Link href="/logout">Logout</Link>
-            </nav>
-          </header>
-          {children}
+          <Shell>{children}</Shell>
           <DemoScriptOverlay />
         </Providers>
       </body>

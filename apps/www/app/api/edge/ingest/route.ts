@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { edgeIngestUrl } from '@/lib/edge'
-import { QUOTAS } from '@/lib/billing/plans'
 import { QUOTAS, planForUser } from '@/lib/billing/plans'
 import { admin } from '@/lib/supabase/admin'
 
@@ -19,17 +18,13 @@ export async function POST(req: NextRequest) {
     .select('plan')
     .eq('user_id', user.id)
     .maybeSingle()
-  const plan = (sub?.plan as string) ?? 'starter'
-
-  // Plan gate: only pro / team / enterprise may ingest RTSP
-  const quota = QUOTAS[plan as keyof typeof QUOTAS] ?? QUOTAS.starter
+  let plan = (sub?.plan as string) ?? 'starter'
   const { data: row } = await admin()
     .from('user_plans')
     .select('plan')
     .eq('user_id', user.id)
     .maybeSingle()
-  const plan = planForUser(row?.plan)
-
+  plan = planForUser(row?.plan)
   const quota = QUOTAS[plan]
   if (!quota.features.rtsp_ingest) {
     return NextResponse.json(

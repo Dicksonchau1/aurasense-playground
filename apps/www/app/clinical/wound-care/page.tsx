@@ -1,3 +1,5 @@
+
+"use client";
 import React, { useEffect, useState } from 'react';
 import DressingRecommendation from '../../../components/wound-care/DressingRecommendation';
 import WoundCapture from '../../../components/wound-care/WoundCapture';

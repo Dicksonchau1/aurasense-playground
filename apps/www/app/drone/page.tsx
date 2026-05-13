@@ -6,6 +6,8 @@ import { captureRegionAsBlob } from '@/lib/nepa/frameCapture'
 import { postNEPAFrame } from '@/lib/nepa/inferenceClient'
 import type { NEPARegionMeta, NEPAInferenceResponse } from '@/types/nepa'
 import { Plane, Battery, Signal, AlertCircle, Radio, Lock, Zap, X, ExternalLink } from 'lucide-react'
+import { StatePill } from '@/components/ui/StatePill'
+import { FallbackRibbon } from '@/components/ui/FallbackRibbon'
 import type { BBox } from '@/lib/yolo'
 
 interface Drone { id: string; model: string; status: string; battery: number; region: string }
@@ -77,6 +79,8 @@ export default function DronePage() {
   const [nepaLoadingRegion, setNepaLoadingRegion] = useState<number | null>(null)
   const [nepaError, setNepaError] = useState<string | null>(null)
   const [nepaOverlays, setNepaOverlays] = useState<Record<number, NEPAInferenceResponse>>({})
+  // Platform state for pill and fallback
+  const [platformStatus, setPlatformStatus] = useState<'live' | 'degraded' | 'offline'>('live')
   // Determine source type for NEPA (webcam or rtsp)
   const sourceType: 'webcam' | 'rtsp' = feedMode === 'webcam' ? 'webcam' : 'rtsp'
 
@@ -303,6 +307,7 @@ export default function DronePage() {
         <div className="flex items-center gap-2 mb-4">
           <Plane className="w-4 h-4" style={{ color: '#10b981' }} />
           <h1 className="text-2xl font-bold">Drone Console</h1>
+          <StatePill status={platformStatus} className="ml-2" />
           <span className="ml-2 text-[10px] font-mono px-2 py-0.5 rounded-full"
             style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}>
             LIVE · HK-KLN-1
@@ -329,6 +334,11 @@ export default function DronePage() {
             )}
           </div>
         </div>
+
+        {/* Fallback ribbon for degraded/offline state */}
+        {platformStatus !== 'live' && (
+          <FallbackRibbon message={platformStatus === 'offline' ? 'Platform is offline. Some features may be unavailable.' : 'Platform is degraded. Some features may be limited.'} status={platformStatus} />
+        )}
 
         {/* RTSP / SRT ingest panel */}
         <div className="mb-4 rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(16,185,129,0.15)' }}>
@@ -472,22 +482,7 @@ export default function DronePage() {
                           </label>
                           {autoInfer && <span className="text-xs text-emerald-400">Running…</span>}
                         </div>
-                  // Continuous backend inference effect
-                  useEffect(() => {
-                    let interval: any = null
-                    async function inferLoop() {
-                      if (!autoInferRef.current) return
-                      // Find the hidden FrameClickable and trigger a full-frame grab
-                      const btn = document.querySelector('[aria-label="Capture full frame for NEPA inference"]') as HTMLButtonElement
-                      if (btn) btn.click()
-                    }
-                    if (autoInfer) {
-                      interval = setInterval(inferLoop, 1500) // every 1.5s
-                    } else {
-                      if (interval) clearInterval(interval)
-                    }
-                    return () => { if (interval) clearInterval(interval) }
-                  }, [autoInfer, active])
+                  {/* Continuous backend inference effect handled in main logic */}
                 <NEPAOverlay overlays={nepaOverlays} />
               </div>
               {/* Clickable grid for NEPA region capture */}
@@ -611,9 +606,7 @@ export default function DronePage() {
         </div>
 
         {nepaError && (
-          <div className="mt-2 rounded-lg border border-red-800 bg-red-950/60 px-3 py-2 text-[11px] font-mono text-red-300">
-            {nepaError}
-          </div>
+          <FallbackRibbon message={nepaError} status="degraded" />
         )}
         {isDev && (
           <button
