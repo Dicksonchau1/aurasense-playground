@@ -280,6 +280,23 @@ export default function DronePage() {
     ? Object.values(edgeStats.p95_ms).reduce((a, b) => a + b, 0)
     : null
 
+  // Continuous backend inference effect
+  useEffect(() => {
+    let interval: any = null
+    async function inferLoop() {
+      if (!autoInferRef.current) return
+      const btn = document.querySelector('[aria-label="Capture full frame for NEPA inference"]') as HTMLButtonElement
+      if (btn) btn.click()
+    }
+    if (autoInfer) {
+      interval = setInterval(inferLoop, 1500)
+    } else {
+      if (interval) clearInterval(interval)
+    }
+    return () => { if (interval) clearInterval(interval) }
+  }, [autoInfer, active])
+
+
   return (
     <main className="min-h-dvh pt-16 pb-12 px-4" style={{ background: '#070e1a', color: 'white' }}>
       <section className="max-w-6xl mx-auto">

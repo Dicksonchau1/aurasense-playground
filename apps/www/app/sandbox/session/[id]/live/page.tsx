@@ -1,5 +1,5 @@
 import React from 'react';
-import OverlayMarkerList from '../../../../components/sandbox/OverlayMarkerList';
+import OverlayMarkerList from '@/components/sandbox/OverlayMarkerList';
 
 // In a real app, tutorId would come from auth/session context
 const tutorId = 'tutor-123';

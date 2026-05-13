@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { HriInboxMount } from "@/hri/HriInboxMount";
+import { HriInboxMount } from "@/components/hri/HriInboxMount";
 import { Analytics } from '@vercel/analytics/react'
-import { MembershipDrawerProvider } from '@/membership-drawer'
-import { NavBar } from '@/nav-bar'
-import { AppSidebar } from '@/app-sidebar'
+import { MembershipDrawerProvider } from '@/components/membership-drawer'
+import { NavBar } from '@/components/nav-bar'
+import { AppSidebar } from '@/components/app-sidebar'
 import './globals.css'
 
 export const metadata: Metadata = {
