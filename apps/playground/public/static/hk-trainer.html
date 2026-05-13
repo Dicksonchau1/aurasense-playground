@@ -266,6 +266,9 @@ a,button,[role="button"],input,select{transition:color var(--t),background var(-
 .info-banner{background:var(--color-info-bg);border-radius:var(--radius-lg);padding:var(--space-4);font-size:var(--text-xs);color:var(--color-info);border:1px solid rgba(26,111,168,0.22)}
 @media(max-width:900px){.main{height:auto}.right-panel{border-left:none;border-top:1px solid var(--color-divider)}.topbar{padding:var(--space-3) var(--space-4)}.mode-tabs{display:none}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="app">
@@ -823,5 +826,803 @@ function toggleTheme(){currentTheme=currentTheme==='dark'?'light':'dark';documen
 // === INIT ===
 renderRail();resetScoreDisplay();
 </script>
+<script>
+
+(function(){
+  // ── State ───────────────────────────────────────────────────────────────
+  let videoEl=null, realCamera=null, realHands=null;
+  let confidenceRolling=0, lastSpokenStep=-1, lastSpokenCorrection=0;
+
+  // ── Speech helper ────────────────────────────────────────────────────────
+  function speak(text, opts){
+    if(!window.speechSynthesis || !window.cfg || !window.cfg.audio) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang   = (opts && opts.lang)  || "en-GB";
+      u.rate   = (opts && opts.rate)  || 0.95;
+      u.pitch  = 1.0;
+      u.volume = 1.0;
+      window.speechSynthesis.speak(u);
+    } catch(e){ console.warn("speak error", e); }
+  }
+  window.auraSpeak = speak;
+
+  // ── Per-step classifier ──────────────────────────────────────────────────
+  // Returns { confidence:0-1, leftDetected:bool, rightDetected:bool }
+  function classifyStep(stepIdx, landmarks, handedness){
+    if(!landmarks || landmarks.length === 0)
+      return { confidence:0, leftDetected:false, rightDetected:false };
+
+    const twoHands = landmarks.length >= 2;
+    let leftHand=null, rightHand=null;
+    if(handedness && handedness.length){
+      handedness.forEach((h,i)=>{
+        if(h.label==="Left")  leftHand  = landmarks[i];
+        else                  rightHand = landmarks[i];
+      });
+    }
+    const wrist    = lm => lm[0];
+    const thumbTip = lm => lm[4];
+    const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y, (a.z||0)-(b.z||0));
+
+    let conf=0, lDet=false, rDet=false;
+
+    switch(stepIdx){
+      // Step 0 – Palm to Palm (rub palms together)
+      case 0:
+        if(twoHands){
+          const d = dist(wrist(landmarks[0]), wrist(landmarks[1]));
+          conf = Math.max(0, Math.min(1, 1.0 - d * 1.5));
+          lDet = !!leftHand; rDet = !!rightHand;
+        }
+        break;
+
+      // Step 1 – Right over left / interlaced fingers
+      case 1:
+        if(twoHands && leftHand && rightHand){
+          const yDiff = Math.abs(landmarks[0][9].y - landmarks[1][9].y);
+          conf = yDiff > 0.05 ? 0.85 : 0.50;
+          lDet = leftHand[9].y  < rightHand[9].y;
+          rDet = rightHand[9].y < leftHand[9].y;
+        }
+        break;
+
+      // Step 2 – Interlaced fingers (backs of fingers)
+      case 2:
+        if(twoHands){
+          const fA = [8,12,16,20].map(i=>landmarks[0][i]);
+          const fB = [8,12,16,20].map(i=>landmarks[1][i]);
+          let t = 0;
+          for(let i=0;i<4;i++) t += dist(fA[i], fB[i]);
+          conf = Math.max(0, Math.min(1, 1.0 - (t/4)*2));
+          lDet = rDet = conf > 0.6;
+        }
+        break;
+
+      // Step 3 – Rotational rubbing (interlocked)
+      case 3:
+        if(twoHands){
+          const d = dist(landmarks[0][9], landmarks[1][9]);
+          conf = d < 0.15 ? 0.82 : 0.40;
+          lDet = rDet = conf > 0.6;
+        }
+        break;
+
+      // Step 4 – Thumbs rotational
+      case 4:
+        if(twoHands){
+          const t0 = thumbTip(landmarks[0]), p1 = landmarks[1][9];
+          const t1 = thumbTip(landmarks[1]), p0 = landmarks[0][9];
+          const dL = dist(t0, p1), dR = dist(t1, p0);
+          conf = Math.max(0, Math.min(1, 1.0 - Math.min(dL,dR)*2));
+          if(leftHand && rightHand){ lDet = dL < 0.2; rDet = dR < 0.2; }
+        }
+        break;
+
+      // Step 5 – Fingertips to palm (clasped)
+      case 5:
+        if(twoHands){
+          const tips = [8,12,16,20].map(i=>landmarks[0][i]);
+          const palm = landmarks[1][9];
+          const avg  = tips.reduce((s,t)=>s+dist(t,palm),0)/4;
+          conf = Math.max(0, Math.min(1, 1.0 - avg*2));
+          lDet = rDet = conf > 0.55;
+        }
+        break;
+
+      // Step 6 – Wrist rub
+      case 6:
+        if(twoHands){
+          const w0 = wrist(landmarks[0]), w1 = wrist(landmarks[1]);
+          const d  = dist(w0, w1);
+          conf = d < 0.18 ? 0.80 : 0.45;
+          if(leftHand && rightHand){
+            lDet = dist(thumbTip(rightHand), wrist(leftHand))  < 0.2;
+            rDet = dist(thumbTip(leftHand),  wrist(rightHand)) < 0.2;
+          }
+        }
+        break;
+
+      default: break;
+    }
+    return { confidence: Math.max(0, conf), leftDetected: lDet, rightDetected: rDet };
+  }
+
+  // ── MediaPipe results callback ────────────────────────────────────────────
+  function onResults(results){
+    if(!window.sess || window.sess.state !== "active") return;
+    const idx = window.sess.curStep;
+    const st  = window.sess.steps[idx];
+    if(!st || st.status !== "active") return;
+
+    const cls = classifyStep(
+      idx,
+      results.multiHandLandmarks || [],
+      results.multiHandedness    || []
+    );
+
+    // Exponential smoothing
+    confidenceRolling = confidenceRolling * 0.7 + cls.confidence * 0.3;
+    st.confSamples.push(confidenceRolling);
+
+    // UI confidence badge
+    const camConf = document.getElementById("camConf");
+    if(camConf) camConf.textContent = "Confidence " + Math.round(confidenceRolling * 100) + "%";
+
+    const sd = window.STEPS[idx];
+
+    // Bilateral laterality tracking
+    if(sd.bilateral && st.laterality){
+      if(cls.leftDetected  && !st.laterality.left)  { st.laterality.left  = true; speak("Left side detected");  }
+      if(cls.rightDetected && !st.laterality.right) { st.laterality.right = true; speak("Right side detected"); }
+    }
+
+    // Step announcement (once per step change)
+    if(idx !== lastSpokenStep){
+      lastSpokenStep = idx;
+      speak("Step " + (idx+1) + ": " + sd.label);
+    }
+
+    // Low-confidence coaching (max once per 4 s)
+    const now = Date.now();
+    if(confidenceRolling < 0.35 && now - lastSpokenCorrection > 4000){
+      lastSpokenCorrection = now;
+      speak("Bring both hands into frame");
+      if(window.setCoachMsg)
+        window.setCoachMsg("Bring both hands into frame for " + sd.label, "correction");
+    }
+
+    // Draw skeleton overlay onto simCanvas
+    const canvas = document.getElementById("simCanvas");
+    if(canvas && videoEl){
+      const ctx = canvas.getContext("2d");
+      canvas.width  = videoEl.videoWidth  || 640;
+      canvas.height = videoEl.videoHeight || 480;
+      ctx.save();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+      if(results.multiHandLandmarks){
+        for(const lms of results.multiHandLandmarks){
+          if(window.drawConnectors && window.HAND_CONNECTIONS)
+            drawConnectors(ctx, lms, HAND_CONNECTIONS, { color:"#3dc8d8", lineWidth:2 });
+          if(window.drawLandmarks)
+            drawLandmarks(ctx, lms, { color:"#7dd4a0", lineWidth:1, radius:3 });
+        }
+      }
+      ctx.restore();
+    }
+  
+  if(window._auraOnResultsHook) window._auraOnResultsHook(results, idx, confidenceRolling);
+}
+
+  // ── Camera + Hands init ──────────────────────────────────────────────────
+  async function initCamera(){
+    if(videoEl) return;
+    videoEl = document.createElement("video");
+    videoEl.autoplay = true;
+    videoEl.playsInline = true;
+    videoEl.muted = true;
+    videoEl.style.display = "none";
+    document.body.appendChild(videoEl);
+
+    if(typeof Hands === "undefined"){
+      console.error("MediaPipe Hands not loaded — check CDN");
+      return;
+    }
+    realHands = new Hands({
+      locateFile: f => "https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/" + f
+    });
+    realHands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.5
+    });
+    realHands.onResults(onResults);
+
+    realCamera = new Camera(videoEl, {
+      onFrame: async () => { await realHands.send({ image: videoEl }); },
+      width: 640, height: 480
+    });
+    await realCamera.start();
+    console.log("[AuraSense] Real camera + perception ONLINE");
+  }
+
+  // ── Override: startSession ───────────────────────────────────────────────
+  const origStart = window.startSession;
+  window.startSession = async function(){
+    try{
+      if(!window.cfg) window.cfg = {};
+      window.cfg.audio = true;
+
+      const placeholder = document.getElementById("camPlaceholder");
+      if(placeholder) placeholder.style.display = "none";
+      const canvas = document.getElementById("simCanvas");
+      if(canvas) canvas.style.display = "block";
+
+      speak("Starting hand hygiene session. Please position both hands in frame.");
+      await initCamera();
+    } catch(e){
+      alert("Camera access required for real perception mode: " + e.message);
+      return;
+    }
+    if(origStart) origStart.apply(this, arguments);
+  };
+
+  // ── Override: startStepSim ───────────────────────────────────────────────
+  const origStartStepSim = window.startStepSim;
+  window.startStepSim = function(idx){
+    clearInterval(window.stepTimer);
+    const sd     = window.STEPS[idx];
+    const st     = window.sess.steps[idx];
+    let elapsed  = 0;
+    const target = window.cfg.minDwell + 1.0;
+
+    window.stepTimer = setInterval(()=>{
+      elapsed += 0.1;
+      st.dwellSeconds = elapsed;
+
+      const pct = Math.min(100, (elapsed / target) * 100);
+      const df  = document.getElementById("dwellFill");
+      if(df) df.style.width = pct + "%";
+      const dp = document.getElementById("dwellPct");
+      if(dp) dp.textContent = Math.round(pct);
+
+      if(sd.bilateral && window.renderSideBadges)
+        window.renderSideBadges(sd, st);
+
+      // Auto-advance when dwell met AND confidence high enough
+      if(elapsed >= target && confidenceRolling > 0.45){
+        const okBilat = !sd.bilateral ||
+          (st.laterality && st.laterality.left && st.laterality.right);
+        if(okBilat){
+          clearInterval(window.stepTimer);
+          const df2 = document.getElementById("dwellFill");
+          if(df2) df2.className = "dwell-fill done";
+          setTimeout(()=>{
+            if(window.sess.state === "active" && st.status === "active")
+              window.manualNext();
+          }, 280);
+        }
+      }
+    }, 100);
+  };
+
+  // ── Override: completeSession ────────────────────────────────────────────
+  const origComplete = window.completeSession;
+  window.completeSession = function(){
+    if(origComplete) origComplete.apply(this, arguments);
+
+    // Scoring feedback via speech
+    const sc   = window.computeScore ? window.computeScore() : null;
+    const pass = sc && sc.total >= (window.cfg.passThreshold || 80);
+    if(pass){
+      speak("Excellent work. All steps completed with good technique. Session passed.");
+    } else {
+      const pct = sc ? Math.round(sc.total) : 0;
+      speak("Session complete. Score " + pct + " percent. Review flagged steps and try again.");
+    }
+
+    // Stop camera to free resources
+    if(realCamera && realCamera.stop) realCamera.stop();
+    if(realHands && realHands.close) realHands.close();
+    videoEl = null; realCamera = null; realHands = null;
+    confidenceRolling = 0; lastSpokenStep = -1;
+  };
+
+})();
+</script>
+<script>
+
+// ── AuraSense Multi-Lane + STDP Bridge ──────────────────────────────────────
+(function(){
+  const NEPA_URL = "https://nepa-stdp.aurasensehk.com";   // adjust if NEPA runs on diff port
+
+  // ── ROI overlay renderer ─────────────────────────────────────────────────
+  function drawROI(ctx, roi, canvasW, canvasH){
+    if(!roi) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,200,0,0.85)";
+    ctx.lineWidth   = 2;
+    ctx.setLineDash([6,3]);
+    ctx.strokeRect(
+      roi.x1 * canvasW,
+      roi.y1 * canvasH,
+      (roi.x2 - roi.x1) * canvasW,
+      (roi.y2 - roi.y1) * canvasH
+    );
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(255,200,0,0.15)";
+    ctx.fillRect(
+      roi.x1 * canvasW,
+      roi.y1 * canvasH,
+      (roi.x2 - roi.x1) * canvasW,
+      (roi.y2 - roi.y1) * canvasH
+    );
+    ctx.restore();
+  }
+
+  // ── STDP modulation bar renderer ─────────────────────────────────────────
+  function renderModBar(modulation){
+    let bar = document.getElementById("stdpModBar");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "stdpModBar";
+      bar.style.cssText = [
+        "position:fixed","bottom:16px","left:50%","transform:translateX(-50%)",
+        "width:220px","height:14px","background:#1a1a2e","border-radius:7px",
+        "overflow:hidden","z-index:9999","box-shadow:0 2px 8px rgba(0,0,0,0.5)"
+      ].join(";");
+      const fill = document.createElement("div");
+      fill.id = "stdpModFill";
+      fill.style.cssText = "height:100%;width:0%;background:linear-gradient(90deg,#3dc8d8,#7dd4a0);transition:width 0.12s ease;border-radius:7px;";
+      bar.appendChild(fill);
+      const label = document.createElement("div");
+      label.id = "stdpModLabel";
+      label.style.cssText = "position:absolute;top:0;left:0;width:100%;text-align:center;font-size:10px;line-height:14px;color:#fff;font-family:monospace;";
+      label.textContent = "STDP 0%";
+      bar.appendChild(label);
+      document.body.appendChild(bar);
+    }
+    const pct = Math.round(modulation * 100);
+    document.getElementById("stdpModFill").style.width  = pct + "%";
+    document.getElementById("stdpModLabel").textContent = "STDP " + pct + "%";
+  }
+
+  // ── Spike burst visualiser (canvas flash) ────────────────────────────────
+  function flashSpikes(spikesFired){
+    if(spikesFired < 3) return;
+    const canvas = document.getElementById("simCanvas");
+    if(!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.35, spikesFired / 40);
+    ctx.fillStyle = "#3dc8d8";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  // ── POST to NEPA /nepa/update ─────────────────────────────────────────────
+  async function postToNEPA(payload){
+    try{
+      const res = await fetch(NEPA_URL + "/nepa/update", {
+        method:  "POST",
+        headers: {"Content-Type":"application/json"},
+        body:    JSON.stringify(payload),
+        signal:  AbortSignal.timeout(120),
+      });
+      if(!res.ok) return null;
+      return await res.json();
+    } catch(e){ return null; }
+  }
+
+  // ── Hook into existing onResults (defined in previous sprint block) ───────
+  // We wrap window._auraOnResults which the perception block sets.
+  // Polling interval for NEPA so we don't DDoS it: every 3rd frame.
+  let _frameCount = 0;
+  let _lastROI    = null;
+  let _lastMod    = 0;
+
+  const _origOnResults = window._auraOnResultsHook || null;
+
+  window._auraOnResultsHook = async function(results, stepIdx, confidenceRolling){
+    _frameCount++;
+
+    // Build landmark payload (convert MediaPipe format → plain objects)
+    const lmPayload = (results.multiHandLandmarks || []).map(hand =>
+      hand.map(lm => ({ x: lm.x, y: lm.y, z: lm.z || 0 }))
+    );
+    const hdPayload = (results.multiHandedness || []).map(h => ({
+      label: h.label, score: h.score
+    }));
+
+    // Every 3rd frame → send to NEPA
+    if(_frameCount % 3 === 0){
+      const resp = await postToNEPA({
+        step:       stepIdx,
+        landmarks:  lmPayload,
+        handedness: hdPayload,
+        confidence: confidenceRolling,
+      });
+      if(resp){
+        _lastROI = resp.roi || null;
+        _lastMod = resp.modulation || 0;
+        renderModBar(_lastMod);
+        flashSpikes(resp.spikes_fired || 0);
+        // Feed modulation back: boost confidence threshold if mod is high
+        if(window.sess && window.sess.steps[stepIdx]){
+          window.sess.steps[stepIdx].nepaModulation = _lastMod;
+        }
+        if(window.hri && typeof window.hri.ingestFrame === "function"){
+          window.hri.ingestFrame(stepIdx, confidenceRolling, resp);
+      }
+    }
+
+    // Draw ROI overlay on canvas every frame
+    const canvas = document.getElementById("simCanvas");
+    if(canvas && _lastROI){
+      drawROI(canvas.getContext("2d"), _lastROI, canvas.width, canvas.height);
+    }
+
+    if(_origOnResults) _origOnResults(results, stepIdx, confidenceRolling);
+  };
+
+  // ── Patch the existing onResults to call our hook ─────────────────────────
+  // The perception block from sprint 1 calls onResults() internally.
+  // We inject the hook call at the END of onResults by wrapping it.
+  const _waitForOnResults = setInterval(()=>{
+    if(typeof window._auraInjectHook === "function"){
+      clearInterval(_waitForOnResults);
+      window._auraInjectHook(window._auraOnResultsHook);
+    }
+  }, 200);
+
+  console.log("[AuraSense] Multi-lane + STDP bridge ONLINE");
+})();
+</script>
 </body>
-</html>
+</html><script>
+(function(){
+  // ── HRI agentic supervisor: performance stability envelope ───────────────
+  if(!window.hri) window.hri = {};
+
+  // Per-step metrics over a session
+  const stepMetrics = {};  // stepIdx -> { dwell:[], conf:[], spikes:[], mod:[] }
+
+  function ensureStep(stepIdx){
+    if(!stepMetrics[stepIdx]){
+      stepMetrics[stepIdx] = {
+        dwell: [],
+        conf: [],
+        spikes: [],
+        mod: [],
+        anomalies: 0
+      };
+    }
+    return stepMetrics[stepIdx];
+  }
+
+  // Called each frame from STDP bridge (we’ll hook it in a moment)
+  window.hri.ingestFrame = function(stepIdx, confidenceRolling, nepaResp){
+    const m = ensureStep(stepIdx);
+    m.conf.push(confidenceRolling);
+    if(nepaResp){
+      if(typeof nepaResp.spikes_fired === "number") m.spikes.push(nepaResp.spikes_fired);
+      if(typeof nepaResp.modulation   === "number") m.mod.push(nepaResp.modulation);
+    }
+  };
+
+  // Called when a step completes (we can hook into manualNext / startStepSim)
+  window.hri.markStepComplete = function(stepIdx){
+    const st  = window.sess && window.sess.steps[stepIdx];
+    const met = ensureStep(stepIdx);
+    if(st && typeof st.dwellSeconds === "number"){
+      met.dwell.push(st.dwellSeconds);
+    }
+  };
+
+  // Compute stability envelope for a step: [0,1], higher = more stable
+  function stabilityForStep(stepIdx){
+    const m = stepMetrics[stepIdx];
+    if(!m) return 0;
+
+    // Variance of dwell, conf, modulation — lower variance = more stable
+    function scoreFromVariance(arr){
+      if(!arr || arr.length < 2) return 0;
+      const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+      const varc = arr.reduce((a,b)=>a + (b-mean)*(b-mean),0)/arr.length;
+      const std  = Math.sqrt(varc);
+      // Map std to score: std=0 -> 1.0, std>=target -> ~0
+      const target = mean * 0.25 + 1e-6;
+      const s = 1.0 - Math.min(1.0, std / target);
+      return Math.max(0, s);
+    }
+
+    const dwellS = scoreFromVariance(m.dwell);
+    const confS  = scoreFromVariance(m.conf);
+    const modS   = scoreFromVariance(m.mod);
+
+    // Weighted blend
+    return (0.4*dwellS + 0.4*confS + 0.2*modS);
+  }
+
+  // Session-level envelope
+  window.hri.computeEnvelope = function(){
+    const steps = window.STEPS || [];
+    if(!steps.length) return { overall:0, perStep:{} };
+    const perStep = {};
+    let acc = 0, n = 0;
+    for(let i=0;i<steps.length;i++){
+      const s = stabilityForStep(i);
+      perStep[i] = s;
+      if(!Number.isNaN(s)){
+        acc += s; n++;
+      }
+    }
+    return {
+      overall: n ? acc/n : 0,
+      perStep
+    };
+  };
+
+  // Adapt HRI coaching based on envelope
+  function adaptiveCoaching(envelope){
+    if(!window.auraSpeak) return;
+    const overall = envelope.overall;
+    if(overall >= 0.8){
+      window.auraSpeak("Nice work. Your technique is very stable. You can go slightly faster on the next run.");
+    } else if (overall >= 0.5){
+      window.auraSpeak("Session complete. Your performance is acceptable but has some instability. Focus on keeping the same rhythm each step.");
+    } else {
+      window.auraSpeak("Your performance is unstable. We recommend repeating this session slower and focusing on consistent movements.");
+    }
+  }
+
+  // Hook into completeSession to speak envelope result
+  const _origComplete = window.completeSession;
+  window.completeSession = function(){
+    if(_origComplete) _origComplete.apply(this, arguments);
+    const env = window.hri.computeEnvelope();
+    adaptiveCoaching(env);
+    if(window.sess){
+      window.sess.hriEnvelope = env;
+    }
+  };
+
+  // Hook into manualNext to mark step completion
+  const _origManualNext = window.manualNext;
+  window.manualNext = function(){
+    if(window.sess){
+      const idx = window.sess.curStep;
+      window.hri.markStepComplete(idx);
+    }
+    if(_origManualNext) _origManualNext.apply(this, arguments);
+  };
+
+  // Expose for debugging
+  window.hri.debugDump = function(){
+    console.log("HRI stepMetrics", JSON.parse(JSON.stringify(stepMetrics)));
+    console.log("HRI envelope", window.hri.computeEnvelope());
+  };
+
+  console.log("[AuraSense] HRI performance envelope ONLINE");
+})();
+</script>
+<script>
+(function(){
+  const WM_URL    = "https://nepa-wm.aurasensehk.com";
+  const AGENT_URL = "https://nepa-crew.aurasensehk.com";
+
+  // Push observations to World Model every 1 second
+  let _wmTicker = null;
+  async function startWM(){
+    try{
+      await fetch(WM_URL + "/wm/session/start", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({session_id:"playground-"+Date.now()})
+      });
+      console.log("[AuraSense] World Model session started");
+    }catch(e){ console.warn("WM start failed", e); }
+
+    if(_wmTicker) clearInterval(_wmTicker);
+    _wmTicker = setInterval(async ()=>{
+      try{
+        const idx = window.sess && window.sess.curStep || 0;
+        const st  = window.sess && window.sess.steps && window.sess.steps[idx] || {};
+        const env = (window.hri && window.hri.computeEnvelope) ? window.hri.computeEnvelope().overall : 0;
+        const conf= (st.confSamples && st.confSamples.length) ? st.confSamples[st.confSamples.length-1] : 0;
+        await fetch(WM_URL + "/wm/observe", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            step: idx,
+            dwell: st.dwellSeconds || 0,
+            confidence: conf,
+            modulation: st.nepaModulation || 0,
+            envelope: env,
+          }),
+        });
+      }catch(e){}
+    }, 1000);
+  }
+  function stopWM(){ if(_wmTicker){ clearInterval(_wmTicker); _wmTicker=null; } }
+
+  // Hook session lifecycle
+  const _origStart = window.startSession;
+  window.startSession = async function(){
+    if(_origStart) await _origStart.apply(this, arguments);
+    startWM();
+  };
+  const _origComplete = window.completeSession;
+  window.completeSession = async function(){
+    if(_origComplete) _origComplete.apply(this, arguments);
+    stopWM();
+    // Ask the agent crew for a decision
+    try{
+      const r = await fetch(AGENT_URL + "/agents/decide");
+      const dec = await r.json();
+      window.sess.crewDecision = dec;
+      console.log("[AuraSense] Crew decision:", dec);
+      if(dec.coach && window.auraSpeak) window.auraSpeak(dec.coach);
+      if(dec.examiner && window.setCoachMsg){
+        window.setCoachMsg("Examiner: "+dec.examiner.verdict+
+          " (conf "+Math.round(dec.examiner.confidence*100)+"%)",
+          dec.examiner.verdict==="PASS"?"info":"correction");
+      }
+      if(dec.curriculum && dec.curriculum.next_action){
+        const banner = document.createElement("div");
+        banner.style.cssText="position:fixed;top:80px;right:16px;background:#1a1a2e;color:#fff;padding:12px 16px;border-radius:8px;font-family:monospace;font-size:12px;z-index:99999;max-width:280px;box-shadow:0 4px 12px rgba(0,0,0,0.4);";
+        banner.innerHTML = "<b>Curriculum</b><br>Next: "+dec.curriculum.next_action+
+          (dec.curriculum.weak_steps && dec.curriculum.weak_steps.length ?
+            "<br>Weak: step "+dec.curriculum.weak_steps.map(i=>i+1).join(", ") : "");
+        document.body.appendChild(banner);
+        setTimeout(()=>banner.remove(), 12000);
+      }
+    }catch(e){ console.warn("agent crew decide failed", e); }
+  };
+
+  console.log("[AuraSense] World Model + Agent Crew bridge ONLINE");
+})();
+</script>
+<script>
+(function(){
+  const ENGINE_URL = "https://nepa-engine.aurasensehk.com";
+  let _frameCnt = 0;
+
+  function sampleRGB(canvas, roi){
+    if(!canvas || !roi) return null;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width, h = canvas.height;
+    const x1 = Math.max(0, Math.floor(roi.x1 * w));
+    const y1 = Math.max(0, Math.floor(roi.y1 * h));
+    const x2 = Math.min(w, Math.floor(roi.x2 * w));
+    const y2 = Math.min(h, Math.floor(roi.y2 * h));
+    const rw = Math.max(8, x2 - x1);
+    const rh = Math.max(8, y2 - y1);
+    if(rw < 8 || rh < 8) return null;
+    try{
+      const img = ctx.getImageData(x1, y1, rw, rh).data;
+      const grid = [];
+      for(let gy=0; gy<8; gy++){
+        const row = [];
+        for(let gx=0; gx<8; gx++){
+          let r=0,g=0,b=0,n=0;
+          const cx0 = Math.floor(gx*rw/8), cx1 = Math.floor((gx+1)*rw/8);
+          const cy0 = Math.floor(gy*rh/8), cy1 = Math.floor((gy+1)*rh/8);
+          for(let py=cy0; py<cy1; py+=2){
+            for(let px=cx0; px<cx1; px+=2){
+              const i = (py*rw + px) * 4;
+              r += img[i]; g += img[i+1]; b += img[i+2]; n++;
+            }
+          }
+          row.push([r/n|0, g/n|0, b/n|0]);
+        }
+        grid.push(row);
+      }
+      return grid;
+    }catch(e){ return null; }
+  }
+
+  function drawHeatmap(canvas, grid){
+    if(!canvas || !grid) return;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width, h = canvas.height;
+    const rows = grid.length, cols = grid[0].length;
+    const cw = w/cols, ch = h/rows;
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    for(let y=0; y<rows; y++){
+      for(let x=0; x<cols; x++){
+        const v = Math.min(1, grid[y][x]/2.5);
+        if(v < 0.05) continue;
+        ctx.fillStyle = `rgba(${Math.floor(255*v)},${Math.floor(80*(1-v))},${Math.floor(180*(1-v))},${v})`;
+        ctx.fillRect(x*cw, y*ch, cw, ch);
+      }
+    }
+    ctx.restore();
+  }
+
+  function setLaneBadges(resp){
+    let badge = document.getElementById("auraLaneBadges");
+    if(!badge){
+      badge = document.createElement("div");
+      badge.id = "auraLaneBadges";
+      badge.style.cssText = "position:fixed;top:16px;right:16px;background:#1a1a2e;color:#7dd4a0;padding:10px 12px;border-radius:8px;font-family:monospace;font-size:11px;z-index:9999;line-height:1.55;box-shadow:0 2px 8px rgba(0,0,0,0.4);min-width:200px;";
+      document.body.appendChild(badge);
+    }
+    const wd = resp.L8_wetdry || {};
+    const sp = resp.L7_soap || {};
+    const ld = resp.L5_lidar || {};
+    const anomalyTag = wd.anomaly ? `<span style="color:#ff7b7b">⚠ ${wd.anomaly}</span>` : `<span style="color:#7dd4a0">✓ nominal</span>`;
+    badge.innerHTML = `
+      <b style="color:#3dc8d8">8-Lane Engine</b><br>
+      L4 mod:&nbsp;${(resp.L4_stdp.modulation||0).toFixed(2)}<br>
+      L5 prox:&nbsp;${ld.proximity ?? '–'}<br>
+      L6 heat:&nbsp;${(resp.L6_heat.mean||0).toFixed(3)}<br>
+      L7 foam:&nbsp;${(sp.foam_score||0).toFixed(2)} ${sp.lather_present?"🫧":""}<br>
+      L8 wet:&nbsp;${(wd.wet_prob||0).toFixed(2)}<br>
+      ${anomalyTag}
+    `;
+  }
+
+  // Hook into the existing STDP bridge frame loop
+  const _origHook = window._auraOnResultsHook;
+  window._auraOnResultsHook = async function(results, stepIdx, confidenceRolling){
+    if(_origHook) _origHook(results, stepIdx, confidenceRolling);
+    _frameCnt++;
+    if(_frameCnt % 4 !== 0) return;   // every 4th frame to engine
+
+    const lmPayload = (results.multiHandLandmarks || []).map(hand =>
+      hand.map(lm => ({x:lm.x, y:lm.y, z:lm.z||0})));
+    const hdPayload = (results.multiHandedness || []).map(h => ({label:h.label, score:h.score}));
+
+    const canvas = document.getElementById("simCanvas");
+    let roi = null;
+    if(window.sess && window.sess.steps && window.sess.steps[stepIdx]){
+      roi = window.sess.steps[stepIdx].lastROI || null;
+    }
+    const rgb_sample = sampleRGB(canvas, roi || {x1:0.2,y1:0.2,x2:0.8,y2:0.8});
+
+    try{
+      const r = await fetch(ENGINE_URL + "/engine/frame", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          step: stepIdx,
+          landmarks: lmPayload,
+          handedness: hdPayload,
+          confidence: confidenceRolling,
+          rgb_sample,
+        }),
+        signal: AbortSignal.timeout(180),
+      });
+      if(!r.ok) return;
+      const resp = await r.json();
+      setLaneBadges(resp);
+
+      // Draw heatmap + anomaly toast
+      if(canvas && resp.L6_heat){
+        try{
+          const hr = await fetch(ENGINE_URL + "/engine/heatmap");
+          const hd = await hr.json();
+          drawHeatmap(canvas, hd.grid);
+        }catch(e){}
+      }
+      if(resp.L8_wetdry && resp.L8_wetdry.anomaly && window.auraSpeak){
+        if(!window._lastWetAnomaly || (Date.now()-window._lastWetAnomaly)>6000){
+          window._lastWetAnomaly = Date.now();
+          if(resp.L8_wetdry.anomaly === "wet_no_lather"){
+            window.auraSpeak("Hands are wet but no lather detected. Apply soap.");
+          } else if(resp.L8_wetdry.anomaly === "lather_dry"){
+            window.auraSpeak("Lather present but hands look dry. Wet your hands first.");
+          }
+        }
+      }
+    }catch(e){}
+  };
+
+  console.log("[AuraSense] 8-lane pre-engine bridge ONLINE");
+})();
+</script>
