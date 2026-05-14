@@ -433,6 +433,98 @@
     </div>
   </div>
   <script>
+            // PHASE D1: Universal fetch wrapper
+            async function fetchJSON(url, fallback) {
+              try {
+                const r = await fetch(url, {cache:'no-store', signal: AbortSignal.timeout(2000)});
+                if(!r.ok) throw new Error(`HTTP ${r.status}`);
+                const j = await r.json();
+                return j?.data ?? j;
+              } catch {
+                return fallback;
+              }
+            }
+
+            // PHASE D2: Unified demo state
+            const DEMO = {
+              lidar:    {obs:14, near:6.8, density:[0.1,0.22,0.4,0.66,0.81,0.94,0.73,0.52,0.31,0.18]},
+              thermal:  {min:'12.4 °C', avg:'24.8 °C', max:'68.2 °C', anomaly:'⚠ Hotspot · panel B7'},
+              chem:     {voc:'142', co2:'612 ppm', co:'3.2 ppm', risk:'LOW', radius:'18 m'},
+              safety:   {batt:62, reserve:28, eta:'4.2 min', glide:'6.5°', status:'✓ RTH SAFE'},
+              imu:      {pitch:'3.2°', roll:'−1.8°', yaw:'42°', gs:'18.4 m/s', as:'21.1 m/s', stall:'38%', land:'16.5 m/s'},
+              facade:   {scanned:'61', defects:'7', pct:64},
+              photog:   {imgs:'384', mesh:'61%'},
+              weather:  {temp:'27 °C', wind:'14 NE', vis:'9 km', rain:'0.0 mm/h', warn:'✓ No active warnings'},
+            };
+
+            // PHASE D3: Polling loop (flip useMock:false to go live)
+            async function pollBackend() {
+              if (!ATTAS_FLAGS.useMock) {
+                const [lidar, thermal, chem, safety, imu, weather] = await Promise.allSettled([
+                  fetchJSON('/api/nepa/lidar/preview',        DEMO.lidar),
+                  fetchJSON('/api/nepa/inference/heatmap',    DEMO.thermal),
+                  fetchJSON('/api/voda/chem/latest',          DEMO.chem),
+                  fetchJSON('/api/nepa/safety/battery-rth',   DEMO.safety),
+                  fetchJSON('/api/nepa/telemetry/imu',        DEMO.imu),
+                  fetchJSON('/api/hko/weather/latest',        DEMO.weather),
+                ]);
+                Object.assign(DEMO, {
+                  lidar:   lidar.status==='fulfilled'   ? lidar.value   : DEMO.lidar,
+                  thermal: thermal.status==='fulfilled' ? thermal.value : DEMO.thermal,
+                  chem:    chem.status==='fulfilled'    ? chem.value    : DEMO.chem,
+                  safety:  safety.status==='fulfilled'  ? safety.value  : DEMO.safety,
+                  imu:     imu.status==='fulfilled'     ? imu.value     : DEMO.imu,
+                  weather: weather.status==='fulfilled' ? weather.value : DEMO.weather,
+                });
+              }
+              renderPanels();
+            }
+
+            function renderPanels() {
+              // LiDAR
+              document.getElementById('lidar-obs')?.setAttribute('data-val', DEMO.lidar.obs);
+              document.getElementById('lidar-obs').textContent = DEMO.lidar.obs;
+              document.getElementById('lidar-near').textContent = DEMO.lidar.near + ' m';
+              // Thermal
+              document.getElementById('th-min').textContent  = DEMO.thermal.min;
+              document.getElementById('th-avg').textContent  = DEMO.thermal.avg;
+              document.getElementById('th-max').textContent  = DEMO.thermal.max;
+              document.getElementById('th-anomaly').textContent = DEMO.thermal.anomaly;
+              // Chem
+              document.getElementById('chem-voc').textContent    = DEMO.chem.voc;
+              document.getElementById('chem-co2').textContent    = DEMO.chem.co2;
+              document.getElementById('chem-co').textContent     = DEMO.chem.co;
+              document.getElementById('chem-risk').textContent   = DEMO.chem.risk;
+              document.getElementById('chem-radius').textContent = DEMO.chem.radius;
+              // Safety
+              const b = DEMO.safety.batt;
+              document.getElementById('rth-batt').textContent     = b + '%';
+              document.getElementById('rth-batt-bar').style.width = b + '%';
+              document.getElementById('rth-batt-bar').style.background = b > 40 ? 'var(--suc)' : 'var(--err)';
+              document.getElementById('rth-reserve').textContent  = DEMO.safety.reserve + '%';
+              document.getElementById('rth-res-bar').style.width  = DEMO.safety.reserve + '%';
+              document.getElementById('rth-eta').textContent      = DEMO.safety.eta;
+              document.getElementById('rth-glide').textContent    = DEMO.safety.glide;
+              document.getElementById('rth-status').textContent   = DEMO.safety.status;
+              // IMU
+              document.getElementById('imu-pitch').textContent = DEMO.imu.pitch;
+              document.getElementById('imu-roll').textContent  = DEMO.imu.roll;
+              document.getElementById('imu-yaw').textContent   = DEMO.imu.yaw;
+              document.getElementById('imu-gs').textContent    = DEMO.imu.gs;
+              document.getElementById('imu-as').textContent    = DEMO.imu.as;
+              document.getElementById('imu-stall').textContent = DEMO.imu.stall;
+              document.getElementById('imu-land').textContent  = DEMO.imu.land;
+              // Weather
+              document.getElementById('wx-temp').textContent = DEMO.weather.temp;
+              document.getElementById('wx-wind').textContent = DEMO.weather.wind;
+              document.getElementById('wx-vis').textContent  = DEMO.weather.vis;
+              document.getElementById('wx-rain').textContent = DEMO.weather.rain;
+              document.getElementById('wx-warn').textContent = DEMO.weather.warn;
+            }
+
+            // initial render then poll
+            renderPanels();
+            setInterval(pollBackend, 1500);
         // PHASE C2: AI Defect Detection Overlay
         if (ATTAS_FLAGS.enableCrackAI) {
           const DEFECTS = [
