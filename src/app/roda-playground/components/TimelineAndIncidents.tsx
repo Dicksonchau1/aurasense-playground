@@ -1,43 +1,48 @@
-import React, { useEffect, useState } from 'react';
+import useSWR from 'swr';
+import React from 'react';
 
 interface IncidentBar {
   type: 'auto' | 'warn' | 'danger';
   value: number;
 }
 
+interface IncidentSummary {
+  total: number;
+  auto: number;
+  warn: number;
+  danger: number;
+}
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 export default function TimelineAndIncidents() {
-  const [bars, setBars] = useState<IncidentBar[]>([]);
-  const [summary, setSummary] = useState({ total: 0, auto: 0, warn: 0, danger: 0 });
-  const [loading, setLoading] = useState(true);
+  // Replace with your real API endpoint for incidents summary
+  const { data, error } = useSWR('/api/nepa/anomalies/summary', fetcher, { refreshInterval: 10000 });
 
-  useEffect(() => {
-    // TODO: Replace with real API call for incidents
-    // Simulated data for now
-    const fakeBars = [
-      { type: 'auto', value: 12 },
-      { type: 'auto', value: 10 },
-      { type: 'warn', value: 7 },
-      { type: 'auto', value: 11 },
-      { type: 'danger', value: 4 },
-      { type: 'auto', value: 9 },
-      { type: 'warn', value: 6 },
-      { type: 'auto', value: 10 },
-      { type: 'auto', value: 8 },
-      { type: 'danger', value: 3 },
-      { type: 'auto', value: 9 },
-      { type: 'auto', value: 7 },
-    ];
-    setBars(fakeBars);
-    setSummary({
-      total: 76,
-      auto: 59,
-      warn: 11,
-      danger: 6,
-    });
-    setLoading(false);
-  }, []);
+  // Fallback to static if API not ready
+  const bars: IncidentBar[] = data?.data?.bars || [
+    { type: 'auto', value: 12 },
+    { type: 'auto', value: 10 },
+    { type: 'warn', value: 7 },
+    { type: 'auto', value: 11 },
+    { type: 'danger', value: 4 },
+    { type: 'auto', value: 9 },
+    { type: 'warn', value: 6 },
+    { type: 'auto', value: 10 },
+    { type: 'auto', value: 8 },
+    { type: 'danger', value: 3 },
+    { type: 'auto', value: 9 },
+    { type: 'auto', value: 7 },
+  ];
+  const summary: IncidentSummary = data?.data?.summary || {
+    total: 76,
+    auto: 59,
+    warn: 11,
+    danger: 6,
+  };
 
-  if (loading) return <div>Loading timeline...</div>;
+  if (error) return <div>Error loading incidents.</div>;
+  if (!data) return <div>Loading timeline...</div>;
 
   return (
     <section style={{marginTop:32, marginBottom:32}}>

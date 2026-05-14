@@ -1,54 +1,36 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 
-const PROTECTED = ["/attas", "/robotics", "/rehearse-3d"];
-const AUTH_PAGES = ["/login", "/register"];
+const PROTECTED = ["/rehearse-nurse", "/cohort"];
 
 export async function middleware(req: NextRequest) {
-  let res = NextResponse.next({ request: { headers: req.headers } });
+  const res = NextResponse.next();
+  const needsAuth = PROTECTED.some(p => req.nextUrl.pathname.startsWith(p));
+  if (!needsAuth) return res;
 
-  const supabase = createServerClient(
+  const sb = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          res.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          res.cookies.set({ name, value: "", ...options });
-        },
-      },
-    }
+    { cookies: {
+      get: (n)=>req.cookies.get(n)?.value,
+      set: (n,v,o)=>res.cookies.set({ name:n, value:v, ...o }),
+      remove: (n,o)=>res.cookies.set({ name:n, value:"", ...o, maxAge:0 })
+    }}
   );
-
-  const { data: { user } } = await supabase.auth.getUser();
-  const path = req.nextUrl.pathname;
-
-  const isProtected = PROTECTED.some((p) => path === p || path.startsWith(`${p}/`));
-  const isAuthPage = AUTH_PAGES.includes(path);
-
-  if (isProtected && !user) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirectTo", path);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) {
+    const url = req.nextUrl.clone(); url.pathname = "/login"; url.searchParams.set("next", req.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
-
-  if (isAuthPage && user) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  // role gate for /cohort
+  if (req.nextUrl.pathname.startsWith("/cohort")) {
+    const { data: prof } = await sb.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (!prof || (prof.role !== "instructor" && prof.role !== "admin")) {
+      const url = req.nextUrl.clone(); url.pathname = "/rehearse-nurse";
+      return NextResponse.redirect(url);
+    }
   }
-
   return res;
 }
 
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
-  ],
-};
+export const config = { matcher: ["/rehearse-nurse/:path*", "/cohort/:path*"] };

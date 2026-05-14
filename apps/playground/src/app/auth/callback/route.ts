@@ -1,34 +1,20 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get("code");
-  const next = requestUrl.searchParams.get("next") ?? "/";
-
-  const response = NextResponse.redirect(new URL(next, request.url));
-
-  const supabase = createServerClient(
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const code = url.searchParams.get("code");
+  const cookieStore = cookies();
+  const sb = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          response.cookies.set({ name, value: "", ...options });
-        },
-      },
-    }
+    { cookies: {
+      get: (n)=>cookieStore.get(n)?.value,
+      set: (n,v,o)=>cookieStore.set({ name:n, value:v, ...o }),
+      remove: (n,o)=>cookieStore.set({ name:n, value:"", ...o, maxAge:0 })
+    }}
   );
-
-  if (code) {
-    await supabase.auth.exchangeCodeForSession(code);
-  }
-
-  return response;
+  if (code) await sb.auth.exchangeCodeForSession(code);
+  return NextResponse.redirect(new URL("/auth/post-login", url.origin));
 }
