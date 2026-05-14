@@ -5,23 +5,15 @@
     "jsx": "preserve",
     "composite": true,
     "lib": [
-      {
-        "extends": "../../tsconfig.json",
-        "compilerOptions": {
-          "outDir": "dist",
-          "rootDir": "src",
-          "jsx": "preserve",
-          "composite": true,
-          "lib": [
-            "dom",
-            "dom.iterable",
-            "esnext"
-          ],
-          "allowJs": true,
-          "incremental": true,
-          "resolveJsonModule": true,
-          "isolatedModules": true
-        },
-        "include": ["src", "pages"],
-        "exclude": ["node_modules", "dist"]
-      }
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "include": ["src", "pages"],
+  "exclude": ["node_modules", "dist"]
+}

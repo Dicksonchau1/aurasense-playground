@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import Card from "@/components/shell/Card";
-import Field from "@/components/shell/Field";
-import Button from "@/components/shell/Button";
+import { getSupabaseClient } from "../../utils/supabaseClient";
+import Card from "../../components/shell/Card";
+import Field from "../../components/shell/Field";
+import Button from "../../components/shell/Button";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,23 +22,10 @@ export default function RegisterPage() {
     setMsg(null);
     setLoading(true);
     try {
-      const supabase = createClient();
-      const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/auth/callback`
-          : undefined;
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
-      });
-
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
-
-      setMsg(
-        "Check your inbox to confirm your email. After confirmation, you'll return through the auth callback and can sign in."
-      );
+      setMsg("Check your inbox to confirm your email. You can sign in after confirming.");
     } catch (e: any) {
       setErr(e?.message ?? "Registration failed");
     } finally {

@@ -1,21 +1,43 @@
 "use client";
 
-
-import { useEffect } from "react";
-import { getSupabaseClient } from "../../utils/supabaseClient";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { getSupabaseClient } from "../../utils/supabaseClient";
+import Card from "../../components/shell/Card";
 
 export default function LogoutPage() {
   const router = useRouter();
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = getSupabaseClient();
-    supabase.auth.signOut().finally(() => router.push("/login"));
+    (async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        setDone(true);
+        setTimeout(() => router.push("/login"), 1200);
+      } catch (e: any) {
+        setErr(e?.message ?? "Sign out failed");
+      }
+    })();
   }, [router]);
 
   return (
-    <main className="flex items-center justify-center min-h-screen">
-      <div className="text-lg">Signing out...</div>
-    </main>
+    <div className="grid place-items-center min-h-[480px]">
+      <Card className="w-full max-w-md text-center">
+        <h1 className="aura-h1 mb-2">Signing out…</h1>
+        {!done && !err && <p className="aura-sub">Clearing your session.</p>}
+        {done && <p className="aura-sub">Done. Redirecting…</p>}
+        {err && (
+          <>
+            <p className="aura-sub" style={{ color: "#7f1d1d" }}>{err}</p>
+            <Link href="/login" className="aura-link block mt-4">Back to sign in</Link>
+          </>
+        )}
+      </Card>
+    </div>
   );
 }

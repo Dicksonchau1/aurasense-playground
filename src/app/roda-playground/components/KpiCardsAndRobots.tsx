@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import styles from './KpiCardsAndRobots.module.css';
 
 interface Mission {
   id: string;
@@ -64,33 +65,39 @@ export default function KpiCardsAndRobots() {
 
   return (
     <section>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-        <div>
-          <div>Active missions</div>
-          <div style={{ fontSize: 22 }}>{kpi.activeMissions}</div>
+      <div className={styles.kpiGrid}>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiTitle}>Active missions</div>
+          <div className={styles.kpiValue}>{kpi.activeMissions}</div>
         </div>
-        <div>
-          <div>Robots online</div>
-          <div style={{ fontSize: 22 }}>{kpi.robotsOnline}/{kpi.robotsTotal}</div>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiTitle}>Robots online</div>
+          <div className={styles.kpiValue}>{kpi.robotsOnline}/{kpi.robotsTotal}</div>
         </div>
-        <div>
-          <div>Pending decisions</div>
-          <div style={{ fontSize: 22 }}>{kpi.pendingDecisions}</div>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiTitle}>Pending decisions</div>
+          <div className={styles.kpiValue}>{kpi.pendingDecisions}</div>
         </div>
-        <div>
-          <div>Autonomy ratio</div>
-          <div style={{ fontSize: 22 }}>{kpi.autonomyRatio}%</div>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiTitle}>Autonomy ratio</div>
+          <div className={styles.kpiValue}>{kpi.autonomyRatio}%</div>
         </div>
       </div>
       <div>
-        <h3>Robots overview</h3>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <h3 style={{color:'#ffd335',marginBottom:8}}>Robots overview</h3>
+        <div className={styles.robotsGrid}>
           {robots.map(robot => (
-            <div key={robot.id} style={{ border: '1px solid #333', borderRadius: 10, padding: 12, minWidth: 160 }}>
-              <div><strong>{robot.model} #{robot.id}</strong></div>
-              <div>Status: {robot.status}</div>
-              <div>Battery: {robot.battery}%</div>
-              <div>Region: {robot.region}</div>
+            <div key={robot.id} className={styles.robotCard}>
+              <span className={[
+                styles.robotStatus,
+                robot.status === 'alert' ? styles.alert : '',
+                robot.status === 'maintenance' ? styles.maintenance : ''
+              ].join(' ')}>
+                {robot.status.charAt(0).toUpperCase() + robot.status.slice(1)}
+              </span>
+              <div className={styles.robotTitle}>{robot.model} #{robot.id}</div>
+              <div className={styles.robotMeta}>Battery: {robot.battery}%</div>
+              <div className={styles.robotMeta}>Region: {robot.region}</div>
             </div>
           ))}
         </div>

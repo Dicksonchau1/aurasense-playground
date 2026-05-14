@@ -3,6 +3,11 @@
 import { KpiCard, StatusChip } from "@/components/atlas";
 import { AtlasSection, AtlasStack } from "@/components/atlas/layout";
 import type { ParametersPanelVM } from "@/lib/atlas/view-models-ardupilot";
+"use client";
+
+import { KpiCard, StatusChip } from "@/components/atlas";
+import { AtlasSection, AtlasStack } from "@/components/atlas/layout";
+import type { ParametersPanelVM } from "@/lib/atlas/view-models-ardupilot";
 
 type ParametersSectionProps = {
   vm: ParametersPanelVM;

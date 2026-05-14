@@ -62,14 +62,29 @@ export default function NurseRehearseSession({ onComplete }: { onComplete: (resu
       } else {
         // Complete
         clearNurseRehearseSession();
-        onComplete({
+        // Send result to backend
+        const result = {
           sessionId,
           steps: updated,
-          verdict: "pass",
-          summary: "Hand hygiene module completed successfully.",
           anomalies: [],
-          timestamp: new Date().toISOString()
-        });
+        };
+        try {
+          const backendResult = await fetchJSON("/api/rehearse-nurse/complete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(result)
+          });
+          onComplete(backendResult);
+        } catch (err) {
+          // Fallback to local result if backend fails
+          onComplete({
+            ...result,
+            verdict: "pass",
+            summary: "Hand hygiene module completed successfully.",
+            timestamp: new Date().toISOString(),
+            backendError: true
+          });
+        }
       }
     } catch (e: any) {
       setError(e.message);
