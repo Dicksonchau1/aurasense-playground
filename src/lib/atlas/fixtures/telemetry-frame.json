@@ -1,0 +1,19 @@
+{
+  "session_id": "sess_live_001",
+  "ts": "2026-05-14T16:07:14+08:00",
+  "lat": 22.30401,
+  "lng": 114.16043,
+  "alt_m": 55.6,
+  "ground_speed_ms": 3.1,
+  "heading_deg": 86.4,
+  "battery_pct": 71.2,
+  "gps_fix": 5,
+  "link_quality_pct": 94,
+  "flight_mode": "AUTO",
+  "imu": {
+    "roll_deg": 1.4,
+    "pitch_deg": -3.2,
+    "yaw_deg": 86.1,
+    "vibration_index": 0.07
+  }
+}

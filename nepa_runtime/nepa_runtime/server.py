@@ -108,3 +108,24 @@ def serve():
 
 if __name__ == "__main__":
     serve()
+
+# ── STDP Hybrid Loop HTTP endpoints (appended by build script) ──────────────
+from nepa_runtime.stdp_hybrid_loop import get_loop as _get_stdp_loop
+from fastapi import Request as _Request
+from fastapi.responses import JSONResponse as _JSONResponse
+
+@app.post("/nepa/update")
+async def nepa_update(req: _Request):
+    body = await req.json()
+    loop = _get_stdp_loop()
+    result = loop.update(
+        step_idx       = int(body.get("step", 0)),
+        multi_landmarks = body.get("landmarks", []),
+        multi_handedness= body.get("handedness", []),
+        confidence     = float(body.get("confidence", 0.0)),
+    )
+    return _JSONResponse(result)
+
+@app.get("/nepa/weights")
+async def nepa_weights():
+    return _JSONResponse(_get_stdp_loop().get_weights_snapshot())

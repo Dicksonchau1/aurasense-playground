@@ -1,0 +1,74 @@
+{
+  "mission_id": "mis_hk_icc_001",
+  "org_id": "org_aurasense_demo",
+  "title": "ICC Facade Sweep A-12",
+  "description": "Enterprise facade inspection rehearsal and live mission for west elevation crack and seepage review.",
+  "vehicle_id": "veh_m300_rtk_01",
+  "mission_type": "facade_inspection",
+  "status": "validated",
+  "waypoints": [
+    {
+      "waypoint_id": "wp_001",
+      "seq": 1,
+      "lat": 22.3039,
+      "lng": 114.1604,
+      "alt_m": 48,
+      "speed_ms": 3.5,
+      "hold_s": 2,
+      "heading_deg": 85,
+      "action": "WAYPOINT",
+      "params": { "camera_pitch_deg": -18 }
+    },
+    {
+      "waypoint_id": "wp_002",
+      "seq": 2,
+      "lat": 22.30402,
+      "lng": 114.16042,
+      "alt_m": 56,
+      "speed_ms": 3.2,
+      "hold_s": 3,
+      "heading_deg": 86,
+      "action": "TAKE_PHOTO",
+      "params": { "capture_mode": "rgb", "zoom": 3 }
+    },
+    {
+      "waypoint_id": "wp_003",
+      "seq": 3,
+      "lat": 22.30412,
+      "lng": 114.16045,
+      "alt_m": 64,
+      "speed_ms": 3,
+      "hold_s": 2,
+      "heading_deg": 88,
+      "action": "WAYPOINT",
+      "params": { "camera_pitch_deg": -22 }
+    }
+  ],
+  "geofence": {
+    "points": [
+      { "lat": 22.3035, "lng": 114.1600 },
+      { "lat": 22.3045, "lng": 114.1600 },
+      { "lat": 22.3045, "lng": 114.1610 },
+      { "lat": 22.3035, "lng": 114.1610 }
+    ]
+  },
+  "rally_points": [
+    { "lat": 22.3037, "lng": 114.1602, "alt_m": 25 }
+  ],
+  "payload_profile": {
+    "camera": "rgb",
+    "overlap_pct": 72,
+    "inspection_mode": "crack"
+  },
+  "environment_preset": {
+    "preset_id": "env_hk_summer_haze",
+    "label": "HK Summer Haze",
+    "wind_profile": "harbour_crosswind_light",
+    "light_profile": "pm_west_glare",
+    "dust_profile": "urban_low"
+  },
+  "created_at": "2026-05-14T13:00:00+08:00",
+  "updated_at": "2026-05-14T13:08:00+08:00",
+  "created_by": "dickson",
+  "tags": ["hk", "facade", "enterprise", "rehearse-3d"]
+}

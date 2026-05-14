@@ -1,0 +1,52 @@
+{
+  "session_id": "sess_rehearse_001",
+  "mission_id": "mis_hk_icc_001",
+  "passed": true,
+  "score": 89.7,
+  "estimated_battery_margin_pct": 28.5,
+  "predicted_risks": [
+    {
+      "risk_id": "risk_001",
+      "category": "visibility",
+      "severity": "medium",
+      "message": "Mild west-glare reduces crack visibility near waypoint 2.",
+      "waypoint_id": "wp_002",
+      "confidence": 0.82
+    },
+    {
+      "risk_id": "risk_002",
+      "category": "drift",
+      "severity": "low",
+      "message": "Crosswind may increase hover drift by 0.3m during photo capture.",
+      "waypoint_id": "wp_002",
+      "confidence": 0.76
+    }
+  ],
+  "suggested_adjustments": [
+    {
+      "adjustment_id": "adj_001",
+      "target": "mission",
+      "field": "waypoints[1].hold_s",
+      "current_value": 3,
+      "suggested_value": 2,
+      "reason": "Reduce glare exposure window."
+    },
+    {
+      "adjustment_id": "adj_002",
+      "target": "vehicle_profile",
+      "field": "hover_stability_mode",
+      "current_value": "standard",
+      "suggested_value": "precision",
+      "reason": "Improve lateral stability at capture point."
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "art_rehearse_001",
+      "session_id": "sess_rehearse_001",
+      "kind": "snapshot",
+      "url": "/fixtures/rehearse-frame-001.png",
+      "created_at": "2026-05-14T13:13:22+08:00"
+    }
+  ]
+}

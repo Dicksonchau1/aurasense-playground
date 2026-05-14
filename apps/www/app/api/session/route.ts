@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createSupabaseServiceClient } from '@/lib/supabase/service'
 
 export async function POST(req: NextRequest) {
   const sb = await createClient()
@@ -42,6 +43,57 @@ export async function POST(req: NextRequest) {
       lane_breakdown: lanes ?? {},
     })
   }
+
+  // --- Dual-write: NEPA audit chain (tamper-evident log) ---
+  try {
+    const svc = createSupabaseServiceClient()
+    // Compute prev_hash (last audit row for user)
+    const { data: lastAudit } = await svc
+      .from('nepa_audit')
+      .select('row_hash')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const prev_hash = lastAudit?.row_hash || null
+    // Minimal canonical row for audit chain
+    const canonical = JSON.stringify({
+      user_id: user.id,
+      session_id: session.id,
+      envelope,
+      consistency,
+      lanes,
+      snapshot_url,
+      duration_sec,
+      ts: new Date().toISOString(),
+    })
+    // Compute row_hash (sha256 of prev_hash + canonical)
+    const encoder = new TextEncoder()
+    const data = encoder.encode((prev_hash || '') + canonical)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const row_hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
+    await svc.from('nepa_audit').insert({
+      user_id: user.id,
+      pipeline: 'visual',
+      source: 'rehearse',
+      region: null,
+      image_sha256: null,
+      image_path: snapshot_url ?? null,
+      bytes: 0,
+      detections: [],
+      stdp: {},
+      world_model: {},
+      latency_ms: null,
+      prev_hash,
+      row_hash,
+    })
+  } catch (e) {
+    // Log but do not block session save on audit chain failure
+    console.error('NEPA audit chain write failed', e)
+  }
+
+  // --- Instructor override/audit chain stub ---
+  // TODO: Implement instructor override/hold and signed verdict chain
 
   return NextResponse.json({ id: session.id })
 }

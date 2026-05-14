@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HK 7-Step Hand Hygiene Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="light"]{
+--text-xs:clamp(0.75rem,0.7rem + 0.25vw,0.875rem);
+--text-sm:clamp(0.875rem,0.8rem + 0.35vw,1rem);
+--text-base:clamp(1rem,0.95rem + 0.25vw,1.125rem);
+--text-lg:clamp(1.125rem,1rem + 0.75vw,1.5rem);
+--text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
+--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;
+--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
+--space-12:3rem;--space-16:4rem;
+--color-bg:#f5f7f8;--color-surface:#ffffff;--color-surface-2:#f8fafc;
+--color-surface-offset:#eef2f5;--color-surface-dynamic:#e2eaef;
+--color-divider:#dde4ea;--color-border:#cbd5de;
+--color-text:#1a2330;--color-text-muted:#546372;--color-text-faint:#9aaab6;
+--color-text-inverse:#f5f7f8;
+--color-primary:#01696f;--color-primary-hover:#0c4e54;--color-primary-active:#0f3638;
+--color-primary-bg:#e6f3f4;--color-primary-light:#b3d8db;
+--color-success:#2e7d4f;--color-success-bg:#e8f5ee;--color-success-light:#a8d8bc;
+--color-warning:#b05a00;--color-warning-bg:#fdf0e0;--color-warning-light:#f0c07a;
+--color-error:#c0392b;--color-error-bg:#fdf0ee;--color-error-light:#f0a89e;
+--color-info:#1a6fa8;--color-info-bg:#e6f1fa;
+--radius-sm:0.375rem;--radius-md:0.5rem;--radius-lg:0.75rem;--radius-xl:1rem;--radius-full:9999px;
+--t:180ms cubic-bezier(0.16,1,0.3,1);
+--shadow-sm:0 1px 3px oklch(0.2 0.02 220/0.08);
+--shadow-md:0 4px 12px oklch(0.2 0.02 220/0.10);
+--shadow-lg:0 12px 32px oklch(0.2 0.02 220/0.14);
+--font-body:'Inter','Helvetica Neue',sans-serif;
+--font-mono:'JetBrains Mono','Courier New',monospace;
+}
+[data-theme="dark"]{
+--color-bg:#0f1419;--color-surface:#161d25;--color-surface-2:#1c2530;
+--color-surface-offset:#1a2230;--color-surface-dynamic:#222d3a;
+--color-divider:#243040;--color-border:#2d3d4f;
+--color-text:#c8d8e8;--color-text-muted:#7090a8;--color-text-faint:#445566;
+--color-text-inverse:#0f1419;
+--color-primary:#3d9ea8;--color-primary-hover:#2d8a96;--color-primary-active:#1d7480;
+--color-primary-bg:#0d2428;--color-primary-light:#1d4850;
+--color-success:#4aaa72;--color-success-bg:#0d2018;--color-success-light:#1d4030;
+--color-warning:#e0882a;--color-warning-bg:#241500;--color-warning-light:#4a2a00;
+--color-error:#e05545;--color-error-bg:#240c08;--color-error-light:#4a1810;
+--color-info:#4a9fd0;--color-info-bg:#0c1e30;
+--shadow-sm:0 1px 3px oklch(0 0 0/0.25);
+--shadow-md:0 4px 12px oklch(0 0 0/0.35);
+--shadow-lg:0 12px 32px oklch(0 0 0/0.45);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{min-height:100dvh;line-height:1.5;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg)}
+img,svg{display:block;max-width:100%}
+button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
+input,select{font:inherit;color:inherit}
+table{border-collapse:collapse;width:100%}
+a,button,[role="button"],input,select{transition:color var(--t),background var(--t),border-color var(--t),box-shadow var(--t),opacity var(--t)}
+:focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+
+.app{display:grid;grid-template-rows:auto 1fr;min-height:100dvh}
+.topbar{background:var(--color-surface);border-bottom:1px solid var(--color-divider);padding:var(--space-3) var(--space-6);display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm);position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:var(--space-3)}
+.topbar-logo{display:flex;align-items:center;gap:var(--space-2)}
+.topbar-logo-text{font-size:var(--text-sm);font-weight:600}
+.topbar-logo-sub{font-size:var(--text-xs);color:var(--color-text-muted);font-weight:400}
+.tb-badge{font-size:var(--text-xs);padding:2px var(--space-2);background:var(--color-primary-bg);color:var(--color-primary);border-radius:var(--radius-full);font-weight:500;border:1px solid var(--color-primary-light)}
+.topbar-right{display:flex;align-items:center;gap:var(--space-2)}
+.mode-tabs{display:flex;gap:2px;background:var(--color-surface-offset);border-radius:var(--radius-lg);padding:3px}
+.mode-tab{padding:var(--space-1) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-xs);font-weight:500;cursor:pointer;color:var(--color-text-muted)}
+.mode-tab.active{background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-sm)}
+.mode-tab:hover:not(.active){color:var(--color-text)}
+.btn-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);color:var(--color-text-muted)}
+.btn-icon:hover{background:var(--color-surface-offset);color:var(--color-text)}
+
+.main{display:grid;grid-template-columns:1fr 320px;gap:0;height:calc(100dvh - 57px);overflow:hidden}
+@media(max-width:900px){.main{grid-template-columns:1fr;grid-template-rows:1fr auto;height:auto;overflow:visible}}
+
+.coaching-panel{display:flex;flex-direction:column;gap:var(--space-4);padding:var(--space-6);overflow-y:auto;background:var(--color-bg)}
+.camera-area{background:var(--color-surface);border-radius:var(--radius-xl);border:1px solid var(--color-border);overflow:hidden;position:relative;aspect-ratio:16/10;box-shadow:var(--shadow-md)}
+.camera-bg{width:100%;height:100%;background:linear-gradient(135deg,#0d1a20 0%,#0a1520 50%,#0d1a20 100%);display:flex;align-items:center;justify-content:center;position:relative}
+.cam-placeholder{display:flex;flex-direction:column;align-items:center;gap:var(--space-3);color:#4a6070;text-align:center}
+.cam-placeholder svg{opacity:0.35}
+.cam-placeholder p{font-size:var(--text-sm)}
+.camera-overlay{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:var(--space-4)}
+.cam-top{display:flex;align-items:flex-start;justify-content:space-between}
+.cam-bottom{display:flex;align-items:flex-end;justify-content:space-between}
+.cam-pill{display:flex;align-items:center;gap:5px;padding:4px var(--space-2);border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:500;backdrop-filter:blur(8px)}
+.cam-pill.idle{background:rgba(20,30,40,0.75);color:#7090a8}
+.cam-pill.detecting{background:rgba(1,60,65,0.80);color:#7dcfdb}
+.cam-pill.active{background:rgba(1,60,65,0.85);color:#7dcfdb}
+.cam-pill.complete{background:rgba(20,80,50,0.85);color:#7dd4a0}
+.cam-dot{width:7px;height:7px;border-radius:50%}
+.cam-pill.idle .cam-dot{background:#445566}
+.cam-pill.detecting .cam-dot,.cam-pill.active .cam-dot{background:#3dc8d8;animation:pdot 0.9s ease-in-out infinite}
+.cam-pill.complete .cam-dot{background:#4aaa72}
+@keyframes pdot{0%,100%{opacity:1}50%{opacity:0.25}}
+.cam-timer{font-family:var(--font-mono);font-size:var(--text-lg);font-weight:500;backdrop-filter:blur(8px);padding:4px var(--space-3);border-radius:var(--radius-md);letter-spacing:0.05em}
+.cam-timer.idle{background:rgba(20,30,40,0.6);color:#445566}
+.cam-timer.running{background:rgba(1,50,55,0.8);color:#7dcfdb}
+.cam-timer.warning{background:rgba(100,60,0,0.8);color:#f0c07a}
+.cam-timer.complete{background:rgba(20,70,40,0.8);color:#7dd4a0}
+.cam-conf{font-size:var(--text-xs);color:#7090a8;backdrop-filter:blur(6px);background:rgba(20,30,40,0.6);padding:3px var(--space-2);border-radius:var(--radius-sm)}
+.cam-sides{display:flex;gap:3px}
+.side-chip{font-size:var(--text-xs);padding:2px var(--space-2);border-radius:var(--radius-full);font-weight:600;backdrop-filter:blur(6px)}
+.side-chip.pending{background:rgba(30,45,60,0.75);color:#445566}
+.side-chip.done{background:rgba(1,50,55,0.80);color:#7dcfdb}
+
+.step-card{background:var(--color-surface);border-radius:var(--radius-xl);border:1px solid var(--color-border);padding:var(--space-5) var(--space-6);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:var(--space-4)}
+.step-card-hd{display:flex;align-items:center;gap:var(--space-3)}
+.step-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:var(--text-sm);flex-shrink:0;background:var(--color-primary-bg);color:var(--color-primary);border:2px solid var(--color-primary-light)}
+.step-meta{flex:1}
+.step-label{font-size:var(--text-lg);font-weight:600;line-height:1.2}
+.step-sub{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:2px}
+.step-tag{font-size:var(--text-xs);font-weight:600;padding:4px var(--space-2);border-radius:var(--radius-full)}
+.step-tag.active{background:var(--color-primary-bg);color:var(--color-primary)}
+.step-tag.correction{background:var(--color-warning-bg);color:var(--color-warning)}
+.step-tag.complete{background:var(--color-success-bg);color:var(--color-success)}
+.step-tag.idle{background:var(--color-surface-offset);color:var(--color-text-faint)}
+
+.coach-msg{padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);font-size:var(--text-sm);font-weight:500;line-height:1.4}
+.coach-msg.active{background:var(--color-primary-bg);color:var(--color-primary);border:1px solid var(--color-primary-light)}
+.coach-msg.correction{background:var(--color-warning-bg);color:var(--color-warning);border:1px solid var(--color-warning-light)}
+.coach-msg.complete{background:var(--color-success-bg);color:var(--color-success);border:1px solid var(--color-success-light)}
+.coach-msg.idle{background:var(--color-surface-offset);color:var(--color-text-muted);border:1px solid var(--color-divider)}
+
+.dwell-row{display:flex;align-items:center;gap:var(--space-3)}
+.dwell-lbl{font-size:var(--text-xs);color:var(--color-text-muted);white-space:nowrap;min-width:72px}
+.dwell-track{flex:1;height:6px;background:var(--color-surface-offset);border-radius:var(--radius-full);overflow:hidden}
+.dwell-fill{height:100%;border-radius:var(--radius-full);background:var(--color-primary);transition:width 0.35s ease-out}
+.dwell-fill.done{background:var(--color-success)}
+.dwell-fill.warn{background:var(--color-warning)}
+.dwell-pct{font-size:var(--text-xs);color:var(--color-text-muted);min-width:32px;text-align:right;font-family:var(--font-mono)}
+
+.lat-row{display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap}
+.lat-lbl{font-size:var(--text-xs);color:var(--color-text-muted)}
+.lat-chip{font-size:var(--text-xs);padding:3px var(--space-3);border-radius:var(--radius-full);font-weight:500;transition:all var(--t)}
+.lat-chip.pending{background:var(--color-surface-offset);color:var(--color-text-faint);border:1px solid var(--color-border)}
+.lat-chip.done{background:var(--color-success-bg);color:var(--color-success);border:1px solid var(--color-success-light)}
+
+.ctrl-row{display:flex;gap:var(--space-3);align-items:center;margin-top:var(--space-2)}
+.btn-p{padding:var(--space-3) var(--space-6);background:var(--color-primary);color:white;border-radius:var(--radius-lg);font-size:var(--text-sm);font-weight:600;border:none;cursor:pointer}
+.btn-p:hover{background:var(--color-primary-hover)}
+.btn-p:active{background:var(--color-primary-active)}
+.btn-p:disabled{opacity:0.4;cursor:not-allowed}
+.btn-s{padding:var(--space-3) var(--space-5);background:var(--color-surface-offset);color:var(--color-text);border-radius:var(--radius-lg);font-size:var(--text-sm);font-weight:500;border:1px solid var(--color-border);cursor:pointer}
+.btn-s:hover{background:var(--color-surface-dynamic)}
+.btn-g{padding:var(--space-2) var(--space-4);color:var(--color-text-muted);font-size:var(--text-sm);border-radius:var(--radius-md);cursor:pointer}
+.btn-g:hover{background:var(--color-surface-offset);color:var(--color-text)}
+
+.right-panel{background:var(--color-surface);border-left:1px solid var(--color-divider);display:flex;flex-direction:column;overflow:hidden}
+.rail-hd{padding:var(--space-4) var(--space-4) var(--space-3);border-bottom:1px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between}
+.rail-title{font-size:var(--text-sm);font-weight:600}
+.rail-sub{font-size:var(--text-xs);color:var(--color-text-muted)}
+.dur-badge{font-size:var(--text-xs);font-family:var(--font-mono);padding:3px var(--space-2);border-radius:var(--radius-sm);background:var(--color-surface-offset);color:var(--color-text-muted)}
+.step-rail{padding:var(--space-3) var(--space-4);display:flex;flex-direction:column;gap:2px}
+.rail-item{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);transition:background var(--t)}
+.rail-item.active{background:var(--color-primary-bg)}
+.rail-item.completed{background:var(--color-success-bg)}
+.rail-item.correction{background:var(--color-warning-bg)}
+.rail-item.pending{opacity:0.5}
+.rail-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:700;flex-shrink:0}
+.rail-item.pending .rail-icon{background:var(--color-surface-offset);color:var(--color-text-faint);border:1px solid var(--color-border)}
+.rail-item.active .rail-icon{background:var(--color-primary);color:white}
+.rail-item.completed .rail-icon{background:var(--color-success);color:white}
+.rail-item.correction .rail-icon{background:var(--color-warning);color:white}
+.rail-info{flex:1;min-width:0}
+.rail-name{font-size:var(--text-xs);font-weight:600;color:var(--color-text)}
+.rail-item.pending .rail-name{color:var(--color-text-muted)}
+.rail-item.completed .rail-name{color:var(--color-success)}
+.rail-item.active .rail-name{color:var(--color-primary)}
+.rail-item.correction .rail-name{color:var(--color-warning)}
+.rail-dwell{font-size:10px;font-family:var(--font-mono);color:var(--color-text-faint)}
+.rail-bilat{display:flex;gap:3px}
+.rb-dot{width:14px;height:14px;border-radius:50%;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.rb-dot.done{background:var(--color-success);color:white}
+.rb-dot.pending{background:var(--color-surface-dynamic);color:var(--color-text-faint)}
+
+.score-section{border-top:1px solid var(--color-divider);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)}
+.score-hd{display:flex;align-items:center;justify-content:space-between}
+.score-title{font-size:var(--text-sm);font-weight:600}
+.score-total{font-size:var(--text-xl);font-weight:700;font-family:var(--font-mono);color:var(--color-primary);line-height:1}
+.score-total.pass{color:var(--color-success)}
+.score-total.fail{color:var(--color-error)}
+.score-bk{display:flex;flex-direction:column;gap:var(--space-2)}
+.score-row{display:flex;align-items:center;gap:var(--space-2)}
+.score-lbl{font-size:var(--text-xs);color:var(--color-text-muted);flex:1}
+.score-track{width:80px;height:5px;background:var(--color-surface-offset);border-radius:var(--radius-full);overflow:hidden}
+.score-fill{height:100%;border-radius:var(--radius-full);background:var(--color-primary);transition:width 0.6s ease-out}
+.score-val{font-size:var(--text-xs);font-family:var(--font-mono);color:var(--color-text-muted);min-width:36px;text-align:right}
+.pass-banner{padding:var(--space-3) var(--space-4);border-radius:var(--radius-lg);text-align:center;font-size:var(--text-sm);font-weight:600}
+.pass-banner.pass{background:var(--color-success-bg);color:var(--color-success);border:1px solid var(--color-success-light)}
+.pass-banner.fail{background:var(--color-error-bg);color:var(--color-error);border:1px solid var(--color-error-light)}
+
+.log-section{border-top:1px solid var(--color-divider);display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
+.log-hd{padding:var(--space-3) var(--space-4) var(--space-2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.log-title{font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.07em}
+.log-clear{font-size:var(--text-xs);color:var(--color-text-faint);cursor:pointer}
+.log-clear:hover{color:var(--color-text-muted)}
+.log-scroll{flex:1;overflow-y:auto;padding:0 var(--space-4) var(--space-4)}
+.log-empty{text-align:center;padding:var(--space-6) 0;color:var(--color-text-faint);font-size:var(--text-xs)}
+.log-entry{display:flex;align-items:flex-start;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider);animation:ein .22s ease-out}
+@keyframes ein{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.log-entry:last-child{border-bottom:none}
+.log-dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.log-dot.info{background:var(--color-primary)}
+.log-dot.correction{background:var(--color-warning)}
+.log-dot.complete{background:var(--color-success)}
+.log-dot.flag{background:var(--color-error)}
+.log-dot.start{background:var(--color-info)}
+.log-content{flex:1;min-width:0}
+.log-msg{font-size:var(--text-xs);color:var(--color-text);line-height:1.4}
+.log-ts{font-size:10px;font-family:var(--font-mono);color:var(--color-text-faint)}
+
+.backdrop{position:fixed;inset:0;background:oklch(0.1 0.02 220/0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:var(--space-4)}
+.backdrop.hidden{display:none}
+.modal{background:var(--color-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);width:100%;max-width:520px;max-height:90dvh;overflow-y:auto;border:1px solid var(--color-border);animation:min .22s cubic-bezier(0.16,1,0.3,1)}
+@keyframes min{from{opacity:0;transform:scale(0.96) translateY(8px)}to{opacity:1;transform:none}}
+.modal-hd{padding:var(--space-6) var(--space-6) var(--space-4);border-bottom:1px solid var(--color-divider);display:flex;align-items:flex-start;justify-content:space-between}
+.modal-title{font-size:var(--text-lg);font-weight:700}
+.modal-sub{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:2px}
+.modal-x{color:var(--color-text-faint);padding:var(--space-1);border-radius:var(--radius-sm)}
+.modal-x:hover{color:var(--color-text);background:var(--color-surface-offset)}
+.modal-body{padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-5)}
+.modal-ft{padding:var(--space-4) var(--space-6);border-top:1px solid var(--color-divider);display:flex;gap:var(--space-3);justify-content:flex-end}
+
+.cfg-grp{display:flex;flex-direction:column;gap:var(--space-3)}
+.cfg-grp-lbl{font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted)}
+.cfg-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)}
+.cfg-lbl{font-size:var(--text-sm);color:var(--color-text)}
+.cfg-hint{font-size:var(--text-xs);color:var(--color-text-faint)}
+.cfg-input{padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-sm);border:1px solid var(--color-border);background:var(--color-surface-2);min-width:80px}
+.cfg-input:focus{outline:2px solid var(--color-primary);outline-offset:2px}
+.cfg-select{padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);font-size:var(--text-sm);border:1px solid var(--color-border);background:var(--color-surface-2);cursor:pointer}
+.tog-row{display:flex;align-items:center;gap:var(--space-3);justify-content:space-between}
+.tog-lbl{font-size:var(--text-sm);color:var(--color-text)}
+.tog{width:40px;height:22px;border-radius:var(--radius-full);position:relative;cursor:pointer;transition:background var(--t);background:var(--color-border);border:none}
+.tog.on{background:var(--color-primary)}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;transition:transform var(--t);box-shadow:0 1px 3px oklch(0 0 0/0.2)}
+.tog.on::after{transform:translateX(18px)}
+
+.res-ring{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);padding:var(--space-4) 0}
+.res-big{font-size:64px;font-weight:800;font-family:var(--font-mono);line-height:1}
+.res-big.pass{color:var(--color-success)}
+.res-big.fail{color:var(--color-error)}
+.res-label{font-size:var(--text-sm);color:var(--color-text-muted);font-weight:500}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+.res-card{background:var(--color-surface-2);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);border:1px solid var(--color-border)}
+.res-card-lbl{font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:4px}
+.res-card-val{font-size:var(--text-lg);font-weight:700;font-family:var(--font-mono)}
+.res-card-val.good{color:var(--color-success)}
+.res-card-val.ok{color:var(--color-primary)}
+.res-card-val.poor{color:var(--color-error)}
+.res-card-max{font-size:var(--text-xs);color:var(--color-text-faint)}
+.json-block{background:var(--color-surface-offset);border-radius:var(--radius-md);padding:var(--space-4);font-family:var(--font-mono);font-size:10px;color:var(--color-text-muted);line-height:1.6;overflow-x:auto;white-space:pre;max-height:240px;overflow-y:auto;border:1px solid var(--color-border)}
+.spec-table{width:100%;border-collapse:collapse;font-size:var(--text-xs)}
+.spec-table th{padding:var(--space-2) var(--space-3);text-align:left;background:var(--color-surface-offset);font-weight:600;color:var(--color-text-muted);border-bottom:1px solid var(--color-border)}
+.spec-table td{padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--color-divider);color:var(--color-text);vertical-align:top}
+.spec-table tr:last-child td{border-bottom:none}
+.spec-table td:first-child{font-weight:500;color:var(--color-primary);width:38%}
+.info-banner{background:var(--color-info-bg);border-radius:var(--radius-lg);padding:var(--space-4);font-size:var(--text-xs);color:var(--color-info);border:1px solid rgba(26,111,168,0.22)}
+@media(max-width:900px){.main{height:auto}.right-panel{border-left:none;border-top:1px solid var(--color-divider)}.topbar{padding:var(--space-3) var(--space-4)}.mode-tabs{display:none}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="app">
+
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="HK Hand Hygiene Trainer logo">
+        <rect width="28" height="28" rx="7" fill="#01696f"/>
+        <path d="M9 11C9 10.17 9.67 9.5 10.5 9.5h.7c.83 0 1.5.67 1.5 1.5v6.5a1.5 1.5 0 01-3 0V11z" fill="white" opacity="0.9"/>
+        <path d="M12.7 12C12.7 11.17 13.37 10.5 14.2 10.5h.4c.83 0 1.5.67 1.5 1.5v6.5a1.5 1.5 0 01-3 0V12z" fill="white" opacity="0.9"/>
+        <path d="M16.1 13c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5a4.1 4.1 0 01-8.2 0v-.6h.5a.5.5 0 01.5.5v.1a1 1 0 002 0V13z" fill="white"/>
+      </svg>
+      <div>
+        <div class="topbar-logo-text">HK Hand Hygiene Trainer</div>
+        <div class="topbar-logo-sub">7-Step Technique &middot; CHP-Aligned</div>
+      </div>
+    </div>
+    <span class="tb-badge">Mode A &mdash; Technique</span>
+  </div>
+  <div class="topbar-right">
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="setMode('practice')">Practice</button>
+      <button class="mode-tab" onclick="setMode('assessed')">Assessed</button>
+    </div>
+    <button class="btn-icon" onclick="openConfig()" aria-label="Settings">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+    <button class="btn-icon" onclick="openSpec()" aria-label="Step reference">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    </button>
+    <button class="btn-icon" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="coaching-panel">
+    <div class="camera-area">
+      <div class="camera-bg" id="camBg">
+        <div class="cam-placeholder" id="camPlaceholder">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <p>Simulated hand-detection preview<br><span style="font-size:0.72rem;opacity:0.55">Press Start to begin</span></p>
+        </div>
+        <canvas id="simCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:none"></canvas>
+      </div>
+      <div class="camera-overlay">
+        <div class="cam-top">
+          <div class="cam-pill idle" id="camPill"><div class="cam-dot"></div><span id="camPillTxt">Ready</span></div>
+          <div class="cam-timer idle" id="camTimer">00:00</div>
+        </div>
+        <div class="cam-bottom">
+          <div class="cam-conf" id="camConf">Confidence: &mdash;</div>
+          <div class="cam-sides" id="camSides"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-card-hd">
+        <div class="step-num" id="stepNum">&mdash;</div>
+        <div class="step-meta">
+          <div class="step-label" id="stepLabel">Session not started</div>
+          <div class="step-sub" id="stepSub">Press Start to begin the 7-step technique</div>
+        </div>
+        <div class="step-tag idle" id="stepTag">Idle</div>
+      </div>
+      <div class="coach-msg idle" id="coachMsg">Position both hands clearly in frame, then press <strong>Start Session</strong>.</div>
+      <div class="dwell-row">
+        <span class="dwell-lbl">Step dwell</span>
+        <div class="dwell-track"><div class="dwell-fill" id="dwellFill" style="width:0%"></div></div>
+        <span class="dwell-pct" id="dwellPct">0%</span>
+      </div>
+      <div class="lat-row" id="latRow" style="display:none">
+        <span class="lat-lbl">Side completion:</span>
+        <span class="lat-chip pending" id="latL">L</span>
+        <span class="lat-chip pending" id="latR">R</span>
+      </div>
+      <div class="ctrl-row">
+        <button class="btn-p" id="startBtn" onclick="startSession()">&#9654; Start Session</button>
+        <button class="btn-s" id="nextBtn" style="display:none" onclick="manualNext()">Next Step &rarr;</button>
+        <button class="btn-g" id="resetBtn" style="display:none" onclick="resetSession()">Reset</button>
+        <button class="btn-g" id="viewBtn" style="display:none" onclick="openResults()">View Results</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="rail-hd">
+      <div><div class="rail-title">7-Step Progress Rail</div><div class="rail-sub">HK CHP-aligned technique</div></div>
+      <div class="dur-badge" id="durBadge">0.0s / &ge;20s</div>
+    </div>
+    <div class="step-rail" id="stepRail"></div>
+    <div class="score-section">
+      <div class="score-hd">
+        <div class="score-title">Auditable Score</div>
+        <div class="score-total" id="scoreTotal">&mdash;</div>
+      </div>
+      <div class="score-bk">
+        <div class="score-row"><span class="score-lbl">Sequence (30)</span><div class="score-track"><div class="score-fill" id="sSeq" style="width:0%"></div></div><span class="score-val" id="vSeq">&mdash;/30</span></div>
+        <div class="score-row"><span class="score-lbl">Bilateral (25)</span><div class="score-track"><div class="score-fill" id="sBilat" style="width:0%"></div></div><span class="score-val" id="vBilat">&mdash;/25</span></div>
+        <div class="score-row"><span class="score-lbl">Duration (25)</span><div class="score-track"><div class="score-fill" id="sDur" style="width:0%"></div></div><span class="score-val" id="vDur">&mdash;/25</span></div>
+        <div class="score-row"><span class="score-lbl">Form / Coverage (20)</span><div class="score-track"><div class="score-fill" id="sForm" style="width:0%"></div></div><span class="score-val" id="vForm">&mdash;/20</span></div>
+      </div>
+      <div class="pass-banner" id="passBanner" style="display:none"></div>
+    </div>
+    <div class="log-section">
+      <div class="log-hd"><span class="log-title">Event Timeline</span><button class="log-clear" onclick="clearLog()">Clear</button></div>
+      <div class="log-scroll" id="eventLog"><div class="log-empty">Events will appear during session</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="backdrop hidden" id="cfgModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-hd">
+      <div><div class="modal-title">Tutor Configuration</div><div class="modal-sub">Adjust assessment parameters</div></div>
+      <button class="modal-x" onclick="closeConfig()" aria-label="Close"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="cfg-grp">
+        <div class="cfg-grp-lbl">Session Mode</div>
+        <div class="cfg-row"><div><div class="cfg-lbl">Assessment mode</div><div class="cfg-hint">Practice = completion only &mdash; Assessed = scored + pass/fail</div></div>
+          <select class="cfg-select" id="cfgMode"><option value="practice">Practice</option><option value="assessed">Assessed</option></select></div>
+      </div>
+      <div class="cfg-grp">
+        <div class="cfg-grp-lbl">Pass Criteria</div>
+        <div class="cfg-row"><div><div class="cfg-lbl">Passing score threshold</div><div class="cfg-hint">Recommended default: 80/100</div></div><input type="number" class="cfg-input" id="cfgPass" value="80" min="50" max="100"></div>
+        <div class="cfg-row"><div><div class="cfg-lbl">Minimum total duration (sec)</div><div class="cfg-hint">HK CHP requirement: &ge;20 seconds</div></div><input type="number" class="cfg-input" id="cfgDur" value="20" min="10" max="60"></div>
+        <div class="cfg-row"><div><div class="cfg-lbl">Min dwell per step (sec)</div><div class="cfg-hint">Minimum time at each step</div></div><input type="number" class="cfg-input" id="cfgDwell" value="2" min="1" max="8" step="0.5"></div>
+      </div>
+      <div class="cfg-grp">
+        <div class="cfg-grp-lbl">Strictness &amp; Features</div>
+        <div class="tog-row"><div><div class="tog-lbl">Strict step sequence</div><div class="cfg-hint" style="font-size:0.7rem;color:var(--color-text-faint)">Steps must follow 1&rarr;7 order</div></div><button class="tog on" id="cfgSeq" onclick="toggleTog(this)" role="switch" aria-pressed="true"></button></div>
+        <div class="tog-row"><div><div class="tog-lbl">Grade wrists (Step 7)</div><div class="cfg-hint" style="font-size:0.7rem;color:var(--color-text-faint)">Off = wrists advisory only</div></div><button class="tog on" id="cfgWrists" onclick="toggleTog(this)" role="switch" aria-pressed="true"></button></div>
+        <div class="tog-row"><div><div class="tog-lbl">Audio coaching</div><div class="cfg-hint" style="font-size:0.7rem;color:var(--color-text-faint)">Spoken step prompts (browser TTS)</div></div><button class="tog" id="cfgAudio" onclick="toggleTog(this)" role="switch" aria-pressed="false"></button></div>
+        <div class="tog-row"><div><div class="tog-lbl">Replay review available</div><div class="cfg-hint" style="font-size:0.7rem;color:var(--color-text-faint)">Show event log after session</div></div><button class="tog on" id="cfgReplay" onclick="toggleTog(this)" role="switch" aria-pressed="true"></button></div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn-g" onclick="closeConfig()">Cancel</button><button class="btn-p" onclick="saveConfig()">Save Configuration</button></div>
+  </div>
+</div>
+
+<!-- SPEC MODAL -->
+<div class="backdrop hidden" id="specModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-hd">
+      <div><div class="modal-title">7-Step Reference</div><div class="modal-sub">HK CHP-aligned &middot; &ge;20 seconds &middot; Bilateral rules enforced</div></div>
+      <button class="modal-x" onclick="closeSpec()" aria-label="Close"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <table class="spec-table"><thead><tr><th>Step</th><th>Area</th><th>Completion Rule</th></tr></thead><tbody id="specBody"></tbody></table>
+      <div class="info-banner"><strong>Claim language:</strong> This module is aligned to <em>Hong Kong teaching practice / CHP-style 7-step technique</em> (&ge;20 seconds). It does not implement the full WHO soap-and-water handwash procedure (40&ndash;60s including wet&nbsp;hands, soap, rinse, dry, faucet shutoff). That is reserved for Mode B.</div>
+    </div>
+    <div class="modal-ft"><button class="btn-p" onclick="closeSpec()">Close</button></div>
+  </div>
+</div>
+
+<!-- RESULTS MODAL -->
+<div class="backdrop hidden" id="resModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-hd">
+      <div><div class="modal-title">Session Results</div><div class="modal-sub" id="resSub">HK 7-Step Technique &middot; Mode A</div></div>
+      <button class="modal-x" onclick="closeResults()" aria-label="Close"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="res-ring"><div class="res-big" id="resBig">&mdash;</div><div class="res-label" id="resLbl">Final Score</div></div>
+      <div class="res-grid" id="resGrid"></div>
+      <div><div style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Audit Event Log (JSON)</div><div class="json-block" id="resJson"></div></div>
+    </div>
+    <div class="modal-ft"><button class="btn-s" onclick="copyJson()">Copy JSON</button><button class="btn-g" onclick="closeResults()">Close</button><button class="btn-p" onclick="closeResults();resetSession()">New Session</button></div>
+  </div>
+</div>
+
+<script>
+const STEPS=[
+  {id:1,label:'Palm to Palm',sub:'Reciprocal palm rubbing',bilateral:false,bilatDesc:null},
+  {id:2,label:'Back of Hands',sub:'Right over left & left over right',bilateral:true,bilatDesc:['R-over-L','L-over-R']},
+  {id:3,label:'Fingers Interlaced',sub:'Palm-to-palm, fingers interlaced',bilateral:false,bilatDesc:null},
+  {id:4,label:'Back of Fingers',sub:'Fingers interlocked, backs to palms',bilateral:false,bilatDesc:null},
+  {id:5,label:'Thumbs',sub:'Rotational rubbing each thumb',bilateral:true,bilatDesc:['L thumb','R thumb']},
+  {id:6,label:'Fingertips',sub:'Fingertips in opposing palm',bilateral:true,bilatDesc:['R tips','L tips']},
+  {id:7,label:'Wrists',sub:'Rotational around each wrist',bilateral:true,bilatDesc:['L wrist','R wrist']},
+];
+const STEP_MSGS=['Rub palms together with a circular motion.','Rub right palm over left dorsum, then left over right.','Interlace fingers and rub palms together.','Lock fingers, rub backs of fingers against opposing palms.','Rub both thumbs with a rotational motion — left then right.','Rub fingertips of each hand into the opposing palm.','Rub around each wrist with a rotational motion.'];
+
+let cfg={mode:'practice',passThreshold:80,minDuration:20,minDwell:2,strictSeq:true,gradeWrists:true,audio:false,replay:true};
+let sess=makeSession();
+let globalTimer=null,stepTimer=null;
+
+function makeSession(){return{state:'idle',curStep:0,startTime:null,sessionId:null,steps:STEPS.map(s=>({stepId:s.id,label:s.label,status:'pending',startedAt:null,completedAt:null,dwellSeconds:0,avgConf:0,confSamples:[],lateralityRequired:s.bilateral,laterality:s.bilateral?{left:false,right:false}:null,feedbackEvents:[],corrections:0})),flags:{handVis:0,occlusion:0,seqBreaks:0},eventLog:[]}}
+
+function computeScore(){
+  const s=sess;
+  let seq=30;
+  s.steps.forEach(st=>{if(st.status!=='completed')seq-=4});
+  seq-=s.flags.seqBreaks*3;seq=Math.max(0,seq);
+  let bilat=25;
+  s.steps.forEach(st=>{if(!st.lateralityRequired)return;if(!st.laterality||!st.laterality.left||!st.laterality.right)bilat-=5});
+  bilat=Math.max(0,bilat);
+  const totalDwell=s.steps.reduce((a,st)=>a+st.dwellSeconds,0);
+  const dur=Math.min(25,Math.round((totalDwell/cfg.minDuration)*25));
+  const avgConf=s.steps.reduce((a,st)=>a+(st.avgConf||0),0)/s.steps.length;
+  const form=Math.max(0,Math.min(20,Math.round(avgConf*20)));
+  return{total:seq+bilat+dur+form,seq,bilat,dur,form};
+}
+
+function startSession(){
+  sess=makeSession();
+  sess.state='detecting';
+  sess.sessionId='sess-'+Date.now().toString(36);
+  sess.startTime=Date.now();
+  logEvent('start','Session started \u00b7 ID: '+sess.sessionId);
+  logEvent('info','Mode: '+cfg.mode+' \u00b7 Min duration: '+cfg.minDuration+'s \u00b7 Pass: '+cfg.passThreshold+'/100');
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('resetBtn').style.display='';
+  document.getElementById('viewBtn').style.display='none';
+  setCamState('detecting');
+  renderRail();startGlobalTimer();
+  setTimeout(()=>activateStep(0),700);
+}
+
+function activateStep(idx){
+  if(idx>=STEPS.length){completeSession();return}
+  sess.curStep=idx;
+  const st=sess.steps[idx];
+  const sd=STEPS[idx];
+  st.status='active';st.startedAt=new Date().toISOString();
+  sess.state='active';
+  logEvent('info','Step '+(idx+1)+': '+sd.label+' \u2014 started');
+  setCamState('active');renderStepCard();renderRail();
+  startStepSim(idx);
+  document.getElementById('nextBtn').style.display='';
+}
+
+function manualNext(){
+  const idx=sess.curStep;const st=sess.steps[idx];const sd=STEPS[idx];
+  if(sd.bilateral&&st.laterality&&(!st.laterality.left||!st.laterality.right)){
+    st.corrections++;
+    const msg='Repeat the opposite side \u2014 both sides required for '+sd.label;
+    logEvent('correction',msg);
+    setCoachMsg(msg,'correction');
+    st.laterality.left=true;st.laterality.right=true;
+    renderStepCard();renderRail();
+    setTimeout(()=>completeStep(idx),500);return;
+  }
+  completeStep(idx);
+}
+
+function completeStep(idx){
+  clearInterval(stepTimer);
+  const st=sess.steps[idx];const sd=STEPS[idx];
+  st.status='completed';st.completedAt=new Date().toISOString();
+  st.avgConf=st.confSamples.length?st.confSamples.reduce((a,b)=>a+b,0)/st.confSamples.length:0.82+Math.random()*0.15;
+  if(sd.bilateral&&st.laterality){st.laterality.left=true;st.laterality.right=true}
+  logEvent('complete','Step '+(idx+1)+': '+sd.label+' \u2014 completed (dwell: '+st.dwellSeconds.toFixed(1)+'s)');
+  if(cfg.audio)speak('Step '+(idx+1)+' complete. '+(idx+1<STEPS.length?STEPS[idx+1].label:'Session complete.'));
+  renderStepCard();renderRail();renderLiveScore();
+  document.getElementById('nextBtn').style.display='none';
+  const nx=idx+1;
+  if(nx<STEPS.length)setTimeout(()=>activateStep(nx),350);
+  else setTimeout(()=>completeSession(),500);
+}
+
+function completeSession(){
+  sess.state='complete';
+  clearInterval(globalTimer);clearInterval(stepTimer);
+  const totalDwell=sess.steps.reduce((a,s)=>a+s.dwellSeconds,0);
+  const score=computeScore();
+  const pass=score.total>=cfg.passThreshold;
+  logEvent('complete','Session complete \u00b7 Score: '+score.total+'/100 \u00b7 '+(pass?'PASS':'FAIL'));
+  logEvent('info','Breakdown \u2014 Seq: '+score.seq+'/30, Bilateral: '+score.bilat+'/25, Duration: '+score.dur+'/25, Form: '+score.form+'/20');
+  setCamState('complete');
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('viewBtn').style.display='';
+  renderLiveScore(score,pass);renderRail();renderStepCard(true,score,pass);
+  const pb=document.getElementById('passBanner');pb.style.display='';
+  pb.className='pass-banner '+(pass?'pass':'fail');
+  pb.textContent=pass?'\u2713 Session passed \u00b7 '+score.total+'/100':'\u2717 Not yet \u2014 '+score.total+'/100 (need '+cfg.passThreshold+')';
+  stopSimCanvas();
+}
+
+function resetSession(){
+  clearInterval(globalTimer);clearInterval(stepTimer);
+  sess=makeSession();
+  ['startBtn'].forEach(id=>document.getElementById(id).style.display='');
+  ['nextBtn','resetBtn','viewBtn'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('passBanner').style.display='none';
+  setCamState('idle');setIdleCard();renderRail();resetScoreDisplay();
+  document.getElementById('camTimer').textContent='00:00';
+  document.getElementById('camTimer').className='cam-timer idle';
+  document.getElementById('camConf').textContent='Confidence: \u2014';
+  document.getElementById('camSides').innerHTML='';
+  document.getElementById('durBadge').textContent='0.0s / \u226520s';
+  stopSimCanvas();
+}
+
+// === SIMULATION ===
+function startStepSim(idx){
+  clearInterval(stepTimer);
+  const sd=STEPS[idx];const st=sess.steps[idx];
+  let elapsed=0;const target=cfg.minDwell+Math.random()*1.5;
+  const canvas=document.getElementById('simCanvas');
+  document.getElementById('camPlaceholder').style.display='none';
+  canvas.style.display='block';
+  drawSim(canvas,idx,0);
+  if(sd.bilateral){const lf=Math.random()>0.5;if(lf)st.laterality.left=true;else st.laterality.right=true;renderStepCard();}
+  stepTimer=setInterval(()=>{
+    elapsed+=0.1;st.dwellSeconds=elapsed;
+    const c=0.76+Math.random()*0.22;st.confSamples.push(c);
+    if(sd.bilateral&&elapsed>target*0.5){st.laterality.left=true;st.laterality.right=true;}
+    const pct=Math.min(100,(elapsed/target)*100);
+    document.getElementById('dwellFill').style.width=pct+'%';
+    document.getElementById('dwellPct').textContent=Math.round(pct)+'%';
+    document.getElementById('camConf').textContent='Confidence: '+Math.round(c*100)+'%';
+    if(sd.bilateral)renderSideBadges(sd,st);
+    drawSim(canvas,idx,elapsed);
+    if(elapsed>=target){
+      clearInterval(stepTimer);
+      document.getElementById('dwellFill').className='dwell-fill done';
+      setTimeout(()=>{if(sess.state==='active'&&sess.steps[idx].status==='active')manualNext();},280);
+    }
+  },100);
+}
+
+function stopSimCanvas(){
+  const c=document.getElementById('simCanvas');c.style.display='none';
+  document.getElementById('camPlaceholder').style.display='flex';
+  const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
+}
+
+function drawSim(canvas,si,t){
+  const W=canvas.offsetWidth||640,H=canvas.offsetHeight||380;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2;
+  const cols=['#3dc8d8','#4aaa72','#7dcfdb','#3dc8d8','#e8af34','#d163a7','#5591c7'];
+  const col=cols[si]||'#3dc8d8';
+  const grd=ctx.createRadialGradient(cx,cy,5,cx,cy,H*0.55);
+  grd.addColorStop(0,col+'22');grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  const a=Math.sin(t*3.5)*5;
+  drawStylisedHand(ctx,cx-68+a,cy,col,false,si,t);
+  drawStylisedHand(ctx,cx+68-a,cy,col,true,si,t);
+  ctx.font='600 12px Inter,sans-serif';ctx.fillStyle=col+'bb';ctx.textAlign='center';
+  ctx.fillText(STEPS[si].label,cx,H-20);
+}
+
+function drawStylisedHand(ctx,x,y,col,flip,si,t){
+  ctx.save();ctx.translate(x,y);if(flip)ctx.scale(-1,1);
+  ctx.strokeStyle=col;ctx.fillStyle=col+'22';ctx.lineWidth=1.6;
+  ctx.beginPath();ctx.ellipse(0,10,21,27,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  const f=[[-12,-20],[-5,-28],[3,-30],[11,-27],[19,-18]];
+  f.forEach(([fx,fy])=>{ctx.beginPath();ctx.ellipse(fx,fy,5,11,0.1,0,Math.PI*2);ctx.fill();ctx.stroke();});
+  const rot=t*2+(si*0.4);
+  ctx.strokeStyle=col+'66';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(0,8,30,rot,rot+Math.PI*1.4);ctx.stroke();
+  ctx.restore();
+}
+
+// === RENDER FUNCTIONS ===
+function renderRail(){
+  const rail=document.getElementById('stepRail');
+  rail.innerHTML=STEPS.map((s,i)=>{
+    const st=sess.steps[i];
+    const isAct=sess.state!=='idle'&&sess.state!=='complete'&&sess.curStep===i;
+    const isCorr=st.corrections>0&&st.status!=='completed';
+    let cls='pending';
+    if(st.status==='completed')cls='completed';
+    else if(isAct)cls=isCorr?'correction active':'active';
+    let ico=s.id;if(st.status==='completed')ico='&#x2713;';
+    let bil='';
+    if(s.bilateral&&st.laterality){
+      const ld=s.bilatDesc||['L','R'];
+      bil='<div class="rail-bilat"><div class="rb-dot '+(st.laterality.left?'done':'pending')+'">'+ld[0][0]+'</div><div class="rb-dot '+(st.laterality.right?'done':'pending')+'">'+ld[1][0]+'</div></div>';
+    }
+    const dw=st.dwellSeconds>0?st.dwellSeconds.toFixed(1)+'s':'';
+    return'<div class="rail-item '+cls+'"><div class="rail-icon">'+ico+'</div><div class="rail-info"><div class="rail-name">'+s.label+'</div><div class="rail-dwell">'+dw+'</div></div>'+bil+'</div>';
+  }).join('');
+}
+
+function renderStepCard(complete,score,pass){
+  if(sess.state==='idle'){setIdleCard();return}
+  if(complete){
+    document.getElementById('stepNum').textContent='\u2713';
+    document.getElementById('stepLabel').textContent='Session Complete';
+    document.getElementById('stepSub').textContent=score?'Score: '+score.total+'/100 \u00b7 '+(pass?'PASS':'NEEDS IMPROVEMENT'):'';
+    document.getElementById('stepTag').textContent=pass?'Passed':'Review';
+    document.getElementById('stepTag').className='step-tag '+(pass?'complete':'correction');
+    setCoachMsg(pass?'Well done. All 7 steps completed. Score: '+score.total+'/100.':'Session ended. Review results and retry.', pass?'complete':'correction');
+    document.getElementById('latRow').style.display='none';
+    return;
+  }
+  const idx=sess.curStep;const sd=STEPS[idx];const st=sess.steps[idx];
+  document.getElementById('stepNum').textContent=sd.id;
+  document.getElementById('stepLabel').textContent=sd.label;
+  document.getElementById('stepSub').textContent=sd.sub;
+  document.getElementById('stepTag').textContent=st.status==='active'?'Active':st.status==='completed'?'Complete':'Pending';
+  document.getElementById('stepTag').className='step-tag '+(st.status==='active'?'active':st.status==='completed'?'complete':'idle');
+  setCoachMsg(STEP_MSGS[idx],'active');
+  if(sd.bilateral&&st.laterality){
+    document.getElementById('latRow').style.display='flex';
+    const ld=sd.bilatDesc||['L','R'];
+    document.getElementById('latL').textContent=ld[0];document.getElementById('latL').className='lat-chip '+(st.laterality.left?'done':'pending');
+    document.getElementById('latR').textContent=ld[1];document.getElementById('latR').className='lat-chip '+(st.laterality.right?'done':'pending');
+  }else{document.getElementById('latRow').style.display='none';}
+  renderSideBadges(sd,st);
+}
+
+function renderSideBadges(sd,st){
+  const el=document.getElementById('camSides');
+  if(!sd.bilateral||!st.laterality){el.innerHTML='';return}
+  const ld=sd.bilatDesc||['L','R'];
+  el.innerHTML='<span class="side-chip '+(st.laterality.left?'done':'pending')+'">'+ld[0]+'</span><span class="side-chip '+(st.laterality.right?'done':'pending')+'">'+ld[1]+'</span>';
+}
+
+function setIdleCard(){
+  document.getElementById('stepNum').textContent='\u2014';
+  document.getElementById('stepLabel').textContent='Session not started';
+  document.getElementById('stepSub').textContent='Press Start to begin the 7-step technique';
+  document.getElementById('stepTag').textContent='Idle';document.getElementById('stepTag').className='step-tag idle';
+  document.getElementById('coachMsg').innerHTML='Position both hands clearly in frame, then press <strong>Start Session</strong>.';
+  document.getElementById('coachMsg').className='coach-msg idle';
+  document.getElementById('latRow').style.display='none';
+  document.getElementById('dwellFill').style.width='0%';document.getElementById('dwellFill').className='dwell-fill';document.getElementById('dwellPct').textContent='0%';
+}
+
+function setCoachMsg(txt,type){const el=document.getElementById('coachMsg');el.textContent=txt;el.className='coach-msg '+type;}
+
+function renderLiveScore(pre,pass){
+  const sc=pre||computeScore();
+  const done=sess.state==='complete';
+  const tel=document.getElementById('scoreTotal');
+  if(done){tel.textContent=sc.total+'/100';tel.className='score-total '+(pass?'pass':'fail');}else{tel.textContent='\u2014';tel.className='score-total';}
+  const p=(v,m)=>Math.round(v/m*100)+'%';
+  document.getElementById('sSeq').style.width=p(sc.seq,30);document.getElementById('vSeq').textContent=sc.seq+'/30';
+  document.getElementById('sBilat').style.width=p(sc.bilat,25);document.getElementById('vBilat').textContent=sc.bilat+'/25';
+  document.getElementById('sDur').style.width=p(sc.dur,25);document.getElementById('vDur').textContent=sc.dur+'/25';
+  document.getElementById('sForm').style.width=p(sc.form,20);document.getElementById('vForm').textContent=sc.form+'/20';
+}
+
+function resetScoreDisplay(){
+  ['sSeq','sBilat','sDur','sForm'].forEach(id=>document.getElementById(id).style.width='0%');
+  ['vSeq','vBilat','vDur','vForm'].forEach(id=>document.getElementById(id).textContent='\u2014');
+  document.getElementById('scoreTotal').textContent='\u2014';document.getElementById('scoreTotal').className='score-total';
+}
+
+// === TIMER ===
+function startGlobalTimer(){
+  clearInterval(globalTimer);
+  globalTimer=setInterval(()=>{
+    if(!sess.startTime)return;
+    const el=(Date.now()-sess.startTime)/1000;
+    const m=Math.floor(el/60),s=Math.floor(el%60);
+    const te=document.getElementById('camTimer');
+    te.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    te.className='cam-timer '+(el<cfg.minDuration?'warning':'running');
+    const td=sess.steps.reduce((a,s)=>a+s.dwellSeconds,0);
+    document.getElementById('durBadge').textContent=td.toFixed(1)+'s / \u2265'+cfg.minDuration+'s';
+  },250);
+}
+
+function setCamState(st){
+  const p=document.getElementById('camPill');p.className='cam-pill '+st;
+  const labels={idle:'Ready',detecting:'Detecting hands',active:'Evaluating',complete:'Complete'};
+  document.getElementById('camPillTxt').textContent=labels[st]||st;
+  const t=document.getElementById('camTimer');
+  if(st==='active')t.className='cam-timer running';
+  if(st==='complete')t.className='cam-timer complete';
+}
+
+// === EVENT LOG ===
+function logEvent(type,msg){
+  sess.eventLog.push({timestamp:new Date().toISOString(),type,message:msg});
+  const c=document.getElementById('eventLog');
+  const em=c.querySelector('.log-empty');if(em)em.remove();
+  const e=document.createElement('div');e.className='log-entry';
+  const ts=new Date().toISOString().slice(11,23);
+  e.innerHTML='<div class="log-dot '+type+'"></div><div class="log-content"><div class="log-msg">'+msg+'</div><div class="log-ts">'+ts+'</div></div>';
+  c.appendChild(e);c.scrollTop=c.scrollHeight;
+}
+function clearLog(){document.getElementById('eventLog').innerHTML='<div class="log-empty">Events will appear during session</div>';}
+
+// === RESULTS ===
+function buildJson(){
+  const sc=computeScore();const td=sess.steps.reduce((a,s)=>a+s.dwellSeconds,0);
+  return{session_id:sess.sessionId,module_id:'hk_hand_hygiene_7_step_v1',mode:cfg.mode,user_id:null,started_at:sess.steps[0]?.startedAt||null,ended_at:sess.steps[6]?.completedAt||null,duration_seconds:parseFloat(td.toFixed(2)),final_score:sc.total,pass:sc.total>=cfg.passThreshold,score_breakdown:{sequence:sc.seq,bilateral:sc.bilat,duration:sc.dur,form:sc.form},steps:sess.steps.map(st=>({step_id:st.stepId,label:st.label,status:st.status,started_at:st.startedAt,completed_at:st.completedAt,dwell_seconds:parseFloat(st.dwellSeconds.toFixed(2)),avg_confidence:parseFloat((st.avgConf||0).toFixed(3)),laterality_required:st.lateralityRequired,laterality:st.laterality,feedback_events:st.feedbackEvents})),system_flags:{hand_visibility_loss:sess.flags.handVis,occlusion_events:sess.flags.occlusion,sequence_breaks:sess.flags.seqBreaks}};
+}
+
+function openResults(){
+  const sc=computeScore();const pass=sc.total>=cfg.passThreshold;
+  const td=sess.steps.reduce((a,s)=>a+s.dwellSeconds,0);
+  document.getElementById('resBig').textContent=sc.total;
+  document.getElementById('resBig').className='res-big '+(pass?'pass':'fail');
+  document.getElementById('resLbl').textContent=(pass?'PASSED':'NOT YET')+' \u00b7 '+cfg.mode+' mode';
+  document.getElementById('resSub').textContent='Session '+(sess.sessionId||'\u2014')+' \u00b7 '+td.toFixed(1)+'s total';
+  const bds=[{label:'Sequence',v:sc.seq,m:30},{label:'Bilateral',v:sc.bilat,m:25},{label:'Duration',v:sc.dur,m:25},{label:'Form',v:sc.form,m:20}];
+  document.getElementById('resGrid').innerHTML=bds.map(b=>{const p=b.v/b.m;const c=p>=0.85?'good':p>=0.6?'ok':'poor';return'<div class="res-card"><div class="res-card-lbl">'+b.label+'</div><div class="res-card-val '+c+'">'+b.v+'<span class="res-card-max">/'+b.m+'</span></div></div>';}).join('');
+  document.getElementById('resJson').textContent=JSON.stringify(buildJson(),null,2);
+  document.getElementById('resModal').classList.remove('hidden');
+}
+function closeResults(){document.getElementById('resModal').classList.add('hidden');}
+function copyJson(){
+  navigator.clipboard.writeText(document.getElementById('resJson').textContent).then(()=>{
+    const b=document.querySelector('[onclick="copyJson()"]');if(b){b.textContent='Copied!';setTimeout(()=>b.textContent='Copy JSON',1500);}
+  });
+}
+
+// === CONFIG ===
+function openConfig(){syncCfgUI();document.getElementById('cfgModal').classList.remove('hidden');}
+function closeConfig(){document.getElementById('cfgModal').classList.add('hidden');}
+function syncCfgUI(){
+  document.getElementById('cfgMode').value=cfg.mode;
+  document.getElementById('cfgPass').value=cfg.passThreshold;
+  document.getElementById('cfgDur').value=cfg.minDuration;
+  document.getElementById('cfgDwell').value=cfg.minDwell;
+  setTog('cfgSeq',cfg.strictSeq);setTog('cfgWrists',cfg.gradeWrists);setTog('cfgAudio',cfg.audio);setTog('cfgReplay',cfg.replay);
+}
+function setTog(id,v){const e=document.getElementById(id);e.className='tog'+(v?' on':'');e.setAttribute('aria-pressed',v?'true':'false');}
+function toggleTog(btn){const on=btn.classList.contains('on');btn.className='tog'+(on?'':' on');btn.setAttribute('aria-pressed',on?'false':'true');}
+function saveConfig(){
+  cfg.mode=document.getElementById('cfgMode').value;
+  cfg.passThreshold=parseInt(document.getElementById('cfgPass').value)||80;
+  cfg.minDuration=parseInt(document.getElementById('cfgDur').value)||20;
+  cfg.minDwell=parseFloat(document.getElementById('cfgDwell').value)||2;
+  cfg.strictSeq=document.getElementById('cfgSeq').classList.contains('on');
+  cfg.gradeWrists=document.getElementById('cfgWrists').classList.contains('on');
+  cfg.audio=document.getElementById('cfgAudio').classList.contains('on');
+  cfg.replay=document.getElementById('cfgReplay').classList.contains('on');
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.textContent.toLowerCase()===cfg.mode));
+  document.getElementById('durBadge').textContent='0.0s / \u2265'+cfg.minDuration+'s';
+  closeConfig();
+}
+function setMode(m){cfg.mode=m;document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.textContent.toLowerCase()===m));}
+
+// === SPEC ===
+function openSpec(){
+  const rules=['Stable palm-rubbing motion above threshold for minimum dwell time','Right palm over left dorsum AND left over right \u2014 both required','Interlaced finger contact maintained during rubbing for minimum dwell','Fingers interlocked, backs of fingers pressed against opposing palm','Left thumb AND right thumb rotational rubbing both completed','Right fingertips in left palm AND left fingertips in right palm \u2014 both required','Left wrist AND right wrist rotational rubbing both completed'];
+  document.getElementById('specBody').innerHTML=STEPS.map((s,i)=>'<tr><td>'+s.id+'. '+s.label+'</td><td>'+s.sub+'</td><td>'+rules[i]+'</td></tr>').join('');
+  document.getElementById('specModal').classList.remove('hidden');
+}
+function closeSpec(){document.getElementById('specModal').classList.add('hidden');}
+
+// === AUDIO ===
+function speak(t){if(!cfg.audio||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-GB';u.rate=0.9;window.speechSynthesis.speak(u);}
+
+// === THEME ===
+let currentTheme=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+document.documentElement.setAttribute('data-theme',currentTheme);
+function toggleTheme(){currentTheme=currentTheme==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',currentTheme);}
+
+// === INIT ===
+renderRail();resetScoreDisplay();
+</script>
+<script>
+
+(function(){
+  // ── State ───────────────────────────────────────────────────────────────
+  let videoEl=null, realCamera=null, realHands=null;
+  let confidenceRolling=0, lastSpokenStep=-1, lastSpokenCorrection=0;
+
+  // ── Speech helper ────────────────────────────────────────────────────────
+  function speak(text, opts){
+    if(!window.speechSynthesis || !window.cfg || !window.cfg.audio) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang   = (opts && opts.lang)  || "en-GB";
+      u.rate   = (opts && opts.rate)  || 0.95;
+      u.pitch  = 1.0;
+      u.volume = 1.0;
+      window.speechSynthesis.speak(u);
+    } catch(e){ console.warn("speak error", e); }
+  }
+  window.auraSpeak = speak;
+
+  // ── Per-step classifier ──────────────────────────────────────────────────
+  // Returns { confidence:0-1, leftDetected:bool, rightDetected:bool }
+  function classifyStep(stepIdx, landmarks, handedness){
+    if(!landmarks || landmarks.length === 0)
+      return { confidence:0, leftDetected:false, rightDetected:false };
+
+    const twoHands = landmarks.length >= 2;
+    let leftHand=null, rightHand=null;
+    if(handedness && handedness.length){
+      handedness.forEach((h,i)=>{
+        if(h.label==="Left")  leftHand  = landmarks[i];
+        else                  rightHand = landmarks[i];
+      });
+    }
+    const wrist    = lm => lm[0];
+    const thumbTip = lm => lm[4];
+    const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y, (a.z||0)-(b.z||0));
+
+    let conf=0, lDet=false, rDet=false;
+
+    switch(stepIdx){
+      // Step 0 – Palm to Palm (rub palms together)
+      case 0:
+        if(twoHands){
+          const d = dist(wrist(landmarks[0]), wrist(landmarks[1]));
+          conf = Math.max(0, Math.min(1, 1.0 - d * 1.5));
+          lDet = !!leftHand; rDet = !!rightHand;
+        }
+        break;
+
+      // Step 1 – Right over left / interlaced fingers
+      case 1:
+        if(twoHands && leftHand && rightHand){
+          const yDiff = Math.abs(landmarks[0][9].y - landmarks[1][9].y);
+          conf = yDiff > 0.05 ? 0.85 : 0.50;
+          lDet = leftHand[9].y  < rightHand[9].y;
+          rDet = rightHand[9].y < leftHand[9].y;
+        }
+        break;
+
+      // Step 2 – Interlaced fingers (backs of fingers)
+      case 2:
+        if(twoHands){
+          const fA = [8,12,16,20].map(i=>landmarks[0][i]);
+          const fB = [8,12,16,20].map(i=>landmarks[1][i]);
+          let t = 0;
+          for(let i=0;i<4;i++) t += dist(fA[i], fB[i]);
+          conf = Math.max(0, Math.min(1, 1.0 - (t/4)*2));
+          lDet = rDet = conf > 0.6;
+        }
+        break;
+
+      // Step 3 – Rotational rubbing (interlocked)
+      case 3:
+        if(twoHands){
+          const d = dist(landmarks[0][9], landmarks[1][9]);
+          conf = d < 0.15 ? 0.82 : 0.40;
+          lDet = rDet = conf > 0.6;
+        }
+        break;
+
+      // Step 4 – Thumbs rotational
+      case 4:
+        if(twoHands){
+          const t0 = thumbTip(landmarks[0]), p1 = landmarks[1][9];
+          const t1 = thumbTip(landmarks[1]), p0 = landmarks[0][9];
+          const dL = dist(t0, p1), dR = dist(t1, p0);
+          conf = Math.max(0, Math.min(1, 1.0 - Math.min(dL,dR)*2));
+          if(leftHand && rightHand){ lDet = dL < 0.2; rDet = dR < 0.2; }
+        }
+        break;
+
+      // Step 5 – Fingertips to palm (clasped)
+      case 5:
+        if(twoHands){
+          const tips = [8,12,16,20].map(i=>landmarks[0][i]);
+          const palm = landmarks[1][9];
+          const avg  = tips.reduce((s,t)=>s+dist(t,palm),0)/4;
+          conf = Math.max(0, Math.min(1, 1.0 - avg*2));
+          lDet = rDet = conf > 0.55;
+        }
+        break;
+
+      // Step 6 – Wrist rub
+      case 6:
+        if(twoHands){
+          const w0 = wrist(landmarks[0]), w1 = wrist(landmarks[1]);
+          const d  = dist(w0, w1);
+          conf = d < 0.18 ? 0.80 : 0.45;
+          if(leftHand && rightHand){
+            lDet = dist(thumbTip(rightHand), wrist(leftHand))  < 0.2;
+            rDet = dist(thumbTip(leftHand),  wrist(rightHand)) < 0.2;
+          }
+        }
+        break;
+
+      default: break;
+    }
+    return { confidence: Math.max(0, conf), leftDetected: lDet, rightDetected: rDet };
+  }
+
+  // ── MediaPipe results callback ────────────────────────────────────────────
+  function onResults(results){
+    if(!window.sess || window.sess.state !== "active") return;
+    const idx = window.sess.curStep;
+    const st  = window.sess.steps[idx];
+    if(!st || st.status !== "active") return;
+
+    const cls = classifyStep(
+      idx,
+      results.multiHandLandmarks || [],
+      results.multiHandedness    || []
+    );
+
+    // Exponential smoothing
+    confidenceRolling = confidenceRolling * 0.7 + cls.confidence * 0.3;
+    st.confSamples.push(confidenceRolling);
+
+    // UI confidence badge
+    const camConf = document.getElementById("camConf");
+    if(camConf) camConf.textContent = "Confidence " + Math.round(confidenceRolling * 100) + "%";
+
+    const sd = window.STEPS[idx];
+
+    // Bilateral laterality tracking
+    if(sd.bilateral && st.laterality){
+      if(cls.leftDetected  && !st.laterality.left)  { st.laterality.left  = true; speak("Left side detected");  }
+      if(cls.rightDetected && !st.laterality.right) { st.laterality.right = true; speak("Right side detected"); }
+    }
+
+    // Step announcement (once per step change)
+    if(idx !== lastSpokenStep){
+      lastSpokenStep = idx;
+      speak("Step " + (idx+1) + ": " + sd.label);
+    }
+
+    // Low-confidence coaching (max once per 4 s)
+    const now = Date.now();
+    if(confidenceRolling < 0.35 && now - lastSpokenCorrection > 4000){
+      lastSpokenCorrection = now;
+      speak("Bring both hands into frame");
+      if(window.setCoachMsg)
+        window.setCoachMsg("Bring both hands into frame for " + sd.label, "correction");
+    }
+
+    // Draw skeleton overlay onto simCanvas
+    const canvas = document.getElementById("simCanvas");
+    if(canvas && videoEl){
+      const ctx = canvas.getContext("2d");
+      canvas.width  = videoEl.videoWidth  || 640;
+      canvas.height = videoEl.videoHeight || 480;
+      ctx.save();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+      if(results.multiHandLandmarks){
+        for(const lms of results.multiHandLandmarks){
+          if(window.drawConnectors && window.HAND_CONNECTIONS)
+            drawConnectors(ctx, lms, HAND_CONNECTIONS, { color:"#3dc8d8", lineWidth:2 });
+          if(window.drawLandmarks)
+            drawLandmarks(ctx, lms, { color:"#7dd4a0", lineWidth:1, radius:3 });
+        }
+      }
+      ctx.restore();
+    }
+  }
+
+  // ── Camera + Hands init ──────────────────────────────────────────────────
+  async function initCamera(){
+    if(videoEl) return;
+    videoEl = document.createElement("video");
+    videoEl.autoplay = true;
+    videoEl.playsInline = true;
+    videoEl.muted = true;
+    videoEl.style.display = "none";
+    document.body.appendChild(videoEl);
+
+    if(typeof Hands === "undefined"){
+      console.error("MediaPipe Hands not loaded — check CDN");
+      return;
+    }
+    realHands = new Hands({
+      locateFile: f => "https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/" + f
+    });
+    realHands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.5
+    });
+    realHands.onResults(onResults);
+
+    realCamera = new Camera(videoEl, {
+      onFrame: async () => { await realHands.send({ image: videoEl }); },
+      width: 640, height: 480
+    });
+    await realCamera.start();
+    console.log("[AuraSense] Real camera + perception ONLINE");
+  }
+
+  // ── Override: startSession ───────────────────────────────────────────────
+  const origStart = window.startSession;
+  window.startSession = async function(){
+    try{
+      if(!window.cfg) window.cfg = {};
+      window.cfg.audio = true;
+
+      const placeholder = document.getElementById("camPlaceholder");
+      if(placeholder) placeholder.style.display = "none";
+      const canvas = document.getElementById("simCanvas");
+      if(canvas) canvas.style.display = "block";
+
+      speak("Starting hand hygiene session. Please position both hands in frame.");
+      await initCamera();
+    } catch(e){
+      alert("Camera access required for real perception mode: " + e.message);
+      return;
+    }
+    if(origStart) origStart.apply(this, arguments);
+  };
+
+  // ── Override: startStepSim ───────────────────────────────────────────────
+  const origStartStepSim = window.startStepSim;
+  window.startStepSim = function(idx){
+    clearInterval(window.stepTimer);
+    const sd     = window.STEPS[idx];
+    const st     = window.sess.steps[idx];
+    let elapsed  = 0;
+    const target = window.cfg.minDwell + 1.0;
+
+    window.stepTimer = setInterval(()=>{
+      elapsed += 0.1;
+      st.dwellSeconds = elapsed;
+
+      const pct = Math.min(100, (elapsed / target) * 100);
+      const df  = document.getElementById("dwellFill");
+      if(df) df.style.width = pct + "%";
+      const dp = document.getElementById("dwellPct");
+      if(dp) dp.textContent = Math.round(pct);
+
+      if(sd.bilateral && window.renderSideBadges)
+        window.renderSideBadges(sd, st);
+
+      // Auto-advance when dwell met AND confidence high enough
+      if(elapsed >= target && confidenceRolling > 0.45){
+        const okBilat = !sd.bilateral ||
+          (st.laterality && st.laterality.left && st.laterality.right);
+        if(okBilat){
+          clearInterval(window.stepTimer);
+          const df2 = document.getElementById("dwellFill");
+          if(df2) df2.className = "dwell-fill done";
+          setTimeout(()=>{
+            if(window.sess.state === "active" && st.status === "active")
+              window.manualNext();
+          }, 280);
+        }
+      }
+    }, 100);
+  };
+
+  // ── Override: completeSession ────────────────────────────────────────────
+  const origComplete = window.completeSession;
+  window.completeSession = function(){
+    if(origComplete) origComplete.apply(this, arguments);
+
+    // Scoring feedback via speech
+    const sc   = window.computeScore ? window.computeScore() : null;
+    const pass = sc && sc.total >= (window.cfg.passThreshold || 80);
+    if(pass){
+      speak("Excellent work. All steps completed with good technique. Session passed.");
+    } else {
+      const pct = sc ? Math.round(sc.total) : 0;
+      speak("Session complete. Score " + pct + " percent. Review flagged steps and try again.");
+    }
+
+    // Stop camera to free resources
+    if(realCamera && realCamera.stop) realCamera.stop();
+    if(realHands && realHands.close) realHands.close();
+    videoEl = null; realCamera = null; realHands = null;
+    confidenceRolling = 0; lastSpokenStep = -1;
+  };
+
+})();
+</script>
+<script>
+
+// ── AuraSense Multi-Lane + STDP Bridge ──────────────────────────────────────
+(function(){
+  const NEPA_URL = "http://localhost:8765";   // adjust if NEPA runs on diff port
+
+  // ── ROI overlay renderer ─────────────────────────────────────────────────
+  function drawROI(ctx, roi, canvasW, canvasH){
+    if(!roi) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,200,0,0.85)";
+    ctx.lineWidth   = 2;
+    ctx.setLineDash([6,3]);
+    ctx.strokeRect(
+      roi.x1 * canvasW,
+      roi.y1 * canvasH,
+      (roi.x2 - roi.x1) * canvasW,
+      (roi.y2 - roi.y1) * canvasH
+    );
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(255,200,0,0.15)";
+    ctx.fillRect(
+      roi.x1 * canvasW,
+      roi.y1 * canvasH,
+      (roi.x2 - roi.x1) * canvasW,
+      (roi.y2 - roi.y1) * canvasH
+    );
+    ctx.restore();
+  }
+
+  // ── STDP modulation bar renderer ─────────────────────────────────────────
+  function renderModBar(modulation){
+    let bar = document.getElementById("stdpModBar");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "stdpModBar";
+      bar.style.cssText = [
+        "position:fixed","bottom:16px","left:50%","transform:translateX(-50%)",
+        "width:220px","height:14px","background:#1a1a2e","border-radius:7px",
+        "overflow:hidden","z-index:9999","box-shadow:0 2px 8px rgba(0,0,0,0.5)"
+      ].join(";");
+      const fill = document.createElement("div");
+      fill.id = "stdpModFill";
+      fill.style.cssText = "height:100%;width:0%;background:linear-gradient(90deg,#3dc8d8,#7dd4a0);transition:width 0.12s ease;border-radius:7px;";
+      bar.appendChild(fill);
+      const label = document.createElement("div");
+      label.id = "stdpModLabel";
+      label.style.cssText = "position:absolute;top:0;left:0;width:100%;text-align:center;font-size:10px;line-height:14px;color:#fff;font-family:monospace;";
+      label.textContent = "STDP 0%";
+      bar.appendChild(label);
+      document.body.appendChild(bar);
+    }
+    const pct = Math.round(modulation * 100);
+    document.getElementById("stdpModFill").style.width  = pct + "%";
+    document.getElementById("stdpModLabel").textContent = "STDP " + pct + "%";
+  }
+
+  // ── Spike burst visualiser (canvas flash) ────────────────────────────────
+  function flashSpikes(spikesFired){
+    if(spikesFired < 3) return;
+    const canvas = document.getElementById("simCanvas");
+    if(!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.35, spikesFired / 40);
+    ctx.fillStyle = "#3dc8d8";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  // ── POST to NEPA /nepa/update ─────────────────────────────────────────────
+  async function postToNEPA(payload){
+    try{
+      const res = await fetch(NEPA_URL + "/nepa/update", {
+        method:  "POST",
+        headers: {"Content-Type":"application/json"},
+        body:    JSON.stringify(payload),
+        signal:  AbortSignal.timeout(120),
+      });
+      if(!res.ok) return null;
+      return await res.json();
+    } catch(e){ return null; }
+  }
+
+  // ── Hook into existing onResults (defined in previous sprint block) ───────
+  // We wrap window._auraOnResults which the perception block sets.
+  // Polling interval for NEPA so we don't DDoS it: every 3rd frame.
+  let _frameCount = 0;
+  let _lastROI    = null;
+  let _lastMod    = 0;
+
+  const _origOnResults = window._auraOnResultsHook || null;
+
+  window._auraOnResultsHook = async function(results, stepIdx, confidenceRolling){
+    _frameCount++;
+
+    // Build landmark payload (convert MediaPipe format → plain objects)
+    const lmPayload = (results.multiHandLandmarks || []).map(hand =>
+      hand.map(lm => ({ x: lm.x, y: lm.y, z: lm.z || 0 }))
+    );
+    const hdPayload = (results.multiHandedness || []).map(h => ({
+      label: h.label, score: h.score
+    }));
+
+    // Every 3rd frame → send to NEPA
+    if(_frameCount % 3 === 0){
+      const resp = await postToNEPA({
+        step:       stepIdx,
+        landmarks:  lmPayload,
+        handedness: hdPayload,
+        confidence: confidenceRolling,
+      });
+      if(resp){
+        _lastROI = resp.roi || null;
+        _lastMod = resp.modulation || 0;
+        renderModBar(_lastMod);
+        flashSpikes(resp.spikes_fired || 0);
+        // Feed modulation back: boost confidence threshold if mod is high
+        if(window.sess && window.sess.steps[stepIdx]){
+          window.sess.steps[stepIdx].nepaModulation = _lastMod;
+        }
+      }
+    }
+
+    // Draw ROI overlay on canvas every frame
+    const canvas = document.getElementById("simCanvas");
+    if(canvas && _lastROI){
+      drawROI(canvas.getContext("2d"), _lastROI, canvas.width, canvas.height);
+    }
+
+    if(_origOnResults) _origOnResults(results, stepIdx, confidenceRolling);
+  };
+
+  // ── Patch the existing onResults to call our hook ─────────────────────────
+  // The perception block from sprint 1 calls onResults() internally.
+  // We inject the hook call at the END of onResults by wrapping it.
+  const _waitForOnResults = setInterval(()=>{
+    if(typeof window._auraInjectHook === "function"){
+      clearInterval(_waitForOnResults);
+      window._auraInjectHook(window._auraOnResultsHook);
+    }
+  }, 200);
+
+  console.log("[AuraSense] Multi-lane + STDP bridge ONLINE");
+})();
+</script>
+</body>
+</html><script>
+(function(){
+  // ── HRI agentic supervisor: performance stability envelope ───────────────
+  if(!window.hri) window.hri = {};
+
+  // Per-step metrics over a session
+  const stepMetrics = {};  // stepIdx -> { dwell:[], conf:[], spikes:[], mod:[] }
+
+  function ensureStep(stepIdx){
+    if(!stepMetrics[stepIdx]){
+      stepMetrics[stepIdx] = {
+        dwell: [],
+        conf: [],
+        spikes: [],
+        mod: [],
+        anomalies: 0
+      };
+    }
+    return stepMetrics[stepIdx];
+  }
+
+  // Called each frame from STDP bridge (we’ll hook it in a moment)
+  window.hri.ingestFrame = function(stepIdx, confidenceRolling, nepaResp){
+    const m = ensureStep(stepIdx);
+    m.conf.push(confidenceRolling);
+    if(nepaResp){
+      if(typeof nepaResp.spikes_fired === "number") m.spikes.push(nepaResp.spikes_fired);
+      if(typeof nepaResp.modulation   === "number") m.mod.push(nepaResp.modulation);
+    }
+  };
+
+  // Called when a step completes (we can hook into manualNext / startStepSim)
+  window.hri.markStepComplete = function(stepIdx){
+    const st  = window.sess && window.sess.steps[stepIdx];
+    const met = ensureStep(stepIdx);
+    if(st && typeof st.dwellSeconds === "number"){
+      met.dwell.push(st.dwellSeconds);
+    }
+  };
+
+  // Compute stability envelope for a step: [0,1], higher = more stable
+  function stabilityForStep(stepIdx){
+    const m = stepMetrics[stepIdx];
+    if(!m) return 0;
+
+    // Variance of dwell, conf, modulation — lower variance = more stable
+    function scoreFromVariance(arr){
+      if(!arr || arr.length < 2) return 0;
+      const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+      const varc = arr.reduce((a,b)=>a + (b-mean)*(b-mean),0)/arr.length;
+      const std  = Math.sqrt(varc);
+      // Map std to score: std=0 -> 1.0, std>=target -> ~0
+      const target = mean * 0.25 + 1e-6;
+      const s = 1.0 - Math.min(1.0, std / target);
+      return Math.max(0, s);
+    }
+
+    const dwellS = scoreFromVariance(m.dwell);
+    const confS  = scoreFromVariance(m.conf);
+    const modS   = scoreFromVariance(m.mod);
+
+    // Weighted blend
+    return (0.4*dwellS + 0.4*confS + 0.2*modS);
+  }
+
+  // Session-level envelope
+  window.hri.computeEnvelope = function(){
+    const steps = window.STEPS || [];
+    if(!steps.length) return { overall:0, perStep:{} };
+    const perStep = {};
+    let acc = 0, n = 0;
+    for(let i=0;i<steps.length;i++){
+      const s = stabilityForStep(i);
+      perStep[i] = s;
+      if(!Number.isNaN(s)){
+        acc += s; n++;
+      }
+    }
+    return {
+      overall: n ? acc/n : 0,
+      perStep
+    };
+  };
+
+  // Adapt HRI coaching based on envelope
+  function adaptiveCoaching(envelope){
+    if(!window.auraSpeak) return;
+    const overall = envelope.overall;
+    if(overall >= 0.8){
+      window.auraSpeak("Nice work. Your technique is very stable. You can go slightly faster on the next run.");
+    } else if (overall >= 0.5){
+      window.auraSpeak("Session complete. Your performance is acceptable but has some instability. Focus on keeping the same rhythm each step.");
+    } else {
+      window.auraSpeak("Your performance is unstable. We recommend repeating this session slower and focusing on consistent movements.");
+    }
+  }
+
+  // Hook into completeSession to speak envelope result
+  const _origComplete = window.completeSession;
+  window.completeSession = function(){
+    if(_origComplete) _origComplete.apply(this, arguments);
+    const env = window.hri.computeEnvelope();
+    adaptiveCoaching(env);
+    if(window.sess){
+      window.sess.hriEnvelope = env;
+    }
+  };
+
+  // Hook into manualNext to mark step completion
+  const _origManualNext = window.manualNext;
+  window.manualNext = function(){
+    if(window.sess){
+      const idx = window.sess.curStep;
+      window.hri.markStepComplete(idx);
+    }
+    if(_origManualNext) _origManualNext.apply(this, arguments);
+  };
+
+  // Expose for debugging
+  window.hri.debugDump = function(){
+    console.log("HRI stepMetrics", JSON.parse(JSON.stringify(stepMetrics)));
+    console.log("HRI envelope", window.hri.computeEnvelope());
+  };
+
+  console.log("[AuraSense] HRI performance envelope ONLINE");
+})();
+</script>

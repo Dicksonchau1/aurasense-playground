@@ -1,0 +1,10 @@
+{
+  "session_id": "sess_live_001",
+  "mission_id": "mis_hk_icc_001",
+  "vehicle_id": "veh_m300_rtk_01",
+  "mode": "live",
+  "source": "rehearse_promote",
+  "status": "in_mission",
+  "started_at": "2026-05-14T16:02:00+08:00",
+  "source_session_id": "sess_rehearse_001"
+}

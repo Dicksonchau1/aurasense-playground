@@ -1,0 +1,69 @@
+[
+  {
+    "type": "mission.saved",
+    "mission_id": "mis_hk_icc_001",
+    "revision_id": "rev_001"
+  },
+  {
+    "type": "mission.validated",
+    "mission_id": "mis_hk_icc_001",
+    "valid": true,
+    "score": 92.4
+  },
+  {
+    "type": "rehearse.started",
+    "session_id": "sess_rehearse_001",
+    "mission_id": "mis_hk_icc_001"
+  },
+  {
+    "type": "rehearse.completed",
+    "session_id": "sess_rehearse_001",
+    "passed": true,
+    "score": 89.7
+  },
+  {
+    "type": "flight.started",
+    "session_id": "sess_live_001",
+    "mission_id": "mis_hk_icc_001"
+  },
+  {
+    "type": "flight.telemetry",
+    "session_id": "sess_live_001",
+    "frame": {
+      "session_id": "sess_live_001",
+      "ts": "2026-05-14T16:07:14+08:00",
+      "lat": 22.30401,
+      "lng": 114.16043,
+      "alt_m": 55.6,
+      "ground_speed_ms": 3.1,
+      "heading_deg": 86.4,
+      "battery_pct": 71.2,
+      "gps_fix": 5,
+      "link_quality_pct": 94,
+      "flight_mode": "AUTO",
+      "imu": {
+        "roll_deg": 1.4,
+        "pitch_deg": -3.2,
+        "yaw_deg": 86.1,
+        "vibration_index": 0.07
+      }
+    }
+  },
+  {
+    "type": "flight.command_ack",
+    "session_id": "sess_live_001",
+    "command_id": "cmd_001",
+    "accepted": true
+  },
+  {
+    "type": "nepa.suggestion",
+    "session_id": "sess_live_001",
+    "trace_id": "trace_001",
+    "summary": "Reduce hold time near west-glare region."
+  },
+  {
+    "type": "audit.bundle_ready",
+    "session_id": "sess_live_001",
+    "audit_bundle_id": "audit_001"
+  }
+]

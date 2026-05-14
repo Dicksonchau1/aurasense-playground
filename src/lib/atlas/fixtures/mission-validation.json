@@ -1,0 +1,17 @@
+{
+  "valid": true,
+  "score": 92.4,
+  "violations": [
+    {
+      "code": "LIGHT_GLARE_WINDOW",
+      "severity": "warning",
+      "message": "Sunlight glare risk increases after waypoint 2; consider shorter hold time.",
+      "waypoint_id": "wp_002",
+      "field": "hold_s"
+    }
+  ],
+  "recommendations": [
+    "Reduce hold time at wp_002 from 3s to 2s if glare worsens.",
+    "Keep inspection speed under 3.5 m/s on west elevation."
+  ]
+}
