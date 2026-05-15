@@ -1,5 +1,6 @@
 
-import useSWR from 'swr';
+
+import useSWRMutation from 'swr/mutation';
 
 interface Insight {
   title: string;
@@ -19,7 +20,17 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 export default function AssistantPanel() {
   // Replace with your real API endpoints
   const { data: insightsData, error: insightsError } = useSWR('/api/nepa/assistant/insights', fetcher, { refreshInterval: 10000 });
-  const { data: queueData, error: queueError } = useSWR('/api/nepa/assistant/queue', fetcher, { refreshInterval: 10000 });
+  const { data: queueData, error: queueError, mutate: mutateQueue } = useSWR('/api/nepa/assistant/queue', fetcher, { refreshInterval: 10000 });
+
+  // SWR mutation for queue actions
+  async function sendQueueAction(id: string, action: string) {
+    await fetch('/api/nepa/assistant/queue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action })
+    });
+    mutateQueue(); // Refresh queue data
+  }
 
   const insights: Insight[] = insightsData?.data || [
     {
@@ -98,9 +109,9 @@ export default function AssistantPanel() {
               <span style={{display:'block',color:'#9ca3af',fontSize:10}}>{item.sub}</span>
             </div>
             <div style={{display:'flex',gap:4}}>
-              <button style={{padding:'3px 6px',borderRadius:99,border:'1px solid rgba(234,179,8,0.9)',background:'linear-gradient(to right,#fef3c7,#facc15)',color:'#0b0b12',fontSize:10}}>Approve</button>
-              <button style={{padding:'3px 6px',borderRadius:99,border:'1px solid rgba(75,85,99,0.9)',background:'rgba(15,23,42,0.9)',color:'#9ca3af',fontSize:10}}>Modify</button>
-              <button style={{padding:'3px 6px',borderRadius:99,border:'1px solid rgba(248,113,113,0.9)',background:'rgba(15,23,42,0.9)',color:'#fecaca',fontSize:10}}>Reject</button>
+              <button onClick={() => sendQueueAction(item.id, 'approved')} style={{padding:'3px 6px',borderRadius:99,border:'1px solid rgba(234,179,8,0.9)',background:'linear-gradient(to right,#fef3c7,#facc15)',color:'#0b0b12',fontSize:10}}>Approve</button>
+              <button onClick={() => sendQueueAction(item.id, 'modified')} style={{padding:'3px 6px',borderRadius:99,border:'1px solid rgba(75,85,99,0.9)',background:'rgba(15,23,42,0.9)',color:'#9ca3af',fontSize:10}}>Modify</button>
+              <button onClick={() => sendQueueAction(item.id, 'rejected')} style={{padding:'3px 6px',borderRadius:99,border:'1px solid rgba(248,113,113,0.9)',background:'rgba(15,23,42,0.9)',color:'#fecaca',fontSize:10}}>Reject</button>
             </div>
           </div>
         ))}

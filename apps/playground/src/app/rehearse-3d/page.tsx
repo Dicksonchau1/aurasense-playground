@@ -1,13 +1,18 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 
 import { useEffect, useState } from "react";
 import Card from "../../components/shell/Card";
 import BuildingPicker, { Building } from "../../components/rehearse3d/BuildingPicker";
 import Hud from "../../components/rehearse3d/Hud";
 import StatsPanel from "../../components/rehearse3d/StatsPanel";
-import Scene from "../../components/rehearse3d/Scene";
+import dynamic from "next/dynamic";
+const Scene = dynamic(() => import("../../components/rehearse3d/Scene"), { ssr: false });
 
 function fmtTime(secs: number) {
   const m = Math.floor(secs / 60).toString().padStart(2, "0");

@@ -14,9 +14,13 @@ app.add_middleware(RequestIDMiddleware)
 
 logger = get_logger("aurasense.api")
 
+
+from .routers.missions import router as missions_router
+
 app.include_router(atlas_router)
 app.include_router(fleet_router)
 app.include_router(drone_router)
 app.include_router(status_router)
+app.include_router(missions_router)
 
 # ...existing code for other routers, middleware, startup, etc.

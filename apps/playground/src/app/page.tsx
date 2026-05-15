@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PartnerIntegrationSection from '../../../../src/components/integrations/PartnerIntegrationSection';
 import Card from "../components/shell/Card";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ const APPS = [
 export default function PlaygroundHome() {
   return (
     <div className="space-y-6">
+      <PartnerIntegrationSection />
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="aura-h1">AuraSense Playground</h1>

@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import PartnerIntegrationSection from '../../src/components/integrations/PartnerIntegrationSection';
 import { WhyAmIAskedSparkline } from '@/components/WhyAmIAskedSparkline';
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
@@ -11,6 +12,7 @@ export default function HomePage() {
       style={{ background: '#070e1a', color: 'white' }}
     >
       <section className="max-w-2xl w-full text-center">
+        <PartnerIntegrationSection />
         <p
           className="text-[10px] font-mono uppercase tracking-[0.25em] mb-4"
           style={{ color: '#10b981' }}
