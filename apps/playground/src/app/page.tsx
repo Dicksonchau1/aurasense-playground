@@ -1,40 +1,40 @@
-import Link from "next/link";
-import PartnerIntegrationSection from '../../../../src/components/integrations/PartnerIntegrationSection';
-import Card from "../components/shell/Card";
+"use client";
 
 export const dynamic = "force-dynamic";
+
+import Link from "next/link";
+import Card from "../components/shell/Card";
 
 const APPS = [
   {
     href: "/rehearse-3d",
     title: "Rehearse-3D",
-    tagline: "Physics-grounded drone rehearsal at the timestamp.",
+    tag: "Physics-grounded drone rehearsal at the timestamp.",
     body: "Lawnmower sweep over a 3D building target. Live coverage, defect detection, AI verdicts, mission log. Built on NEPA runtime.",
     badge: "Live",
-    badgeClass: "aura-badge-success",
+    klass: "aura-badge-success",
   },
   {
     href: "/attas",
     title: "ATTAS Sandbox",
-    tagline: "Enterprise drone & mission operations.",
-    body: "Parameters, environment, drone specs, camera, view layers, FoV pins, effects, safety, audit, simulation. Every page live.",
+    tag: "Enterprise drone & mission operations.",
+    body: "Parameters, environment, drone specs, camera, safety, audit, simulation. Every page live.",
     badge: "Production",
-    badgeClass: "aura-badge",
+    klass: "aura-badge",
   },
   {
     href: "/robotics",
     title: "Robotics",
-    tagline: "NEPA-beneath-actuation, low round-trip latency.",
-    body: "Edge runtime slots, fleet telemetry, audit chain. Physics is the dynamic calculation per timestamp — language only expresses.",
+    tag: "NEPA-beneath-actuation, low round-trip latency.",
+    body: "Edge runtime slots, fleet telemetry, audit chain. Physics is the dynamic calculation per timestamp \u2014 language only expresses.",
     badge: "Edge",
-    badgeClass: "aura-badge",
+    klass: "aura-badge",
   },
 ];
 
 export default function PlaygroundHome() {
   return (
     <div className="space-y-6">
-      <PartnerIntegrationSection />
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="aura-h1">AuraSense Playground</h1>
@@ -53,24 +53,24 @@ export default function PlaygroundHome() {
           <Card key={app.href} className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h3 className="aura-h2">{app.title}</h3>
-              <span className={app.badgeClass}>{app.badge}</span>
+              <span className={"aura-badge " + (app.klass.replace("aura-badge", "").trim() ? app.klass : "")}>{app.badge}</span>
             </div>
-            <p className="text-sm font-medium text-aura-text/80">{app.tagline}</p>
+            <p className="text-sm font-medium">{app.tag}</p>
             <p className="aura-sub flex-1">{app.body}</p>
             <Link href={app.href} className="aura-btn aura-btn-primary mt-2">
-              Open {app.title} →
+              Open {app.title}
             </Link>
           </Card>
         ))}
       </div>
 
-      <Card title="What you're looking at">
+      <Card title="What you are looking at">
         <p className="aura-sub">
-          Playground is AuraSense's real-time reference deployment. The fun part is the
+          Playground is AuraSense\u2019s real-time reference deployment. The fun part is the
           real-time overlay and the simulation rehearsal mental environment built on top
-          of it. We grounded it in physics — only possible because our neuromorphic model
-          handles low round-trip latency. That is what gives actuation the real perception
-          it needs.
+          of it. We grounded it in physics \u2014 only possible because our neuromorphic
+          model handles low round-trip latency. That is what gives actuation the real
+          perception it needs.
         </p>
       </Card>
     </div>
