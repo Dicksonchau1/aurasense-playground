@@ -10,5 +10,5 @@ const Rehearse3DImpl = dynamicImport(() => import("./_impl"), {
 });
 
 export default function Page() {
-  return ' + LT + 'Rehearse3DImpl /' + GT + ';
+  return <Rehearse3DImpl />;
 }
