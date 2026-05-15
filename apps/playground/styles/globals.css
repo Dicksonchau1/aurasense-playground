@@ -7,7 +7,7 @@ body {
 }
 
 .btn {
-  @apply px-4 py-2 rounded bg-brand text-white font-semibold hover:bg-brand-light transition;
+  @apply px-4 py-2 rounded bg-brand text-white font-semibold hover:bg-brand-light transition-all;
 }
 
 /* ── Aura design tokens ─────────────────────────────── */
@@ -33,7 +33,7 @@ body {
 
 /* Form */
 .aura-field {
-  @apply w-full rounded-lg px-3 py-2 text-sm outline-none transition;
+  @apply w-full rounded-lg px-3 py-2 text-sm outline-none transition-all;
   background: rgba(255,255,255,0.6);
   border: 1px solid var(--aura-line);
   color: var(--aura-text);
@@ -42,7 +42,7 @@ body {
 
 /* Tabs */
 .aura-tab {
-  @apply px-3 py-2 text-sm font-medium transition rounded-t;
+  @apply px-3 py-2 text-sm font-medium transition-all rounded-t;
   color: var(--aura-sub);
 }
 .aura-tab:hover { color: var(--aura-accent); }
@@ -75,7 +75,7 @@ body {
 
 /* Buttons */
 .aura-btn {
-  @apply px-4 py-2 rounded-lg text-sm font-semibold transition;
+  @apply px-4 py-2 rounded-lg text-sm font-semibold transition-all;
   background: var(--aura-accent);
   color: #fff;
 }
