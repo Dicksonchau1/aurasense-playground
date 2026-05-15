@@ -35,3 +35,4 @@ node_modules
 **/dist
 .env.local
 >>>>>>> cc9d6d4 (Refactor code structure for improved readability and maintainability)
+
