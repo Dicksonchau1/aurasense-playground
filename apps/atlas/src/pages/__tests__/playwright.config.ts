@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
 
 export default defineConfig({
-  testDir: './apps/atlas/src/pages/__tests__',
+  testDir: path.resolve(__dirname),
   timeout: 30 * 1000,
   retries: 0,
   use: {

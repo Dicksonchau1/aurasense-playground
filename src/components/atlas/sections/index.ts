@@ -1,3 +1,5 @@
+export * from "./EvidenceExportSection";
+export * from "./ExternalDisclosureSection";
 export { default as CalibrationSection } from "./CalibrationSection";
 export { default as ModesSection } from "./ModesSection";
 export { default as ParametersSection } from "./ParametersSection";

@@ -1,6 +1,12 @@
 // ATLAS AuditShell: integrates LogReplaySection and WaypointExecutionSection
 import React from "react";
-import { LogReplaySection, WaypointExecutionSection } from "../../../components/atlas/sections";
+import {
+  LogReplaySection,
+  WaypointExecutionSection,
+  EvidenceBundleSection,
+  EvidenceExportSection,
+  ExternalDisclosureSection
+} from "../../../components/atlas/sections";
 
 export default function AuditShell() {
   return (
@@ -8,6 +14,9 @@ export default function AuditShell() {
       <h1 className="text-2xl font-bold mb-4">ATLAS Audit</h1>
       <LogReplaySection />
       <WaypointExecutionSection />
+      <EvidenceBundleSection />
+      <EvidenceExportSection />
+      <ExternalDisclosureSection />
     </main>
   );
 }

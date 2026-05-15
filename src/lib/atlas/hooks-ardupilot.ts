@@ -1,3 +1,397 @@
+export type EvidenceExportArtifactStatus = "ready" | "pending" | "blocked";
+export type EvidenceExportChannel =
+  | "internal-archive"
+  | "client-package"
+  | "regulatory-package"
+  | "partner-brief";
+
+export type EvidenceExportArtifact = {
+  id: string;
+  label: string;
+  kind: "log" | "receipt" | "report" | "capture" | "approval" | "summary";
+  status: EvidenceExportArtifactStatus;
+  bytesLabel: string;
+  checksum: string;
+  included: boolean;
+};
+
+export type EvidenceExportState = {
+  missionLabel: string;
+  exportProfileLabel: string;
+  packageStatus: "assembling" | "review" | "ready" | "blocked";
+  destinationChannel: EvidenceExportChannel;
+  signed: boolean;
+  chainOfCustodyComplete: boolean;
+  exportedAt: string | null;
+  artifacts: EvidenceExportArtifact[];
+  selectedArtifactId: string | null;
+  packageHash: string;
+  lastAck: string;
+  updatedAt: string;
+};
+
+export type ExternalDisclosureSeverity = "info" | "warning" | "critical";
+export type ExternalDisclosureStatus =
+  | "not-required"
+  | "draft"
+  | "review"
+  | "ready"
+  | "submitted"
+  | "blocked";
+
+export type ExternalDisclosureRecipient =
+  | "cad"
+  | "client"
+  | "partner"
+  | "internal-board"
+  | "operator-network";
+
+export type ExternalDisclosureItem = {
+  id: string;
+  recipient: ExternalDisclosureRecipient;
+  label: string;
+  disclosureType: "mandatory" | "voluntary" | "contractual" | "informational";
+  status: ExternalDisclosureStatus;
+  severity: ExternalDisclosureSeverity;
+  dueLabel: string;
+  responsibleRole: string;
+  contentSummary: string;
+  evidenceRef: string;
+  submittedAt: string | null;
+};
+
+export type ExternalDisclosureState = {
+  missionLabel: string;
+  disclosurePosture: "quiet" | "monitor" | "action-required";
+  regulatorWindowLabel: string;
+  selectedDisclosureId: string | null;
+  disclosures: ExternalDisclosureItem[];
+  lastAck: string;
+  updatedAt: string;
+};
+
+function makeEvidenceExportArtifacts(): EvidenceExportArtifact[] {
+  return [
+    {
+      id: "ee-001",
+      label: "Mission telemetry log set",
+      kind: "log",
+      status: "ready",
+      bytesLabel: "2.8 MB",
+      checksum: "sha256:9fd4a31e",
+      included: true
+    },
+    {
+      id: "ee-002",
+      label: "Policy receipt ledger",
+      kind: "receipt",
+      status: "ready",
+      bytesLabel: "184 KB",
+      checksum: "sha256:13cbf202",
+      included: true
+    },
+    {
+      id: "ee-003",
+      label: "Incident report snapshot",
+      kind: "report",
+      status: "ready",
+      bytesLabel: "96 KB",
+      checksum: "sha256:88aa1bc3",
+      included: true
+    },
+    {
+      id: "ee-004",
+      label: "Payload capture evidence",
+      kind: "capture",
+      status: "pending",
+      bytesLabel: "14.2 MB",
+      checksum: "sha256:pending",
+      included: true
+    },
+    {
+      id: "ee-005",
+      label: "Approval chain export",
+      kind: "approval",
+      status: "ready",
+      bytesLabel: "44 KB",
+      checksum: "sha256:6dc114f7",
+      included: true
+    },
+    {
+      id: "ee-006",
+      label: "Stakeholder mission summary",
+      kind: "summary",
+      status: "ready",
+      bytesLabel: "112 KB",
+      checksum: "sha256:c4de12a8",
+      included: true
+    }
+  ];
+}
+
+function makeExternalDisclosureItems(): ExternalDisclosureItem[] {
+  return [
+    {
+      id: "ed-001",
+      recipient: "cad",
+      label: "Civil Aviation occurrence disclosure posture",
+      disclosureType: "mandatory",
+      status: "review",
+      severity: "warning",
+      dueLabel: "Within 96 hours if occurrence is confirmed reportable",
+      responsibleRole: "Compliance lead",
+      contentSummary: "Current mission has no confirmed major safety occurrence, but route-block and degraded link advisory remain under review for reportability.",
+      evidenceRef: "incident-ledger / decision-ledger / rc-ops-review",
+      submittedAt: null
+    },
+    {
+      id: "ed-002",
+      recipient: "client",
+      label: "Client operational mission brief",
+      disclosureType: "contractual",
+      status: "ready",
+      severity: "info",
+      dueLabel: "After evidence export signature",
+      responsibleRole: "Engagement lead",
+      contentSummary: "Client-facing summary can be released once payload completion and final signature are closed.",
+      evidenceRef: "stakeholder-brief / client-view / export-profile",
+      submittedAt: null
+    },
+    {
+      id: "ed-003",
+      recipient: "partner",
+      label: "Partner systems coordination note",
+      disclosureType: "informational",
+      status: "draft",
+      severity: "info",
+      dueLabel: "Optional after internal review",
+      responsibleRole: "Operations lead",
+      contentSummary: "Partner note will summarize link behavior, fence block, and recommended tuning updates.",
+      evidenceRef: "decision-ledger / risk-register / ops-note",
+      submittedAt: null
+    },
+    {
+      id: "ed-004",
+      recipient: "internal-board",
+      label: "Internal governance board brief",
+      disclosureType: "informational",
+      status: "ready",
+      severity: "info",
+      dueLabel: "Immediate",
+      responsibleRole: "Founder / mission owner",
+      contentSummary: "Internal board brief is ready and can be shared once package review is confirmed.",
+      evidenceRef: "stakeholder-brief / board-view",
+      submittedAt: null
+    }
+  ];
+}
+
+export function useArduPilotEvidenceExport() {
+  const [state, setState] = useState<EvidenceExportState>({
+    missionLabel: "Kowloon facade survey / run 04",
+    exportProfileLabel: "Audit outbound package / v1",
+    packageStatus: "review",
+    destinationChannel: "internal-archive",
+    signed: false,
+    chainOfCustodyComplete: false,
+    exportedAt: null,
+    artifacts: makeEvidenceExportArtifacts(),
+    selectedArtifactId: "ee-001",
+    packageHash: "pkg-0x7ab41c92",
+    lastAck: "Evidence export package staged for review.",
+    updatedAt: nowIso()
+  });
+
+  const recomputePackage = useCallback((artifacts: EvidenceExportArtifact[]) => {
+    const hasBlocked = artifacts.some((artifact) => artifact.status === "blocked" && artifact.included);
+    const hasPending = artifacts.some((artifact) => artifact.status === "pending" && artifact.included);
+    const packageStatus =
+      hasBlocked ? "blocked" : hasPending ? "review" : "ready";
+    const chainOfCustodyComplete =
+      artifacts.filter((artifact) => artifact.included).every((artifact) => artifact.status === "ready");
+
+    return {
+      packageStatus,
+      chainOfCustodyComplete
+    } as const;
+  }, []);
+
+  const selectArtifact = useCallback((artifactId: string) => {
+    setState((prev) => ({
+      ...prev,
+      selectedArtifactId: artifactId,
+      lastAck: `Export artifact ${artifactId} selected.`,
+      updatedAt: nowIso()
+    }));
+  }, []);
+
+  const toggleArtifactIncluded = useCallback((artifactId: string) => {
+    setState((prev) => {
+      const artifacts = prev.artifacts.map((artifact) =>
+        artifact.id === artifactId
+          ? { ...artifact, included: !artifact.included }
+          : artifact
+      );
+      const next = recomputePackage(artifacts);
+
+      return {
+        ...prev,
+        artifacts,
+        packageStatus: next.packageStatus,
+        chainOfCustodyComplete: next.chainOfCustodyComplete,
+        lastAck: `Artifact ${artifactId} inclusion toggled.`,
+        updatedAt: nowIso()
+      };
+    });
+  }, [recomputePackage]);
+
+  const setDestinationChannel = useCallback((destinationChannel: EvidenceExportChannel) => {
+    setState((prev) => ({
+      ...prev,
+      destinationChannel,
+      lastAck: `Destination channel set to ${destinationChannel}.",
+      updatedAt: nowIso()
+    }));
+  }, []);
+
+  const signExportPackage = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      signed: true,
+      lastAck: "Evidence export package signed.",
+      updatedAt: nowIso()
+    }));
+  }, []);
+
+  const markArtifactReady = useCallback((artifactId: string) => {
+    setState((prev) => {
+      const artifacts = prev.artifacts.map((artifact) =>
+        artifact.id === artifactId
+          ? {
+              ...artifact,
+              status: "ready" as const,
+              checksum:
+                artifact.checksum === "sha256:pending"
+                  ? "sha256:filled-after-closeout"
+                  : artifact.checksum
+            }
+          : artifact
+      );
+      const next = recomputePackage(artifacts);
+
+      return {
+        ...prev,
+        artifacts,
+        packageStatus: next.packageStatus,
+        chainOfCustodyComplete: next.chainOfCustodyComplete,
+        lastAck: `Artifact ${artifactId} marked ready.`,
+        updatedAt: nowIso()
+      };
+    });
+  }, [recomputePackage]);
+
+  const exportPackage = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      exportedAt:
+        prev.packageStatus === "ready" && prev.signed ? nowIso() : prev.exportedAt,
+      lastAck:
+        prev.packageStatus === "ready" && prev.signed
+          ? "Evidence export package sent to outbound channel."
+          : "Export blocked until package is ready and signed.",
+      updatedAt: nowIso()
+    }));
+  }, []);
+
+  const selectedArtifact =
+    state.artifacts.find((artifact) => artifact.id === state.selectedArtifactId) ?? null;
+
+  return {
+    state,
+    selectedArtifact,
+    selectArtifact,
+    toggleArtifactIncluded,
+    setDestinationChannel,
+    signExportPackage,
+    markArtifactReady,
+    exportPackage
+  };
+}
+
+export function useArduPilotExternalDisclosure() {
+  const [state, setState] = useState<ExternalDisclosureState>({
+    missionLabel: "Kowloon facade survey / run 04",
+    disclosurePosture: "monitor",
+    regulatorWindowLabel: "Occurrence review window active / 96h reference",
+    selectedDisclosureId: "ed-001",
+    disclosures: makeExternalDisclosureItems(),
+    lastAck: "External disclosure posture computed.",
+    updatedAt: nowIso()
+  });
+
+  const recomputeDisclosurePosture = useCallback((disclosures: ExternalDisclosureItem[]) => {
+    const hasAction = disclosures.some(
+      (item) => item.status === "review" || item.status === "blocked"
+    );
+    const hasDraft = disclosures.some((item) => item.status === "draft");
+
+    return hasAction ? "action-required" : hasDraft ? "monitor" : "quiet";
+  }, []);
+
+  const selectDisclosure = useCallback((disclosureId: string) => {
+    setState((prev) => ({
+      ...prev,
+      selectedDisclosureId: disclosureId,
+      lastAck: `Disclosure item ${disclosureId} selected.`,
+      updatedAt: nowIso()
+    }));
+  }, []);
+
+  const setDisclosureStatus = useCallback(
+    (disclosureId: string, status: ExternalDisclosureStatus) => {
+      setState((prev) => {
+        const disclosures = prev.disclosures.map((item) =>
+          item.id === disclosureId
+            ? {
+                ...item,
+                status,
+                submittedAt: status === "submitted" ? nowIso() : item.submittedAt
+              }
+            : item
+        );
+
+        return {
+          ...prev,
+          disclosures,
+          disclosurePosture: recomputeDisclosurePosture(disclosures),
+          lastAck: `Disclosure ${disclosureId} set to ${status}.",
+          updatedAt: nowIso()
+        };
+      });
+    },
+    [recomputeDisclosurePosture]
+  );
+
+  const selectedDisclosure =
+    state.disclosures.find((item) => item.id === state.selectedDisclosureId) ?? null;
+
+  return {
+    state,
+    selectedDisclosure,
+    selectDisclosure,
+    setDisclosureStatus
+  };
+}
+/**
+ * ATLAS slice-hook layer.
+ *
+ * Hooks here own per-section local logic. When MissionStateProvider is
+ * mounted, hooks read their initial seed and cross-slice references from
+ * useMissionState and sync via small reconciliation effects. When no
+ * provider is present, hooks remain isolated and backward compatible.
+ *
+ * See ./ARCHITECTURE.md for the four-layer model and extension rules.
+ */
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
