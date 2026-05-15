@@ -38,8 +38,8 @@ export default function RoboticsPage() {
         <div>
           <h1 className="aura-h1">Robotics</h1>
           <p className="aura-sub mt-1">
-            NEPA edge runtime under your actuation layer. Physics is the dynamic calculation
-            per timestamp; language only expresses.
+            NEPA edge runtime under your actuation layer. Physics is the dynamic
+            calculation per timestamp; language only expresses.
           </p>
         </div>
         <span className={"aura-badge " + (ok ? "aura-badge-success" : "aura-badge-warn")}>
@@ -86,57 +86,26 @@ export default function RoboticsPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="aura-sub">aiortc</span>
-              <span className="font-semibold">
-                {edge?.aiortc_available ? "available" : "off"}
-              </span>
+              <span className="font-semibold">{edge?.aiortc_available ? "available" : "off"}</span>
             </div>
             <div className="flex justify-between">
               <span className="aura-sub">Latency contract</span>
               <span className="font-semibold">per-tick</span>
             </div>
-            <div className="flex justify-between">
-              <span className="aura-sub">Determinism</span>
-              <span className="font-semibold">scoped to version</span>
-            </div>
           </div>
         </Card>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <Card title="Substrate thesis">
-          <p className="aura-sub leading-relaxed">
-            Physics does not crash with neuro-dynamics here. Physics is the dynamic
-            calculation per timestamp, so they fold together instead of fighting. Natural
-            language sits on top only to express, not to explain. The explanation lives in
-            the dynamics.
-          </p>
-        </Card>
-
-        <Card title="Integration">
-          <ul className="space-y-2 text-sm">
-            >
-              <span className="aura-sub">Slots beneath actuation</span>
-              <span className="font-semibold">zero merge friction</span>
-            </li>
-            >
-              <span className="aura-sub">Edge target</span>
-              <span className="font-semibold">Jetson Nano / Orin</span>
-            </li>
-            >
-              <span className="aura-sub">Co-native dynamics</span>
-              <span className="font-semibold">timestamp-aligned</span>
-            </li>
-          </ul>
-          <div className="mt-4 flex gap-2">
-            <Link href="/rehearse-3d" className="aura-btn aura-btn-primary">
-              See it live
-            </Link>
-            <Link href="/attas" className="aura-btn aura-btn-ghost">
-              Open ATTAS
-            </Link>
-          </div>
-        </Card>
-      </div>
+      <Card title="Integration">
+        <p className="aura-sub leading-relaxed">
+          NEPA slots beneath your actuation layer with zero merge friction.
+          Physics and neuro-dynamics are co-native at the timestamp.
+        </p>
+        <div className="mt-4 flex gap-2">
+          <Link href="/rehearse-3d" className="aura-btn aura-btn-primary">See it live</Link>
+          <Link href="/attas" className="aura-btn aura-btn-ghost">Open ATTAS</Link>
+        </div>
+      </Card>
     </div>
   );
 }
