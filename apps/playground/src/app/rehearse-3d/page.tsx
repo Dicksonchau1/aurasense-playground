@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import Card from "../../components/shell/Card";
@@ -47,7 +46,6 @@ mkdir -p src/app/rehearse-3d
 cat > src/app/rehearse-3d/page.tsx <<'EOF'
 "use client";
 
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import Card from "../../components/shell/Card";
