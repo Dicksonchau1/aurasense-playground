@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState } from "react";
 import Card from "../../components/shell/Card";
 import Camera from "./_sections/Camera";
@@ -17,29 +16,29 @@ const BUILDINGS = [
 ];
 const DRONES = ["Matrice 30T", "Matrice 350 RTK", "Mavic 3 Enterprise"];
 const TASKS  = ["Facade crack survey", "Thermal anomaly scan", "MBIS facade inspection"];
-const SECTIONS = ["Parameters","Environment","Drone","Camera","Safety","Audit","Simulation"] as const;
+const SECTIONS = ["Parameters", "Environment", "Drone", "Camera", "Safety", "Audit", "Simulation"] as const;
 type Section = typeof SECTIONS[number];
 
 export default function AttasPage() {
-  const [sec, setSec] = useState<Section>("Parameters");
-  const [bld, setBld] = useState(BUILDINGS[0]);
-  const [drone, setDrone] = useState(DRONES[0]);
-  const [task, setTask] = useState(TASKS[0]);
-  const [wind, setWind] = useState(5.2);
-  const [sun, setSun] = useState(45);
-  const [thermal, setThermal] = useState(true);
+  const [sec, setSec]           = useState<Section>("Parameters");
+  const [bld, setBld]           = useState(BUILDINGS[0]);
+  const [drone, setDrone]       = useState(DRONES[0]);
+  const [task, setTask]         = useState(TASKS[0]);
+  const [wind, setWind]         = useState(5.2);
+  const [sun, setSun]           = useState(45);
+  const [thermal, setThermal]   = useState(true);
   const [simRunning, setSimRunning] = useState(false);
-  const [simLog, setSimLog] = useState<string[]>(["09:15:01 Sandbox ready, awaiting run."]);
+  const [simLog, setSimLog]     = useState<string[]>(["09:15:01 Sandbox ready, awaiting run."]);
 
   function runSim() {
     if (simRunning) return;
     setSimRunning(true);
     const steps = [
       "Initialising physics engine",
-      `Loading building ${bld.name}`,
-      `Drone ${drone}`,
-      `Wind ${wind.toFixed(1)} m/s SW`,
-      `Thermal scan ${thermal ? "active" : "off"}`,
+      "Loading building " + bld.name,
+      "Drone " + drone,
+      "Wind " + wind.toFixed(1) + " m/s SW",
+      "Thermal scan " + (thermal ? "active" : "off"),
       "Simulating trajectory",
       "Running coverage analysis",
       "Checking safety margins",
@@ -48,14 +47,14 @@ export default function AttasPage() {
     let i = 0;
     const t = setInterval(() => {
       const stamp = new Date().toLocaleTimeString("en-HK", { hour12: false });
-      setSimLog(prev => [...prev, `${stamp} ${steps[i]}`]);
+      setSimLog(prev => [...prev, stamp + " " + steps[i]]);
       i++;
       if (i >= steps.length) { clearInterval(t); setSimRunning(false); }
     }, 450);
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 p-6" style={{ background: "var(--aura-bg)", minHeight: "100vh" }}>
       <header className="flex items-end justify-between flex-wrap gap-3">
         <div>
           <h1 className="aura-h1">ATTAS Sandbox</h1>
@@ -73,7 +72,7 @@ export default function AttasPage() {
 
       <div className="flex flex-wrap gap-1.5 border-b" style={{ borderColor: "var(--aura-line)" }}>
         {SECTIONS.map(s => (
-          <button key={s} onClick={() => setSec(s)} className={`aura-tab ${sec === s ? "aura-tab-active" : ""}`}>{s}</button>
+          <button key={s} onClick={() => setSec(s)} className={"aura-tab " + (sec === s ? "aura-tab-active" : "")}>{s}</button>
         ))}
       </div>
 
@@ -96,11 +95,13 @@ export default function AttasPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="aura-label">Wind (m/s): {wind.toFixed(1)}</label>
-                  <input type="range" min={0} max={15} step={0.1} value={wind} onChange={e => setWind(parseFloat(e.target.value))} className="w-full" />
+                  <input type="range" min={0} max={15} step={0.1} value={wind}
+                    onChange={e => setWind(parseFloat(e.target.value))} className="w-full" />
                 </div>
                 <div>
-                  <label className="aura-label">Sun angle (°): {sun}</label>
-                  <input type="range" min={0} max={90} value={sun} onChange={e => setSun(parseInt(e.target.value))} className="w-full" />
+                  <label className="aura-label">Sun angle: {sun}°</label>
+                  <input type="range" min={0} max={90} value={sun}
+                    onChange={e => setSun(parseInt(e.target.value))} className="w-full" />
                 </div>
               </div>
             </div>
@@ -108,14 +109,15 @@ export default function AttasPage() {
           <Card title="Building target">
             <div className="grid grid-cols-1 gap-2">
               {BUILDINGS.map(b => (
-                <button key={b.id} onClick={() => setBld(b)} className="text-left px-3 py-2 rounded-lg border transition"
+                <button key={b.id} onClick={() => setBld(b)}
+                  className="text-left px-3 py-2 rounded-lg border transition"
                   style={{
                     background: bld.id === b.id ? "var(--aura-sel)" : "rgba(255,255,255,0.5)",
                     borderColor: bld.id === b.id ? "rgba(71,105,155,0.4)" : "rgba(255,255,255,0.55)",
                   }}>
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="font-semibold text-sm">{b.name}</div>
+                      <div className="font-semibold text-sm" style={{ color: "var(--aura-text)" }}>{b.name}</div>
                       <div className="text-xs aura-sub">{b.desc}</div>
                     </div>
                     <span className="aura-badge">fit {b.fit}</span>
@@ -129,29 +131,14 @@ export default function AttasPage() {
 
       {sec === "Environment" && (
         <div className="grid gap-5 md:grid-cols-3">
-          <Card title="Wind profile">
-            <ul className="text-sm space-y-2">
-              ><span className="aura-sub">Type</span><span>Urban canyon</span></li>
-              ><span className="aura-sub">Speed</span><span>{wind.toFixed(1)} m/s</span></li>
-              ><span className="aura-sub">Gust factor</span><span>1.3</span></li>
-              ><span className="aura-sub">Direction</span><span>SW 220°</span></li>
-            </ul>
+          <Card title="Wind">
+            <p className="text-sm" style={{ color: "var(--aura-text)" }}>{wind.toFixed(1)} m/s urban canyon, SW 220°, gust ×1.3</p>
           </Card>
-          <Card title="Solar conditions">
-            <ul className="text-sm space-y-2">
-              ><span className="aura-sub">Angle</span><span>{sun}°</span></li>
-              ><span className="aura-sub">Glare risk</span><span className="aura-badge aura-badge-warn">Medium</span></li>
-              ><span className="aura-sub">UV index</span><span>7</span></li>
-              ><span className="aura-sub">Shadow coverage</span><span>32%</span></li>
-            </ul>
+          <Card title="Solar">
+            <p className="text-sm" style={{ color: "var(--aura-text)" }}>Angle {sun}°, glare medium, UV 7, shadow 32%</p>
           </Card>
           <Card title="Atmosphere">
-            <ul className="text-sm space-y-2">
-              ><span className="aura-sub">Humidity</span><span>69%</span></li>
-              ><span className="aura-sub">Temperature</span><span>28°C</span></li>
-              ><span className="aura-sub">Air density</span><span>1.19 kg/m³</span></li>
-              ><span className="aura-sub">Turbulence</span><span className="aura-badge">Low</span></li>
-            </ul>
+            <p className="text-sm" style={{ color: "var(--aura-text)" }}>Humidity 69%, 28°C, density 1.19 kg/m³, turbulence low</p>
           </Card>
         </div>
       )}
@@ -159,30 +146,17 @@ export default function AttasPage() {
       {sec === "Drone" && (
         <div className="grid gap-5 md:grid-cols-2">
           <Card title="Drone specs">
-            <ul className="text-sm space-y-2">
-              ><span className="aura-sub">Model</span><span>{drone}</span></li>
-              ><span className="aura-sub">Payload class</span><span>Medium</span></li>
-              ><span className="aura-sub">IP rating</span><span>IP55</span></li>
-              ><span className="aura-sub">Max wind</span><span>12 m/s</span></li>
-              ><span className="aura-sub">MTOW</span><span>3.78 kg</span></li>
-            </ul>
+            <p className="text-sm" style={{ color: "var(--aura-text)" }}>{drone} — Medium payload, IP55, max wind 12 m/s, MTOW 3.78 kg</p>
           </Card>
           <Card title="Flight envelope">
-            <div className="text-3xl font-bold" style={{ color: "#1a2a3e" }}>41 min</div>
-            <div className="aura-sub">Estimated endurance, current profile</div>
-            <ul className="text-sm space-y-2 mt-3">
-              ><span className="aura-sub">Max altitude</span><span>6000 m</span></li>
-              ><span className="aura-sub">Max speed</span><span>23 m/s</span></li>
-              ><span className="aura-sub">Hover accuracy</span><span>0.1 m (RTK)</span></li>
-              ><span className="aura-sub">Range</span><span>15 km</span></li>
-            </ul>
+            <p className="text-sm" style={{ color: "var(--aura-text)" }}>41 min endurance, 6 000 m max alt, 23 m/s max speed, 0.1 m RTK, 15 km range</p>
           </Card>
         </div>
       )}
 
-      {sec === "Camera" && <Camera sun={sun} thermal={thermal} setThermal={setThermal} />}
-      {sec === "Safety" && <Safety />}
-      {sec === "Audit" && <Audit />}
+      {sec === "Camera"     && <Camera sun={sun} thermal={thermal} setThermal={setThermal} />}
+      {sec === "Safety"     && <Safety />}
+      {sec === "Audit"      && <Audit />}
       {sec === "Simulation" && <Simulation simRunning={simRunning} simLog={simLog} runSim={runSim} />}
     </div>
   );

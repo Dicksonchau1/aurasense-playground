@@ -1,38 +1,57 @@
 "use client";
+
 import Card from "../../../components/shell/Card";
 
-const AUDIT = [
-  { ts: "09:14:22", action: "Brand selected DJI Enterprise", hash: "3a8f2cd91e" },
-  { ts: "09:14:35", action: "Drone selected Matrice 30T",    hash: "7b1d4af23c" },
-  { ts: "09:14:48", action: "Task selected Facade Crack",    hash: "9c5e1ba77f" },
-  { ts: "09:15:01", action: "Building selected Tower A",     hash: "2f4d8bc33a" },
+const HISTORY = [
+  { ts: "2026-05-14 09:42", user: "Dickson", action: "Sim run — Tower A, Matrice 30T, crack survey",   result: "Pass" },
+  { ts: "2026-05-14 10:15", user: "Dickson", action: "Param change — wind 3.1 → 5.2 m/s",               result: "Saved" },
+  { ts: "2026-05-14 11:03", user: "System",  action: "NOTAM check auto-refresh",                        result: "Clear" },
+  { ts: "2026-05-15 08:30", user: "Dickson", action: "Sim run — Tower B, Matrice 350 RTK, thermal scan", result: "Pass" },
+  { ts: "2026-05-15 09:12", user: "Dickson", action: "Thermal overlay toggled ON",                       result: "Saved" },
+  { ts: "2026-05-15 11:55", user: "Dickson", action: "Sandbox opened — ATTAS",                           result: "Active" },
 ];
+
+const STATUS_COLOR: Record<string, string> = {
+  Pass:   "var(--aura-ok)",
+  Saved:  "var(--aura-accent2)",
+  Clear:  "var(--aura-ok)",
+  Active: "var(--aura-accent)",
+  Fail:   "var(--aura-err)",
+};
 
 export default function Audit() {
   return (
-    <div className="grid gap-5 md:grid-cols-2">
-      <Card title="Audit trail">
-        <div className="space-y-2">
-          {AUDIT.map((a) => (
-            <div key={a.hash} className="aura-panel flex items-start gap-3">
-              <div className="w-2 h-2 rounded-full mt-1.5" style={{ background: "#2e7d52" }} />
-              <div className="flex-1">
-                <div className="text-sm font-semibold">{a.action}</div>
-                <div className="text-xs aura-sub">{a.ts}</div>
-                <div className="text-[10px] font-mono mt-1 inline-block px-1.5 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.06)" }}>hash {a.hash}</div>
-              </div>
-              <span className="aura-badge aura-badge-success">OK</span>
+    <div className="grid gap-5 md:grid-cols-3">
+      <div className="md:col-span-2">
+        <Card title="Session audit log">
+          <div className="space-y-1.5 text-xs">
+            <div className="grid grid-cols-[130px_60px_1fr_60px] gap-2 font-semibold aura-sub pb-1"
+              style={{ borderBottom: "1px solid var(--aura-line)" }}>
+              <span>Timestamp</span><span>User</span><span>Action</span><span>Result</span>
             </div>
-          ))}
-        </div>
-      </Card>
-      <Card title="Merkle chain">
-        <div className="space-y-1.5 font-mono text-[11px]">
-          <div className="aura-panel">Root a1b2c3d4e5f6</div>
-          <div className="aura-panel ml-4">Session 3a8f2cd91e</div>
-          <div className="aura-panel ml-8">Event 7b1d4af23c</div>
-          <div className="aura-panel ml-12">Event 9c5e1ba77f</div>
-          <div className="aura-panel ml-12">Event 2f4d8bc33a</div>
+            {HISTORY.map((h, i) => (
+              <div key={i} className="grid grid-cols-[130px_60px_1fr_60px] gap-2 py-1 rounded px-1"
+                style={{ background: i % 2 === 0 ? "var(--aura-sel)" : "transparent", color: "var(--aura-text)" }}>
+                <span className="aura-sub">{h.ts}</span>
+                <span>{h.user}</span>
+                <span>{h.action}</span>
+                <span className="font-semibold" style={{ color: STATUS_COLOR[h.result] ?? "var(--aura-text)" }}>
+                  {h.result}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+      <Card title="Compliance">
+        <div className="space-y-2 text-sm" style={{ color: "var(--aura-text)" }}>
+          <div className="flex justify-between"><span className="aura-sub">Regulation</span><span>CAD HK RPAS Ord.</span></div>
+          <div className="flex justify-between"><span className="aura-sub">MBIS ref.</span><span>Code of Practice 2022</span></div>
+          <div className="flex justify-between"><span className="aura-sub">Data retention</span><span>90 days</span></div>
+          <div className="flex justify-between"><span className="aura-sub">Report format</span><span>PDF / JSON</span></div>
+          <div className="flex justify-between"><span className="aura-sub">Sessions today</span><span>3</span></div>
+          <hr style={{ borderColor: "var(--aura-line)" }} />
+          <p className="aura-sub text-xs">All simulation runs are logged immutably. Export available after each session.</p>
         </div>
       </Card>
     </div>

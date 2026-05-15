@@ -1,27 +1,56 @@
 "use client";
+
 import Card from "../../../components/shell/Card";
 
-export default function Simulation({
-  simRunning,
-  simLog,
-  runSim,
-}: {
+interface SimProps {
   simRunning: boolean;
   simLog: string[];
   runSim: () => void;
-}) {
+}
+
+export default function Simulation({ simRunning, simLog, runSim }: SimProps) {
   return (
-    <div className="grid gap-5 md:grid-cols-2">
-      <Card title="Run simulation">
-        <div className="text-3xl font-bold" style={{ color: "#1a2a3e" }}>{simRunning ? "Running…" : "Ready"}</div>
-        <div className="aura-sub mt-1">Full-physics dynamics, timestamp-aligned with NEPA runtime.</div>
-        <button onClick={runSim} disabled={simRunning} className="aura-btn aura-btn-primary mt-4">
-          {simRunning ? "Running…" : "Run simulation"}
-        </button>
-      </Card>
-      <Card title="Simulation log">
-        <div className="font-mono text-[11px] leading-relaxed max-h-56 overflow-y-auto p-2 rounded" style={{ background: "rgba(20,30,50,0.08)" }}>
-          {simLog.map((line, i) => <div key={i}>{line}</div>)}
+    <div className="grid gap-5 md:grid-cols-3">
+      <div className="md:col-span-2">
+        <Card title="Simulation log">
+          <div className="aura-log">
+            {simLog.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
+          <button
+            onClick={runSim}
+            disabled={simRunning}
+            className="aura-btn mt-3 w-full"
+          >
+            {simRunning ? "Running…" : "▶  Run simulation"}
+          </button>
+        </Card>
+      </div>
+      <Card title="Metrics">
+        <div className="space-y-2 text-sm" style={{ color: "var(--aura-text)" }}>
+          <div className="flex justify-between">
+            <span className="aura-sub">Coverage</span>
+            <span className="font-semibold" style={{ color: "var(--aura-ok)" }}>94.2%</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="aura-sub">Flight time est.</span>
+            <span>22 min</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="aura-sub">Waypoints</span>
+            <span>148</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="aura-sub">Safety score</span>
+            <span className="font-semibold" style={{ color: "var(--aura-ok)" }}>91/100</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="aura-sub">Risk level</span>
+            <span className="font-semibold" style={{ color: "var(--aura-warn)" }}>Low-Medium</span>
+          </div>
+          <hr style={{ borderColor: "var(--aura-line)" }} />
+          <p className="aura-sub text-xs">Metrics update after each simulation run. Export report to PDF after completion.</p>
         </div>
       </Card>
     </div>

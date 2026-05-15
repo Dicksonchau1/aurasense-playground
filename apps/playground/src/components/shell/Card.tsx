@@ -1,14 +1,21 @@
-import { HTMLAttributes, ReactNode } from "react";
+import type { ReactNode } from "react";
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  title?: string;
+interface CardProps {
+  title: string;
   children: ReactNode;
+  className?: string;
 }
 
-export default function Card({ title, children, className = "", ...rest }: CardProps) {
+export default function Card({ title, children, className = "" }: CardProps) {
   return (
-    <div className={`aura-card ${className}`} {...rest}>
-      {title && <h2 className="aura-h2 mb-3">{title}</h2>}
+    <div
+      className={`rounded-2xl p-4 backdrop-blur-sm ${className}`}
+      style={{
+        background: "var(--aura-surface)",
+        border: "1px solid var(--aura-line)",
+      }}
+    >
+      <h2 className="aura-h2 mb-3">{title}</h2>
       {children}
     </div>
   );
