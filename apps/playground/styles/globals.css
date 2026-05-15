@@ -9,3 +9,75 @@ body {
 .btn {
   @apply px-4 py-2 rounded bg-brand text-white font-semibold hover:bg-brand-light transition;
 }
+
+/* ── Aura design tokens ─────────────────────────────── */
+:root {
+  --aura-bg:       #f0f4fa;
+  --aura-surface:  rgba(255,255,255,0.72);
+  --aura-line:     rgba(71,105,155,0.18);
+  --aura-sel:      rgba(71,105,155,0.12);
+  --aura-accent:   #2c5fa8;
+  --aura-accent2:  #4e8cde;
+  --aura-text:     #1a2640;
+  --aura-sub:      #6b7fa3;
+  --aura-ok:       #27a87c;
+  --aura-warn:     #e08a1a;
+  --aura-err:      #d63b3b;
+}
+
+/* Typo */
+.aura-h1    { @apply text-2xl font-bold tracking-tight; color: var(--aura-text); }
+.aura-h2    { @apply text-base font-semibold; color: var(--aura-text); }
+.aura-sub   { @apply text-sm; color: var(--aura-sub); }
+.aura-label { @apply text-xs font-medium uppercase tracking-wide mb-1 block; color: var(--aura-sub); }
+
+/* Form */
+.aura-field {
+  @apply w-full rounded-lg px-3 py-2 text-sm outline-none transition;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--aura-line);
+  color: var(--aura-text);
+}
+.aura-field:focus { border-color: var(--aura-accent2); }
+
+/* Tabs */
+.aura-tab {
+  @apply px-3 py-2 text-sm font-medium transition rounded-t;
+  color: var(--aura-sub);
+}
+.aura-tab:hover { color: var(--aura-accent); }
+.aura-tab-active {
+  color: var(--aura-accent) !important;
+  border-bottom: 2px solid var(--aura-accent);
+}
+
+/* Badges */
+.aura-badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  background: var(--aura-sel);
+  color: var(--aura-accent);
+  border: 1px solid rgba(71,105,155,0.25);
+}
+.aura-score-pill {
+  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1;
+  background: var(--aura-sel);
+  border: 1px solid rgba(71,105,155,0.25);
+  color: var(--aura-text);
+}
+
+/* Log */
+.aura-log {
+  @apply rounded-lg p-3 text-xs font-mono space-y-0.5 overflow-y-auto;
+  background: #101828;
+  color: #7ec8a0;
+  height: 200px;
+}
+
+/* Buttons */
+.aura-btn {
+  @apply px-4 py-2 rounded-lg text-sm font-semibold transition;
+  background: var(--aura-accent);
+  color: #fff;
+}
+.aura-btn:hover { background: var(--aura-accent2); }
+.aura-btn:disabled { opacity: 0.5; cursor: not-allowed; }
