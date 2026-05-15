@@ -71,11 +71,11 @@ export default function Rehearse3DPage() {
           <Card title="Flight params">
             <div className="space-y-3">
               <div>
-                <l<label className="aura-label">Altitude: {alt} m</label>
+                <label className="aura-label">Altitude: {alt} m</label>
                 <input type="range" min={20} max={100} value={alt} onChange={e => setAlt(parseInt(e.target.value))} className="w-full" />
               </div>
               <div>
-                <l<label className="aura-label">Speed: {spd.toFixed(1)} m/s</label>
+                <label className="aura-label">Speed: {spd.toFixed(1)} m/s</label>
                 <input type="range" min={1} max={10} value={spd} onChange={e => setSpd(parseFloat(e.target.value))} className="w-full" />
               </div>
             </div>

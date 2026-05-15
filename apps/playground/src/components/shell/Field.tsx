@@ -8,7 +8,7 @@ export default function Field({ label, id, ...rest }: FieldProps) {
   const inputId = id ?? rest.name;
   return (
     <div className="w-full">
-      <l<label htmlFor={inputId} className="aura-label">{label}</label>
+      <label htmlFor={inputId} className="aura-label">{label}</label>
       <input id={inputId} className="aura-field" {...rest} />
     </div>
   );

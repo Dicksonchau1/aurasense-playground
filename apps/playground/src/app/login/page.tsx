@@ -32,7 +32,7 @@ export default function LoginPage() {
         </div>
         {!sent && (
           <>
-            <l<label style={{fontSize:12, color:"var(--muted,#8a97a8)"}}>Email</label>
+            <label style={{fontSize:12, color:"var(--muted,#8a97a8)"}}>Email</label>
             <input value={email} onChange={e=>setEmail(e.target.value)} type="email" required placeholder="you@polyu.edu.hk"
               style={{width:"100%", padding:"10px 12px", borderRadius:10, border:"1px solid var(--line,#1e2734)", background:"#0f141c", color:"inherit", margin:"6px 0 12px"}}/>
             <button disabled={busy || !email} style={{width:"100%", padding:"10px 12px", borderRadius:10, border:0, background:"linear-gradient(135deg,#5eead4,#38bdf8)", color:"#06121a", fontWeight:700, cursor:"pointer"}}>
