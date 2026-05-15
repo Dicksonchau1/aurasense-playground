@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase-browser";
+import { getSupabaseClient } from "../../utils/supabaseClient";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,7 +10,7 @@ export default function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr(null);
-    const sb = supabaseBrowser();
+    const sb = getSupabaseClient();
     const redirectTo = `${window.location.origin}/auth/callback`;
     const { error } = await sb.auth.signInWithOtp({
       email,
