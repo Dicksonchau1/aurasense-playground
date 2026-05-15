@@ -170,15 +170,15 @@ export default function Rehearse3DPage() {
           <Card title="Flight params">
             <div className="space-y-3">
               <div>
-                abel className="aura-label">Altitude: {alt} m</label>
+                <label className="aura-label">Altitude: {alt} m</label>
                 <input type="range" min={20} max={100} value={alt} onChange={e => setAlt(parseInt(e.target.value))} className="w-full" />
               </div>
               <div>
-                abel className="aura-label">Speed: {spd.toFixed(1)} m/s</label>
+                <label className="aura-label">Speed: {spd.toFixed(1)} m/s</label>
                 <input type="range" min={1} max={10} value={spd} onChange={e => setSpd(parseFloat(e.target.value))} className="w-full" />
               </div>
               <div>
-                abel className="aura-label">Overlap: {overlap}%</label>
+                <label className="aura-label">Overlap: {overlap}%</label>
                 <input type="range" min={50} max={90} value={overlap} onChange={e => setOverlap(parseInt(e.target.value))} className="w-full" />
               </div>
             </div>
