@@ -81,25 +81,25 @@ export default function AttasPage() {
           <Card title="Mission setup">
             <div className="space-y-3">
               <div>
-                <label className="aura-label">Drone</label>
+                <l<label className="aura-label">Drone</label>
                 <select className="aura-field" value={drone} onChange={e => setDrone(e.target.value)}>
                   {DRONES.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label className="aura-label">Task</label>
+                <l<label className="aura-label">Task</label>
                 <select className="aura-field" value={task} onChange={e => setTask(e.target.value)}>
                   {TASKS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="aura-label">Wind (m/s): {wind.toFixed(1)}</label>
+                  <l<label className="aura-label">Wind (m/s): {wind.toFixed(1)}</label>
                   <input type="range" min={0} max={15} step={0.1} value={wind}
                     onChange={e => setWind(parseFloat(e.target.value))} className="w-full" />
                 </div>
                 <div>
-                  <label className="aura-label">Sun angle: {sun}°</label>
+                  <l<label className="aura-label">Sun angle: {sun}°</label>
                   <input type="range" min={0} max={90} value={sun}
                     onChange={e => setSun(parseInt(e.target.value))} className="w-full" />
                 </div>
