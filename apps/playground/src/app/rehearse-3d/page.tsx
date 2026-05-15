@@ -11,8 +11,8 @@ import Card from "../../components/shell/Card";
 import BuildingPicker, { Building } from "../../components/rehearse3d/BuildingPicker";
 import Hud from "../../components/rehearse3d/Hud";
 import StatsPanel from "../../components/rehearse3d/StatsPanel";
-import dynamic from "next/dynamic";
-const Scene = dynamic(() => import("../../components/rehearse3d/Scene"), { ssr: false });
+import nextDynamic from "next/dynamic";
+const Scene = nextDynamic(() => import("../../components/rehearse3d/Scene"), { ssr: false });
 
 function fmtTime(secs: number) {
   const m = Math.floor(secs / 60).toString().padStart(2, "0");

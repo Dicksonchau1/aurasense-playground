@@ -1,4 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server'
+import { logger, getRequestId } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,13 +12,15 @@ const PRICE_MAP: Record<string, string | undefined> = {
   'team:annual':  process.env.STRIPE_PRICE_TEAM_ANNUAL,
 }
 
-export async function POST(req: NextRequest) {
+  const requestId = getRequestId(req)
   try {
     if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ ok: false, error: 'stripe_not_configured' }, { status: 501 })
+      logger.error({ msg: 'stripe_not_configured', requestId })
+      return NextResponse.json({ ok: false, error: 'stripe_not_configured', requestId }, { status: 501 })
     }
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json({ ok: false, error: 'supabase_not_configured' }, { status: 501 })
+      logger.error({ msg: 'supabase_not_configured', requestId })
+      return NextResponse.json({ ok: false, error: 'supabase_not_configured', requestId }, { status: 501 })
     }
 
     const body = await req.json().catch(() => ({}))
@@ -25,10 +29,12 @@ export async function POST(req: NextRequest) {
     const priceId = PRICE_MAP[key]
 
     if (!priceId) {
+      logger.error({ msg: 'price_not_configured', key, requestId })
       return NextResponse.json({
         ok: false,
         error: 'price_not_configured',
         detail: `No env var for ${key.toUpperCase().replace(':', '_')}`,
+        requestId,
       }, { status: 400 })
     }
 
@@ -44,7 +50,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (!user) {
-      return NextResponse.json({ ok: false, error: 'auth_required' }, { status: 401 })
+      logger.error({ msg: 'auth_required', requestId })
+      return NextResponse.json({ ok: false, error: 'auth_required', requestId }, { status: 401 })
     }
 
     // Stripe SDK
@@ -78,11 +85,12 @@ export async function POST(req: NextRequest) {
         })
       }
     } catch (e) {
-      console.error('[checkout] customer setup error:', e)
+      logger.error({ msg: 'customer_setup_failed', error: (e as Error).message, requestId })
       return NextResponse.json({
         ok: false,
         error: 'customer_setup_failed',
         detail: (e as Error).message,
+        requestId,
       }, { status: 500 })
     }
 
@@ -102,21 +110,24 @@ export async function POST(req: NextRequest) {
         metadata: { user_id: user.id, plan },
       })
     } catch (e) {
-      console.error('[checkout] session create error:', e)
+      logger.error({ msg: 'checkout_session_failed', error: (e as Error).message, requestId })
       return NextResponse.json({
         ok: false,
         error: 'checkout_session_failed',
         detail: (e as Error).message,
+        requestId,
       }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true, url: session.url })
+    logger.info({ msg: 'checkout_session_created', userId: user.id, requestId })
+    return NextResponse.json({ ok: true, url: session.url, requestId })
   } catch (e) {
-    console.error('[checkout] unhandled:', e)
+    logger.error({ msg: 'internal_error', error: (e as Error)?.message ?? 'unknown', requestId })
     return NextResponse.json({
       ok: false,
       error: 'internal_error',
       detail: (e as Error)?.message ?? 'unknown',
+      requestId,
     }, { status: 500 })
   }
 }

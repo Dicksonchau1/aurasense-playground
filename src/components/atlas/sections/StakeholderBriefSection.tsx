@@ -9,6 +9,10 @@ import {
 
 type StakeholderBriefSectionProps = {
   className?: string;
+  titleOverride?: string;
+  hideActions?: boolean;
+  onSetAudience?: (audience: string) => void;
+  selectedAudience?: string;
 };
 
 function toneClass(tone: string) {
@@ -20,17 +24,22 @@ function toneClass(tone: string) {
 }
 
 export function StakeholderBriefSection({
-  className
+  className,
+  titleOverride,
+  hideActions,
+  onSetAudience,
+  selectedAudience
 }: StakeholderBriefSectionProps) {
   const {
     state,
     setAudience
   } = useArduPilotStakeholderBrief();
 
-  const vm = getStakeholderBriefPanelVM(state);
+  // Allow external control of audience selection
+  const vm = getStakeholderBriefPanelVM(state, selectedAudience);
 
   return (
-    <section className={className}>
+    <section className={className} aria-label="Stakeholder Brief Section">
       <div className="rounded-3xl border border-white/10 bg-neutral-950/70 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
         <div className="flex flex-col gap-4 border-b border-white/10 pb-5">
           <div className="space-y-2">
@@ -38,46 +47,48 @@ export function StakeholderBriefSection({
               AuditShell / stakeholder narrative
             </p>
             <h2 className="text-2xl font-semibold tracking-tight text-white">
-              {vm.title}
+              {titleOverride || vm.title}
             </h2>
             <p className="max-w-3xl text-sm leading-6 text-white/65">
               {vm.subtitle}
             </p>
           </div>
-
           <div className="flex flex-wrap gap-2">
             {vm.chips.map((chip) => (
               <span
                 key={chip.label}
                 className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${toneClass(chip.tone)}`}
+                aria-label={`Status: ${chip.label}`}
               >
                 {chip.label}
               </span>
             ))}
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {vm.audienceOptions.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => setAudience(option.key)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  option.active
-                    ? "border border-cyan-400/35 bg-cyan-400/10 text-cyan-200"
-                    : "border border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
+          {!hideActions && (
+            <div className="flex flex-wrap gap-2">
+              {vm.audienceOptions.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  aria-label={`Set audience ${option.label}`}
+                  onClick={() => (onSetAudience ? onSetAudience(option.key) : setAudience(option.key))}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    option.active
+                      ? "border border-cyan-400/35 bg-cyan-400/10 text-cyan-200"
+                      : "border border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="grid gap-3 md:grid-cols-3">
             {vm.kpis.map((kpi) => (
               <div
                 key={kpi.key}
                 className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                aria-label={`KPI: ${kpi.label}`}
               >
                 <p className="text-xs uppercase tracking-[0.2em] text-white/40">
                   {kpi.label}
@@ -88,7 +99,6 @@ export function StakeholderBriefSection({
             ))}
           </div>
         </div>
-
         <div className="grid gap-6 pt-6 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-6">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
@@ -102,7 +112,6 @@ export function StakeholderBriefSection({
                 {vm.executiveNarrative}
               </p>
             </div>
-
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-xs uppercase tracking-[0.22em] text-white/40">
@@ -114,7 +123,6 @@ export function StakeholderBriefSection({
                   ))}
                 </div>
               </div>
-
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-xs uppercase tracking-[0.22em] text-white/40">
                   Risks
@@ -125,7 +133,6 @@ export function StakeholderBriefSection({
                   ))}
                 </div>
               </div>
-
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-xs uppercase tracking-[0.22em] text-white/40">
                   Decisions
@@ -136,7 +143,6 @@ export function StakeholderBriefSection({
                   ))}
                 </div>
               </div>
-
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                 <p className="text-xs uppercase tracking-[0.22em] text-white/40">
                   Compliance notes
@@ -149,7 +155,6 @@ export function StakeholderBriefSection({
               </div>
             </div>
           </div>
-
           <aside className="space-y-4">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
               <p className="text-xs uppercase tracking-[0.22em] text-white/40">
@@ -159,7 +164,6 @@ export function StakeholderBriefSection({
                 {vm.evidenceSummary}
               </p>
             </div>
-
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
               <p className="text-xs uppercase tracking-[0.22em] text-white/40">
                 Recommended actions
@@ -170,7 +174,6 @@ export function StakeholderBriefSection({
                 ))}
               </div>
             </div>
-
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
               <p className="text-xs uppercase tracking-[0.22em] text-white/40">
                 Synchronization
