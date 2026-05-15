@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger, getRequestId } from '@/lib/logger'
 import Stripe from 'stripe'
 import { stripe, HAS_STRIPE } from '@/lib/billing/stripe'
 import { admin } from '@/lib/supabase/admin'
@@ -7,21 +8,29 @@ import { priceToPlan } from '@/lib/billing/plans'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function POST(req: NextRequest) {
-  if (!HAS_STRIPE) return NextResponse.json({ ok: false, error: 'stripe_not_configured' }, { status: 501 })
+  const requestId = getRequestId(req)
+  if (!HAS_STRIPE) {
+    logger.error({ msg: 'stripe_not_configured', requestId })
+    return NextResponse.json({ ok: false, error: 'stripe_not_configured', requestId }, { status: 501 })
+  }
   const sig = req.headers.get('stripe-signature')
   const secret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!sig || !secret) return NextResponse.json({ ok: false, error: 'missing_signature' }, { status: 400 })
+  if (!sig || !secret) {
+    logger.error({ msg: 'missing_signature', requestId })
+    return NextResponse.json({ ok: false, error: 'missing_signature', requestId }, { status: 400 })
+  }
 
   const body = await req.text()
   let event: Stripe.Event
   try {
     event = stripe().webhooks.constructEvent(body, sig, secret)
   } catch (e) {
-    return NextResponse.json({ ok: false, error: 'bad_signature', detail: (e as Error).message }, { status: 400 })
+    logger.error({ msg: 'bad_signature', error: (e as Error).message, requestId })
+    return NextResponse.json({ ok: false, error: 'bad_signature', detail: (e as Error).message, requestId }, { status: 400 })
   }
 
   try {
+    logger.info({ msg: 'webhook_received', eventType: event.type, requestId })
     switch (event.type) {
       case 'checkout.session.completed':
       case 'customer.subscription.created':
@@ -74,9 +83,10 @@ export async function POST(req: NextRequest) {
         // ignore
     }
   } catch (e) {
-    console.error('[stripe webhook] handler failed', e)
-    return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 })
+    logger.error({ msg: 'webhook_error', error: (e as Error).message, requestId })
+    return NextResponse.json({ ok: false, error: (e as Error).message, requestId }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, received: event.type })
+  logger.info({ msg: 'webhook_processed', eventType: event.type, requestId })
+  return NextResponse.json({ ok: true, received: event.type, requestId })
 }

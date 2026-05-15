@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from 'react';
 import { partnerAdapterRegistry } from '../lib/integrations/registry';
 import { PartnerIntegrationCardViewModel } from '../lib/integrations/view-models';

@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { PartnerCapability } from '../../lib/integrations/types';
 

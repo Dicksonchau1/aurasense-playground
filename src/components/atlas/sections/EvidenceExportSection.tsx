@@ -14,10 +14,33 @@ type EvidenceExportSectionProps = {
 function toneClass(tone: string) {
   if (tone === "critical") return "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30";
   if (tone === "warning") return "bg-amber-500/15 text-amber-200 ring-1 ring-amber-500/30";
-  if (tone === "success") return "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/30";
-  if (tone === "accent") return "bg-cyan-500/15 text-cyan-200 ring-1 ring-cyan-500/30";
+type EvidenceExportSectionProps = {
+  className?: string;
+  titleOverride?: string;
+  hideActions?: boolean;
+  onSignExport?: () => void;
+  onExportPackage?: () => void;
+  onSelectArtifact?: (id: string) => void;
+  onToggleArtifactIncluded?: (id: string) => void;
+  onMarkArtifactReady?: (id: string) => void;
+  onSetDestinationChannel?: (channel: string) => void;
+  selectedArtifactId?: string;
+  destinationChannel?: string;
+};
   return "bg-white/5 text-white/70 ring-1 ring-white/10";
-}
+export function EvidenceExportSection({
+  className,
+  titleOverride,
+  hideActions,
+  onSignExport,
+  onExportPackage,
+  onSelectArtifact,
+  onToggleArtifactIncluded,
+  onMarkArtifactReady,
+  onSetDestinationChannel,
+  selectedArtifactId,
+  destinationChannel
+}: EvidenceExportSectionProps) {
 
 export function EvidenceExportSection({ className }: EvidenceExportSectionProps) {
   const {
