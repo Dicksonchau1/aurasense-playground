@@ -79,6 +79,9 @@ export function makeNeutralPerceptionFleetState(): PerceptionTypedFleetState {
 }
 
 // Pure function to derive perception fields from evidence (mocked for frontend-only)
+
+import { useMemo } from "react";
+
 export function derivePerceptionFleetStateFromEvidence(
   evidence: PerceptionEvidenceRef[]
 ): PerceptionTypedFleetState {
@@ -116,4 +119,49 @@ export function derivePerceptionFleetStateFromEvidence(
       calibrationMeta: { method: "mocked" }
     }
   };
+}
+
+// Slice hook: usePerceptionTypedFleetState
+// Composes perception fields into FleetState, frontend-only, with mocked evidence
+export function usePerceptionTypedFleetState(
+  opts?: { missionId?: MissionId; vehicleId?: VehicleId }
+): PerceptionTypedFleetState {
+  // For frontend-only, mock evidence array
+  const evidence: PerceptionEvidenceRef[] = useMemo(() => [
+    {
+      evidenceId: "mock-capture-1",
+      vehicleId: opts?.vehicleId ?? "vehicle-1",
+      missionId: opts?.missionId ?? "mission-1",
+      capturedAt: new Date().toISOString(),
+      kind: "capture",
+      url: undefined
+    },
+    {
+      evidenceId: "mock-finding-1",
+      vehicleId: opts?.vehicleId ?? "vehicle-1",
+      missionId: opts?.missionId ?? "mission-1",
+      capturedAt: new Date().toISOString(),
+      kind: "finding",
+      url: undefined
+    },
+    {
+      evidenceId: "mock-calib-1",
+      vehicleId: opts?.vehicleId ?? "vehicle-1",
+      missionId: opts?.missionId ?? "mission-1",
+      capturedAt: new Date().toISOString(),
+      kind: "calibration",
+      url: undefined
+    }
+  ], [opts?.missionId, opts?.vehicleId]);
+
+  // Compose perception fields from evidence
+  const perceptionState = useMemo(() => {
+    // If no perception evidence, return neutral defaults (backward compatibility)
+    if (!evidence || evidence.length === 0) {
+      return makeNeutralPerceptionFleetState();
+    }
+    return derivePerceptionFleetStateFromEvidence(evidence);
+  }, [evidence]);
+
+  return perceptionState;
 }

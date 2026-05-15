@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import useSWR from 'swr';
 
 interface Insight {
   title: string;
@@ -13,43 +14,42 @@ interface QueueItem {
   eta: string;
 }
 
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 export default function AssistantPanel() {
-  const [insights, setInsights] = useState<Insight[]>([]);
-  const [queue, setQueue] = useState<QueueItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Replace with your real API endpoints
+  const { data: insightsData, error: insightsError } = useSWR('/api/nepa/assistant/insights', fetcher, { refreshInterval: 10000 });
+  const { data: queueData, error: queueError } = useSWR('/api/nepa/assistant/queue', fetcher, { refreshInterval: 10000 });
 
-  useEffect(() => {
-    // TODO: Replace with real API calls
-    setInsights([
-      {
-        title: 'Slowdown at escalator exits',
-        confidence: 0.93,
-        description: 'Increase max speed threshold from 0.9 m/s to 0.6 m/s when human density exceeds “busy” in Zone B.'
-      },
-      {
-        title: 'Route drones above kiosk cluster',
-        confidence: 0.71,
-        description: 'Reroute Drone #713 flight corridor 2 m higher to avoid temporary signage detected near cafe zone.'
-      }
-    ]);
-    setQueue([
-      {
-        label: 'Override pedestrian crossing',
-        sub: 'ExR-2 #201 · ETA 12s · risk medium',
-        risk: 'medium',
-        eta: '12s'
-      },
-      {
-        label: 'Relax speed in empty wing',
-        sub: 'Spot #805 · ETA 4s · risk low',
-        risk: 'low',
-        eta: '4s'
-      }
-    ]);
-    setLoading(false);
-  }, []);
+  const insights: Insight[] = insightsData?.data || [
+    {
+      title: 'Slowdown at escalator exits',
+      confidence: 0.93,
+      description: 'Increase max speed threshold from 0.9 m/s to 0.6 m/s when human density exceeds “busy” in Zone B.'
+    },
+    {
+      title: 'Route drones above kiosk cluster',
+      confidence: 0.71,
+      description: 'Reroute Drone #713 flight corridor 2 m higher to avoid temporary signage detected near cafe zone.'
+    }
+  ];
+  const queue: QueueItem[] = queueData?.data || [
+    {
+      label: 'Override pedestrian crossing',
+      sub: 'ExR-2 #201 · ETA 12s · risk medium',
+      risk: 'medium',
+      eta: '12s'
+    },
+    {
+      label: 'Relax speed in empty wing',
+      sub: 'Spot #805 · ETA 4s · risk low',
+      risk: 'low',
+      eta: '4s'
+    }
+  ];
 
-  if (loading) return <div>Loading assistant...</div>;
+  if (insightsError || queueError) return <div>Error loading assistant data.</div>;
+  if (!insightsData && !queueData) return <div>Loading assistant...</div>;
 
   return (
     <aside style={{padding:16,background:'radial-gradient(circle at top,#0f172a,#020617)',borderLeft:'1px solid rgba(148,163,184,0.18)',display:'flex',flexDirection:'column',gap:12}}>

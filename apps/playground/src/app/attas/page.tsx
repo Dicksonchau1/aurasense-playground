@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import Card from "../../components/shell/Card";
 import Camera from "./_sections/Camera";

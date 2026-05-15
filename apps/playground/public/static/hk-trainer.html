@@ -275,6 +275,9 @@ a,button,[role="button"],input,select{transition:color var(--t),background var(-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="app">
@@ -1488,6 +1491,109 @@ window.startStepSim=function(idx){
 };
 const origComplete=window.completeSession;
 window.completeSession=function(){if(origComplete)origComplete.apply(this,arguments);const sc=window.computeScore();const pass=sc.total>=window.cfg.passThreshold;speak(pass?"Session complete. You passed with "+sc.total+" points.":"Session ended. Score "+sc.total+" of 100. Please review and try again.");};
+})();
+
+</script>
+<script>
+(function(){
+let videoEl=null,realCamera=null,realHands=null,confidenceRolling=0,lastSpokenStep=-1,lastSpokenCorrection=0;
+function speak(text,opts){if(!window.speechSynthesis||!window.cfg||!window.cfg.audio)return;try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=(opts&&opts.lang)||"en-GB";u.rate=(opts&&opts.rate)||0.95;u.pitch=1.0;u.volume=1.0;window.speechSynthesis.speak(u);}catch(e){}}
+window.auraSpeak=speak;
+function classifyStep(stepIdx,landmarks,handedness){
+  if(!landmarks||landmarks.length===0)return{confidence:0,leftDetected:false,rightDetected:false};
+  const twoHands=landmarks.length>=2;
+  let leftHand=null,rightHand=null;
+  if(handedness&&handedness.length){handedness.forEach((h,i)=>{if(h.label==="Left")leftHand=landmarks[i];else rightHand=landmarks[i];});}
+  const wrist=lm=>lm[0],thumbTip=lm=>lm[4];
+  const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,(a.z||0)-(b.z||0));
+  let conf=0,lDet=false,rDet=false;
+  switch(stepIdx){
+    case 0: if(twoHands){const d=dist(wrist(landmarks[0]),wrist(landmarks[1]));conf=Math.max(0,Math.min(1,1.0-d*1.5));lDet=!!leftHand;rDet=!!rightHand;}break;
+    case 1: if(twoHands){const yDiff=Math.abs(landmarks[0][9].y-landmarks[1][9].y);conf=yDiff>0.05?0.85:0.5;if(leftHand&&rightHand){lDet=leftHand[9].y<rightHand[9].y;rDet=rightHand[9].y<leftHand[9].y||lDet;}}break;
+    case 2: if(twoHands){const fA=[8,12,16,20].map(i=>landmarks[0][i]);const fB=[8,12,16,20].map(i=>landmarks[1][i]);let t=0;for(let i=0;i<4;i++)t+=dist(fA[i],fB[i]);conf=Math.max(0,Math.min(1,1.0-(t/4)*2));lDet=rDet=conf>0.6;}break;
+    case 3: if(twoHands){const d=dist(landmarks[0][9],landmarks[1][9]);conf=d<0.15?0.82:0.4;lDet=rDet=conf>0.6;}break;
+    case 4: if(twoHands){const t0=thumbTip(landmarks[0]),p1=landmarks[1][9],t1=thumbTip(landmarks[1]),p0=landmarks[0][9];const dL=dist(t0,p1),dR=dist(t1,p0);conf=Math.max(0,Math.min(1,1.0-Math.min(dL,dR)*2));if(leftHand&&rightHand){lDet=dL<0.2;rDet=dR<0.2;}}break;
+    case 5: if(twoHands){const tips=[8,12,16,20].map(i=>landmarks[0][i]);const palm=landmarks[1][9];const a=tips.reduce((s,t)=>s+dist(t,palm),0)/4;conf=Math.max(0,Math.min(1,1.0-a*2));lDet=rDet=conf>0.55;}break;
+    case 6: if(twoHands){const w0=wrist(landmarks[0]),w1=wrist(landmarks[1]);const d=dist(w0,w1);conf=d<0.18?0.8:0.45;if(leftHand&&rightHand){lDet=dist(thumbTip(rightHand),wrist(leftHand))<0.2;rDet=dist(thumbTip(leftHand),wrist(rightHand))<0.2;}}break;
+  }
+  return{confidence:Math.max(0.0,conf),leftDetected:lDet,rightDetected:rDet};
+}
+function onResults(results){
+  if(!window.sess||window.sess.state!=="active")return;
+  const idx=window.sess.curStep;
+  const st=window.sess.steps[idx];
+  if(!st||st.status!=="active")return;
+  const cls=classifyStep(idx,results.multiHandLandmarks||[],results.multiHandedness||[]);
+  confidenceRolling=confidenceRolling*0.7+cls.confidence*0.3;
+  st.confSamples.push(confidenceRolling);
+  const camConf=document.getElementById("camConf");
+  if(camConf)camConf.textContent="Confidence "+Math.round(confidenceRolling*100)+"%";
+  const sd=window.STEPS[idx];
+  if(sd.bilateral&&st.laterality){
+    if(cls.leftDetected&&!st.laterality.left){st.laterality.left=true;speak("Left side detected");}
+    if(cls.rightDetected&&!st.laterality.right){st.laterality.right=true;speak("Right side detected");}
+  }
+  if(idx!==lastSpokenStep){lastSpokenStep=idx;speak("Step "+(idx+1)+": "+sd.label);}
+  const now=Date.now();
+  if(confidenceRolling<0.35&&now-lastSpokenCorrection>4000){lastSpokenCorrection=now;speak("Bring both hands into frame");if(window.setCoachMsg)window.setCoachMsg("Bring both hands into frame for "+sd.label,"correction");}
+  const canvas=document.getElementById("simCanvas");
+  if(canvas&&videoEl){
+    const ctx=canvas.getContext("2d");
+    canvas.width=videoEl.videoWidth||640;canvas.height=videoEl.videoHeight||480;
+    ctx.save();ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(videoEl,0,0,canvas.width,canvas.height);
+    if(results.multiHandLandmarks){for(const lms of results.multiHandLandmarks){if(window.drawConnectors&&window.HAND_CONNECTIONS)drawConnectors(ctx,lms,HAND_CONNECTIONS,{color:"#3dc8d8",lineWidth:2});if(window.drawLandmarks)drawLandmarks(ctx,lms,{color:"#7dd4a0",lineWidth:1,radius:3});}}
+    ctx.restore();
+  }
+}
+async function initCamera(){
+  if(videoEl)return;
+  videoEl=document.createElement("video");videoEl.autoplay=true;videoEl.playsInline=true;videoEl.muted=true;videoEl.style.display="none";document.body.appendChild(videoEl);
+  if(typeof Hands==="undefined"){console.error("MediaPipe Hands not loaded");return;}
+  realHands=new Hands({locateFile:f=>"https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/"+f});
+  realHands.setOptions({maxNumHands:2,modelComplexity:1,minDetectionConfidence:0.6,minTrackingConfidence:0.5});
+  realHands.onResults(onResults);
+  realCamera=new Camera(videoEl,{onFrame:async()=>{await realHands.send({image:videoEl});},width:640,height:480});
+  await realCamera.start();
+  console.log("AuraSense real camera + perception started");
+}
+const origStart=window.startSession;
+window.startSession=async function(){
+  try{
+    if(!window.cfg)window.cfg={audio:true};
+    window.cfg.audio=true;
+    const placeholder=document.getElementById("camPlaceholder");
+    if(placeholder)placeholder.style.display="none";
+    const canvas=document.getElementById("simCanvas");
+    if(canvas)canvas.style.display="block";
+    speak("Starting hand hygiene session. Please position both hands in frame.");
+    await initCamera();
+  }catch(e){
+    alert("Camera access required for real perception mode: "+e.message);
+    return;
+  }
+  if(origStart)origStart.apply(this,arguments);
+};
+const origStartStepSim=window.startStepSim;
+window.startStepSim=function(idx){
+  clearInterval(window.stepTimer);
+  const sd=window.STEPS[idx],st=window.sess.steps[idx];
+  let elapsed=0;
+  const target=window.cfg.minDwell+1.0;
+  window.stepTimer=setInterval(()=>{
+    elapsed+=0.1;st.dwellSeconds=elapsed;
+    const pct=Math.min(100,(elapsed/target)*100);
+    const df=document.getElementById("dwellFill");if(df)df.style.width=pct+"%";
+    const dp=document.getElementById("dwellPct");if(dp)dp.textContent=Math.round(pct);
+    if(sd.bilateral&&window.renderSideBadges)window.renderSideBadges(sd,st);
+    if(elapsed>=target&&confidenceRolling>0.45){
+      const okBilat=!sd.bilateral||(st.laterality&&st.laterality.left&&st.laterality.right);
+      if(okBilat){clearInterval(window.stepTimer);const df2=document.getElementById("dwellFill");if(df2)df2.className="dwell-fill done";setTimeout(()=>{if(window.sess.state==="active"&&st.status==="active")window.manualNext();},280);}
+    }
+  },100);
+};
+const origComplete=window.completeSession;
+window.completeSession=function(){if(origComplete)origComplete.apply(this,arguments);const sc=window.computeScore();const pass=sc.total>=window.cfg.passThreshold
+;speak(pass?"Session complete. You passed with "+sc.total+" points.":"Session ended. Score "+sc.total+" of 100. Please review and try again.");};
 })();
 
 </script>

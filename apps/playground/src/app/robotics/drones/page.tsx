@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import Card from "@/components/shell/Card";
 import Button from "@/components/shell/Button";

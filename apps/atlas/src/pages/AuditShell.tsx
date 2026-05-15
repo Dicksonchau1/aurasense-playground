@@ -5,7 +5,9 @@ import {
   WaypointExecutionSection,
   EvidenceBundleSection,
   EvidenceExportSection,
-  ExternalDisclosureSection
+  ExternalDisclosureSection,
+  RegulatoryComplianceSection,
+  StakeholderBriefSection
 } from "../../../components/atlas/sections";
 
 export default function AuditShell() {
@@ -17,6 +19,8 @@ export default function AuditShell() {
       <EvidenceBundleSection />
       <EvidenceExportSection />
       <ExternalDisclosureSection />
+      <RegulatoryComplianceSection />
+      <StakeholderBriefSection />
     </main>
   );
 }

@@ -1,3 +1,6 @@
+export { default as PerceptionTypedFleetStateSection } from "./PerceptionTypedFleetStateSection";
+export * from "./RegulatoryComplianceSection";
+export * from "./StakeholderBriefSection";
 export * from "./EvidenceExportSection";
 export * from "./ExternalDisclosureSection";
 export { default as CalibrationSection } from "./CalibrationSection";
@@ -10,6 +13,9 @@ export { default as LogReplaySection } from "./LogReplaySection";
 export { default as WaypointExecutionSection } from "./WaypointExecutionSection";
 export { default as PolicyReceiptSection } from "./PolicyReceiptSection";
 export { default as VehicleLinkSection } from "./VehicleLinkSection";
+export { ParameterPresetsSection } from "./ParameterPresetsSection";
+export { SITLControlsSection } from "./SITLControlsSection";
+export { LogReplayDetailSection } from "./LogReplayDetailSection";
 export { default as MissionFenceSection } from "./MissionFenceSection";
 export { default as RecoveryActionsSection } from "./RecoveryActionsSection";
 export { default as PayloadControlSection } from "./PayloadControlSection";
