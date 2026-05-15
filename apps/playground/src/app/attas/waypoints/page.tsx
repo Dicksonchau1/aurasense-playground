@@ -23,7 +23,7 @@ export default async function AttasWaypointsPage() {
           Edit a mission's waypoints, validate on demand against drone capabilities and airspace constraints. Rows colour-code per validation state.
         </p>
       </header>
-      <WaypointEditor drones={drones ?? []} />
+      <WaypointEditor />
     </div>
   );
 }
