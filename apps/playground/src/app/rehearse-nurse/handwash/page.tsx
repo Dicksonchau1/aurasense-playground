@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // Handwash advanced module — deferred to v0.4 (backed up to /tmp)
 export default function HandwashPage() {
   return (
