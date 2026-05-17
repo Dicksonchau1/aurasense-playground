@@ -1,5 +1,6 @@
 // ATLAS AuditShell: integrates LogReplaySection and WaypointExecutionSection
 
+
 import React, { useCallback, useRef, useState } from "react";
 import {
   LogReplaySection,
@@ -150,34 +151,42 @@ export default function AuditShell() {
 
 export default function AuditShell() {
   return (
-    <main className="atlas-shell p-8">
-      <h1 className="text-2xl font-bold mb-4">ATLAS Audit</h1>
+    <main className="atlas-shell p-8" role="main" aria-label="ATLAS Audit Shell">
+      <h1 className="text-2xl font-bold mb-4" tabIndex={0} aria-label="ATLAS Audit Shell Title">ATLAS Audit</h1>
       {/* Progress bar */}
-      <div className="w-full bg-gray-200 rounded h-3 mb-4">
+      <div className="w-full bg-gray-200 rounded h-3 mb-4" aria-label="Progress Bar" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={4} tabIndex={0}>
         <div
           className="bg-blue-600 h-3 rounded"
           style={{ width: `${(progress / 4) * 100}%` }}
         />
       </div>
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4" role="group" aria-label="Undo Redo Controls">
         <button
-          className="px-2 py-1 bg-gray-100 rounded border"
+          className="px-2 py-1 bg-gray-100 rounded border focus:outline-none focus:ring-2 focus:ring-blue-500"
           onClick={popUndo}
           disabled={undoStack.length === 0}
+          aria-label="Undo"
         >Undo</button>
         <button
-          className="px-2 py-1 bg-gray-100 rounded border"
+          className="px-2 py-1 bg-gray-100 rounded border focus:outline-none focus:ring-2 focus:ring-blue-500"
           onClick={popRedo}
           disabled={redoStack.length === 0}
+          aria-label="Redo"
         >Redo</button>
-        <span className="ml-4 text-sm text-gray-600">
+        <span className="ml-4 text-sm text-gray-600" aria-live="polite">
           {allComplete ? "All steps complete!" : `Progress: ${progress}/4`}
         </span>
       </div>
-      <LogReplaySection />
-      <WaypointExecutionSection />
-      <EvidenceBundleSection />
-      <div ref={evidenceRef}>
+      <section aria-label="Log Replay Section">
+        <LogReplaySection />
+      </section>
+      <section aria-label="Waypoint Execution Section">
+        <WaypointExecutionSection />
+      </section>
+      <section aria-label="Evidence Bundle Section">
+        <EvidenceBundleSection />
+      </section>
+      <section ref={evidenceRef} aria-label="Evidence Export Section">
         <EvidenceExportSection
           selectedArtifactId={selectedArtifactId}
           onSelectArtifact={handleSelectArtifact}
@@ -187,32 +196,32 @@ export default function AuditShell() {
           exportEnabled={evidenceExportEnabled}
           complianceSigned={complianceSigned}
         />
-      </div>
-      <div ref={disclosureRef}>
+      </section>
+      <section ref={disclosureRef} aria-label="External Disclosure Section">
         <ExternalDisclosureSection
           selectedDisclosureId={selectedDisclosureId}
           onSelectDisclosure={handleSelectDisclosure}
           onSetDisclosureStatus={handleSetDisclosureStatus}
         />
-      </div>
-      <div ref={complianceRef}>
+      </section>
+      <section ref={complianceRef} aria-label="Regulatory Compliance Section">
         <RegulatoryComplianceSection
           selectedControlId={selectedComplianceControl}
           onSelectControl={handleSelectComplianceControl}
           onSignExport={handleSignComplianceExport}
           complianceSigned={complianceSigned}
         />
-      </div>
-      <div ref={stakeholderRef}>
+      </section>
+      <section ref={stakeholderRef} aria-label="Stakeholder Brief Section">
         <StakeholderBriefSection
           selectedAudience={selectedAudience}
           onSetAudience={handleSetAudience}
         />
-      </div>
+      </section>
       {/* Timeline of actions */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-2">Action Timeline</h2>
-        <ol className="text-xs bg-gray-50 rounded p-2 max-h-40 overflow-y-auto">
+      <section className="mt-8" aria-label="Action Timeline">
+        <h2 className="text-lg font-semibold mb-2" tabIndex={0}>Action Timeline</h2>
+        <ol className="text-xs bg-gray-50 rounded p-2 max-h-40 overflow-y-auto" aria-live="polite">
           {timeline.map((item, i) => (
             <li key={i} className="mb-1">
               <span className="text-gray-500">[{item.ts}]</span> <b>{item.event}</b>
@@ -222,7 +231,7 @@ export default function AuditShell() {
             </li>
           ))}
         </ol>
-      </div>
+      </section>
     </main>
   );
 }

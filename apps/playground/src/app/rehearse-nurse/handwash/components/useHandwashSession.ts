@@ -1,3 +1,4 @@
+"use client";
 import { useReducer, useEffect } from "react";
 import { HandwashStep, HandwashSessionState, HandwashSummary } from "./types";
 

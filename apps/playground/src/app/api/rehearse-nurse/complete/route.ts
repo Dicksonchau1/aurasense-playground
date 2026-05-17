@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -7,6 +6,7 @@ function logEvent(event: string, details: any) {
   console.info(`[NurseRehearse][COMPLETE] ${event}`, details);
 }
 
+export async function POST(req: NextRequest) {
   try {
     const { sessionId, steps, anomalies } = await req.json();
     const allDone = steps.every((s: any) => s.completed);
@@ -27,7 +27,7 @@ function logEvent(event: string, details: any) {
       await supabase.from("nurse_rehearse_sessions").update({
         state: "completed", verdict, completed_at: result.timestamp,
       }).eq("session_id", sessionId);
-    } catch (e) {
+    } catch (e: any) {
       logEvent("supabase_update_failed", { sessionId, error: e?.message || e });
     }
     logEvent("session_completed", { sessionId, verdict, anomalies: anomalies ?? [] });

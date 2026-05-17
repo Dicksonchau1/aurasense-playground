@@ -1,3 +1,24 @@
+import type { PerceptionContinuityTimeline } from "./hooks-fleet";
+// View-model for perception-aware continuity (Surface 3)
+export function getPerceptionAwareContinuityPanelVM(
+  timeline: PerceptionContinuityTimeline
+): {
+  headline: string;
+  coverageSummary: string;
+  criticalFindingsSummary: string;
+  events: { ts: string; type: string; message: string }[];
+} {
+  return {
+    headline: timeline.headline,
+    coverageSummary: timeline.coverageSummary,
+    criticalFindingsSummary: timeline.criticalFindingsSummary,
+    events: timeline.events.map((e) => ({
+      ts: e.ts,
+      type: e.type,
+      message: e.message
+    }))
+  };
+}
 import type { PerceptionArbitrationDecision } from "./hooks-fleet";
 // View-model for perception-aware arbitration (Surface 2)
 import type { StatusChipVM, KPIItem } from "./view-models";

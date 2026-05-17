@@ -2,7 +2,39 @@
 import React, { useEffect, useRef } from "react";
 import { loadThreeJS } from "./threejs-lazy";
 import OverlayLayers from "./OverlayLayers";
+import { useState } from "react";
 
+// --- WebSocket hook for rehearsal channel ---
+function useRehearseWS(sessionId) {
+  const [telemetry, setTelemetry] = useState(null);
+  const wsRef = useRef(null);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/atlas/rehearse/${sessionId}`);
+    wsRef.current = ws;
+    ws.onopen = () => {
+      // Optionally send handshake or auth here
+    };
+    ws.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        setTelemetry(data);
+      } catch {}
+    };
+    ws.onerror = (e) => {
+      // Optionally handle error
+    };
+    ws.onclose = () => {
+      // Optionally handle close
+    };
+    return () => {
+      ws.close();
+    };
+  }, [sessionId]);
+
+  return telemetry;
+}
 export default function Rehearse3DShell() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -87,6 +119,9 @@ export default function Rehearse3DShell() {
         const angle = (i * Math.PI) / 2 + Math.PI / 4;
         rotor.position.set(Math.cos(angle) * 0.45, 0.15, Math.sin(angle) * 0.45);
         rotor.rotation.x = Math.PI / 2;
+          // TODO: Replace with real session ID from route or context
+          const [sessionId] = useState('demo-session');
+          const telemetry = useRehearseWS(sessionId);
         droneGroup.add(rotor);
       }
       droneGroup.position.set(0, 1.2, 4);

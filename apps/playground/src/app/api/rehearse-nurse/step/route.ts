@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 
 function logEvent(event: string, details: any) {
@@ -6,11 +5,12 @@ function logEvent(event: string, details: any) {
   console.info(`[NurseRehearse][STEP] ${event}`, details);
 }
 
+export async function POST(req: NextRequest) {
   try {
     const { sessionId, stepIndex, stepLabel } = await req.json();
     const nepaUrl = process.env.NEPA_API_URL;
     let feedback = "Step accepted.";
-    let pose = null;
+    let pose: any = null;
     if (nepaUrl) {
       try {
         const r = await fetch(`${nepaUrl}/perceive`, {
@@ -23,7 +23,7 @@ function logEvent(event: string, details: any) {
           feedback = j.feedback ?? feedback;
           pose = j.pose ?? null;
         }
-      } catch (e) {
+      } catch (e: any) {
         logEvent("nepa_unreachable", { sessionId, stepIndex, stepLabel, error: e?.message || e });
       }
     }
