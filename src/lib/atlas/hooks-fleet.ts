@@ -1,3 +1,189 @@
+// Slice hook: usePerceptionAwareContinuity
+// Composes perception-aware continuity timeline from perception-typed fleet state (frontend-only)
+export function usePerceptionAwareContinuity(opts?: {
+  missionId?: string;
+  vehicleId?: string;
+}) {
+  // Compose perception state using the existing hook
+  const perceptionState = usePerceptionTypedFleetState({
+    missionId: opts?.missionId,
+    vehicleId: opts?.vehicleId
+  });
+
+  // Compose continuity timeline
+  const timeline = useMemo(
+    () => derivePerceptionContinuityTimeline(perceptionState),
+    [perceptionState]
+  );
+
+  return timeline;
+}
+// ===== Surface 3: Perception-aware continuity =====
+
+// Perception continuity event type
+export type PerceptionContinuityEvent = {
+  id: string;
+  ts: string;
+  type: "perception-coverage-transition" | "vehicle-substitution" | "branch-reconciliation";
+  message: string;
+  coverageBefore?: number | null;
+  coverageAfter?: number | null;
+  findingsBefore?: number | null;
+  findingsAfter?: number | null;
+  evidenceRefs?: PerceptionEvidenceRef[];
+};
+
+// Perception continuity timeline shape
+export type PerceptionContinuityTimeline = {
+  events: PerceptionContinuityEvent[];
+  headline: string;
+  coverageSummary: string;
+  criticalFindingsSummary: string;
+};
+
+// Pure function: derive perception-aware continuity timeline
+export function derivePerceptionContinuityTimeline(
+  fleetState: PerceptionTypedFleetState
+): PerceptionContinuityTimeline {
+  // Mocked timeline for frontend-only
+  const now = new Date();
+  const events: PerceptionContinuityEvent[] = [
+    {
+      id: "evt-1",
+      ts: new Date(now.getTime() - 60000).toISOString(),
+      type: "perception-coverage-transition",
+      message: `Coverage transitioned to ${fleetState.perceptionCoveragePct.value ?? "unknown"}%`,
+      coverageAfter: fleetState.perceptionCoveragePct.value,
+      evidenceRefs: fleetState.perceptionCoveragePct.evidence
+    },
+    {
+      id: "evt-2",
+      ts: new Date(now.getTime() - 30000).toISOString(),
+      type: "branch-reconciliation",
+      message: `Branch reconciled with perception coverage ${fleetState.perceptionCoveragePct.value ?? "unknown"}%`,
+      coverageAfter: fleetState.perceptionCoveragePct.value,
+      findingsAfter: fleetState.unreviewedCriticalFindingsCount.value,
+      evidenceRefs: fleetState.unreviewedCriticalFindingsCount.evidence
+    }
+  ];
+
+  const headline = `Perception coverage: ${fleetState.perceptionCoveragePct.value ?? "unknown"}% | Critical findings: ${fleetState.unreviewedCriticalFindingsCount.value ?? "unknown"}`;
+  const coverageSummary = fleetState.perceptionCoveragePct.value === null
+    ? "Coverage unknown"
+    : fleetState.perceptionCoveragePct.value >= 95
+    ? "Coverage meets contract envelope"
+    : `Coverage below contract: ${fleetState.perceptionCoveragePct.value}%`;
+  const criticalFindingsSummary = fleetState.unreviewedCriticalFindingsCount.value === null
+    ? "Critical findings unknown"
+    : fleetState.unreviewedCriticalFindingsCount.value > 0
+    ? `${fleetState.unreviewedCriticalFindingsCount.value} unreviewed critical finding(s)`
+    : "No unreviewed critical findings";
+
+  return {
+    events,
+    headline,
+    coverageSummary,
+    criticalFindingsSummary
+  };
+}
+import { useMemo } from "react";
+// Slice hook: usePerceptionAwareArbitration
+// Composes arbitration decision from perception-typed fleet state (frontend-only)
+export function usePerceptionAwareArbitration(opts?: {
+  missionId?: string;
+  vehicleId?: string;
+  requiredCoveragePct?: number;
+}) {
+  // Compose perception state using the existing hook
+  const perceptionState = usePerceptionTypedFleetState({
+    missionId: opts?.missionId,
+    vehicleId: opts?.vehicleId
+  });
+
+  // Compose arbitration decision
+  const arbitration = useMemo(
+    () =>
+      derivePerceptionArbitrationDecision(perceptionState, {
+        requiredCoveragePct: opts?.requiredCoveragePct
+      }),
+    [perceptionState, opts?.requiredCoveragePct]
+  );
+
+  return arbitration;
+}
+// ===== Surface 2: Perception-aware arbitration =====
+
+// Arbitration decision outcome
+export type PerceptionArbitrationOutcome =
+  | "accept-handoff"
+  | "refuse-handoff-insufficient-coverage"
+  | "refuse-handoff-critical-findings"
+  | "accept-handoff-with-warning"
+  | "unknown";
+
+// Arbitration decision reason
+export type PerceptionArbitrationReason = {
+  code:
+    | "coverage-ok"
+    | "coverage-insufficient"
+    | "critical-findings-present"
+    | "neutral"
+    | "unknown";
+  message: string;
+};
+
+// Arbitration decision shape
+export type PerceptionArbitrationDecision = {
+  outcome: PerceptionArbitrationOutcome;
+  reasons: PerceptionArbitrationReason[];
+  perceptionCoverage: number | null;
+  unreviewedCriticalFindings: number | null;
+  timestamp: string;
+};
+
+// Pure function: derive perception-aware arbitration decision
+export function derivePerceptionArbitrationDecision(
+  fleetState: PerceptionTypedFleetState,
+  opts?: { requiredCoveragePct?: number }
+): PerceptionArbitrationDecision {
+  const requiredCoverage = opts?.requiredCoveragePct ?? 95;
+  const coverage = fleetState.perceptionCoveragePct.value;
+  const findings = fleetState.unreviewedCriticalFindingsCount.value;
+  const reasons: PerceptionArbitrationReason[] = [];
+
+  if (coverage === null || coverage === undefined) {
+    reasons.push({ code: "unknown", message: "Perception coverage unknown" });
+  } else if (coverage < requiredCoverage) {
+    reasons.push({ code: "coverage-insufficient", message: `Coverage ${coverage}% below required ${requiredCoverage}%` });
+  } else {
+    reasons.push({ code: "coverage-ok", message: `Coverage ${coverage}% meets requirement` });
+  }
+
+  if (findings === null || findings === undefined) {
+    reasons.push({ code: "unknown", message: "Critical findings unknown" });
+  } else if (findings > 0) {
+    reasons.push({ code: "critical-findings-present", message: `${findings} unreviewed critical finding(s)` });
+  }
+
+  let outcome: PerceptionArbitrationOutcome = "unknown";
+  if (coverage === null || findings === null) {
+    outcome = "unknown";
+  } else if (coverage < requiredCoverage) {
+    outcome = "refuse-handoff-insufficient-coverage";
+  } else if (findings > 0) {
+    outcome = "refuse-handoff-critical-findings";
+  } else {
+    outcome = "accept-handoff";
+  }
+
+  return {
+    outcome,
+    reasons,
+    perceptionCoverage: coverage,
+    unreviewedCriticalFindings: findings,
+    timestamp: new Date().toISOString()
+  };
+}
 // src/lib/atlas/hooks-fleet.ts
 // Perception-typed FleetState extension for ATLAS (frontend-only)
 

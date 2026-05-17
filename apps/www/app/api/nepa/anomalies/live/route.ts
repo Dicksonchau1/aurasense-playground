@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { logger, getRequestId } from '@/lib/logger'
 import { pickRuntime } from '@/lib/runtime'
 import { subscribe, ensureUpstream } from '@/lib/runtime/anomaly-bus'
 
@@ -19,16 +20,18 @@ async function getUserIdSafe(req: NextRequest): Promise<string> {
   return 'anon-' + (req.headers.get('x-forwarded-for') ?? 'local')
 }
 
-export async function GET(req: NextRequest) {
+  const requestId = getRequestId(req)
   const userId = await getUserIdSafe(req)
   const rt = pickRuntime()
   ensureUpstream(userId, rt)
+
+  logger.info({ msg: 'anomalies_live_stream', userId, runtime: rt.name, requestId })
 
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
     start(controller) {
       const send = (event: string, data: any) =>
-        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify({ ...data, requestId })}\n\n`))
 
       send('hello', { userId, runtime: rt.name, ts: Date.now() })
       const unsub = subscribe(userId, (a) => send('anomaly', a))
@@ -48,6 +51,7 @@ export async function GET(req: NextRequest) {
       'cache-control': 'no-cache, no-transform',
       'connection': 'keep-alive',
       'x-accel-buffering': 'no',
+      'x-request-id': requestId,
     },
   })
 }

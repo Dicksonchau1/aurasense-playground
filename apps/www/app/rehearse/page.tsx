@@ -1,4 +1,3 @@
-'use client';
 
 'use client';
 import { useRef, useEffect, useState, useCallback } from 'react';
@@ -139,8 +138,7 @@ export default function RehearsePage() {
   const [sessionStatus, setSessionStatus] = useState<'live' | 'degraded' | 'offline' | 'empty'>('live');
 
   // Step state (ensure only one definition)
-  const [scenario, setScenario] = useState('basic');
-  const [currentStep, setCurrentStep] = useState(0);
+  // (Removed duplicate state declarations for scenario and currentStep)
   const [completedSteps, setCompletedSteps] = useState(() => {
     const obj: Record<string, boolean[]> = {};
     for (const s of Object.keys(SCENARIO_STEPS)) {

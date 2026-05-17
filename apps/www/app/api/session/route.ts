@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/service'
+import { logger, getRequestId } from '@/lib/logger'
 
-export async function POST(req: NextRequest) {
+  const requestId = getRequestId(req)
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    logger.warn({ msg: 'session_post_unauthorized', requestId })
+    return NextResponse.json({ error: 'Unauthorized', requestId }, { status: 401, headers: { 'x-request-id': requestId } })
+  }
 
   const body = await req.json()
   const {
@@ -15,6 +19,8 @@ export async function POST(req: NextRequest) {
     lanes,
     snapshot_url,
     duration_sec = 0,
+    override_verdict = null,
+    override_notes = null,
   } = body
 
   const { data: session, error: sessionErr } = await sb
@@ -25,11 +31,16 @@ export async function POST(req: NextRequest) {
       snapshot_url: snapshot_url ?? null,
       duration_sec,
       ended_at: new Date().toISOString(),
+      override_verdict,
+      override_notes,
     })
-    .select('id')
+    .select('id, override_verdict, override_notes')
     .single()
 
-  if (sessionErr) return NextResponse.json({ error: sessionErr.message }, { status: 500 })
+  if (sessionErr) {
+    logger.error({ msg: 'session_post_error', error: sessionErr.message, requestId })
+    return NextResponse.json({ error: sessionErr.message, requestId }, { status: 500, headers: { 'x-request-id': requestId } })
+  }
 
   if (envelope !== undefined || consistency !== undefined || lanes) {
     await sb.from('session_metrics').insert({
@@ -88,19 +99,22 @@ export async function POST(req: NextRequest) {
       row_hash,
     })
   } catch (e) {
-    // Log but do not block session save on audit chain failure
-    console.error('NEPA audit chain write failed', e)
+    logger.error({ msg: 'nepa_audit_chain_write_failed', error: e, requestId })
   }
 
   // --- Instructor override/audit chain stub ---
   // TODO: Implement instructor override/hold and signed verdict chain
 
-  return NextResponse.json({ id: session.id })
+  logger.info({ msg: 'session_post_success', sessionId: session.id, userId: user.id, requestId })
+  return NextResponse.json({ id: session.id, override_verdict: session.override_verdict, override_notes: session.override_notes, requestId }, { headers: { 'x-request-id': requestId } })
 }
 
-export async function GET(req: NextRequest) {
+  const requestId = getRequestId(req)
   const id = req.nextUrl.searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (!id) {
+    logger.warn({ msg: 'session_get_missing_id', requestId })
+    return NextResponse.json({ error: 'Missing id', requestId }, { status: 400, headers: { 'x-request-id': requestId } })
+  }
 
   const sb = await createClient()
   const { data, error } = await sb
@@ -109,17 +123,27 @@ export async function GET(req: NextRequest) {
     .eq('id', id)
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 404 })
-  return NextResponse.json(data)
+  if (error) {
+    logger.error({ msg: 'session_get_error', error: error.message, requestId })
+    return NextResponse.json({ error: error.message, requestId }, { status: 404, headers: { 'x-request-id': requestId } })
+  }
+  logger.info({ msg: 'session_get_success', sessionId: id, requestId })
+  return NextResponse.json({ ...data, requestId }, { headers: { 'x-request-id': requestId } })
 }
 
-export async function DELETE(req: NextRequest) {
+  const requestId = getRequestId(req)
   const id = req.nextUrl.searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  if (!id) {
+    logger.warn({ msg: 'session_delete_missing_id', requestId })
+    return NextResponse.json({ error: 'Missing id', requestId }, { status: 400, headers: { 'x-request-id': requestId } })
+  }
 
   const sb = await createClient()
   const { data: { user } } = await sb.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    logger.warn({ msg: 'session_delete_unauthorized', requestId })
+    return NextResponse.json({ error: 'Unauthorized', requestId }, { status: 401, headers: { 'x-request-id': requestId } })
+  }
 
   const { error } = await sb
     .from('sessions')
@@ -127,6 +151,10 @@ export async function DELETE(req: NextRequest) {
     .eq('id', id)
     .eq('user_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
+  if (error) {
+    logger.error({ msg: 'session_delete_error', error: error.message, requestId })
+    return NextResponse.json({ error: error.message, requestId }, { status: 500, headers: { 'x-request-id': requestId } })
+  }
+  logger.info({ msg: 'session_delete_success', sessionId: id, userId: user.id, requestId })
+  return NextResponse.json({ ok: true, requestId }, { headers: { 'x-request-id': requestId } })
 }

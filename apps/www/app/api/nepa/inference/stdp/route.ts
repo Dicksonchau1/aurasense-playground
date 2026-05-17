@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { envelope, sha256 } from '@/lib/nepa'
 import { inferFrameSafe, inferVideoSafe } from '@/lib/runtime'
+import { logger, getRequestId } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -16,8 +17,8 @@ const MAX_BYTES = Number(process.env.NEPA_MAX_UPLOAD_BYTES ?? 10 * 1024 * 1024)
  * route returned pure jitter() noise even when a real runtime was wired —
  * see AUDIT_2026_05.md §1.
  */
-export async function POST(req: NextRequest) {
   const t = Date.now()
+  const requestId = getRequestId(req)
   let filename = 'unknown'
   let bytes = 0
   let mediaSha = ''
@@ -35,14 +36,17 @@ export async function POST(req: NextRequest) {
       buf = Buffer.from(await file.arrayBuffer())
       bytes = buf.length
       if (bytes > MAX_BYTES) {
+        logger.warn({ msg: 'stdp_payload_too_large', filename, bytes, requestId })
         return NextResponse.json(
-          { ok: false, error: 'payload_too_large', max_bytes: MAX_BYTES, bytes },
-          { status: 413 },
+          { ok: false, error: 'payload_too_large', max_bytes: MAX_BYTES, bytes, requestId },
+          { status: 413, headers: { 'x-request-id': requestId } },
         )
       }
       mediaSha = sha256(buf)
     }
-  } catch { /* not multipart */ }
+  } catch (e) {
+    logger.error({ msg: 'stdp_form_error', error: (e as Error).message, requestId })
+  }
 
   const result = bytes === 0
     ? null
@@ -50,6 +54,7 @@ export async function POST(req: NextRequest) {
       ? await inferFrameSafe(buf, { source: 'stdp-route', region: 'FULL' })
       : await inferVideoSafe(buf, { filename })
 
+  logger.info({ msg: 'stdp_post', filename, bytes, kind, requestId })
   return NextResponse.json(envelope({
     pipeline: 'stdp',
     filename,
@@ -59,13 +64,15 @@ export async function POST(req: NextRequest) {
     stdp: result?.stdp ?? null,
     runtime: result?.runtime ?? 'none',
     note: 'Online STDP weight updates · no backprop · no labels.',
-  }, t))
+    requestId,
+  }, t), { headers: { 'x-request-id': requestId } })
 }
 
-export async function GET() {
+  logger.info({ msg: 'stdp_get', requestId: undefined })
   return NextResponse.json({
     ok: true,
     hint: 'POST multipart/form-data with field "image" or "video"',
     max_bytes: MAX_BYTES,
-  })
+    requestId: undefined,
+  }, { headers: { 'x-request-id': undefined } })
 }

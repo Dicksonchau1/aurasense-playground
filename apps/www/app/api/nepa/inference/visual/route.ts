@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { envelope, sha256 } from '@/lib/nepa'
 import { inferFrameSafe, inferVideoSafe } from '@/lib/runtime'
+import { logger, getRequestId } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -12,8 +13,8 @@ const MAX_BYTES = Number(process.env.NEPA_MAX_UPLOAD_BYTES ?? 10 * 1024 * 1024)
  * Replaces the pre-audit mock that always returned jitter() values
  * (AUDIT_2026_05.md §1).
  */
-export async function POST(req: NextRequest) {
   const t = Date.now()
+  const requestId = getRequestId(req)
   let filename = 'unknown'
   let bytes = 0
   let mediaSha = ''
@@ -31,14 +32,17 @@ export async function POST(req: NextRequest) {
       buf = Buffer.from(await file.arrayBuffer())
       bytes = buf.length
       if (bytes > MAX_BYTES) {
+        logger.warn({ msg: 'visual_payload_too_large', filename, bytes, requestId })
         return NextResponse.json(
-          { ok: false, error: 'payload_too_large', max_bytes: MAX_BYTES, bytes },
-          { status: 413 },
+          { ok: false, error: 'payload_too_large', max_bytes: MAX_BYTES, bytes, requestId },
+          { status: 413, headers: { 'x-request-id': requestId } },
         )
       }
       mediaSha = sha256(buf)
     }
-  } catch { /* not multipart */ }
+  } catch (e) {
+    logger.error({ msg: 'visual_form_error', error: (e as Error).message, requestId })
+  }
 
   const result = bytes === 0
     ? null
@@ -46,6 +50,7 @@ export async function POST(req: NextRequest) {
       ? await inferVideoSafe(buf, { filename })
       : await inferFrameSafe(buf, { source: 'visual-route', region: 'FULL' })
 
+  logger.info({ msg: 'visual_post', filename, bytes, kind, requestId })
   return NextResponse.json(envelope({
     pipeline: 'visual',
     filename,
@@ -55,13 +60,15 @@ export async function POST(req: NextRequest) {
     detections: result?.detections ?? [],
     runtime: result?.runtime ?? 'none',
     note: 'No biometric / facial recognition performed.',
-  }, t))
+    requestId,
+  }, t), { headers: { 'x-request-id': requestId } })
 }
 
-export async function GET() {
+  logger.info({ msg: 'visual_get', requestId: undefined })
   return NextResponse.json({
     ok: true,
     hint: 'POST multipart/form-data with field "image" or "video"',
     max_bytes: MAX_BYTES,
-  })
+    requestId: undefined,
+  }, { headers: { 'x-request-id': undefined } })
 }

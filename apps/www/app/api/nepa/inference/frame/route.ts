@@ -5,14 +5,15 @@ import { inferFrameSafe } from '@/lib/runtime'
 import { publish } from '@/lib/runtime/anomaly-bus'
 import { checkQuota, recordUsage } from '@/lib/billing/quota'
 import crypto from 'crypto'
+import { logger, getRequestId } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const HAS_SUPABASE = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
-export async function POST(req: NextRequest) {
   const t = Date.now()
+  const requestId = getRequestId(req)
   let userId: string | undefined
 
   if (HAS_SUPABASE) {
@@ -27,11 +28,13 @@ export async function POST(req: NextRequest) {
   // Pre-flight quota check (1 frame, bytes unknown yet → estimate 0)
   const q = await checkQuota(userId, 1, 0)
   if (!q.allowed) {
+    logger.warn({ msg: 'inference_frame_quota_exceeded', userId, requestId })
     return NextResponse.json({
       ok: false, error: 'quota_exceeded', reason: q.reason, plan: q.plan,
       used: q.used, limits: q.limits,
       upgrade_url: '/portal?upgrade=1',
-    }, { status: 429 })
+      requestId,
+    }, { status: 429, headers: { 'x-request-id': requestId } })
   }
 
   let buf = Buffer.alloc(0), bytes = 0, imgSha = '', source = 'unknown', region = 'FULL', imagePath: string | undefined
@@ -55,7 +58,9 @@ export async function POST(req: NextRequest) {
         } catch { /* skip storage */ }
       }
     }
-  } catch { /* */ }
+  } catch (e) {
+    logger.error({ msg: 'inference_frame_form_error', error: (e as Error).message, requestId })
+  }
 
   // Real runtime (with mock fallback)
   const result = await inferFrameSafe(buf, { source, region, userId })
@@ -85,7 +90,9 @@ export async function POST(req: NextRequest) {
         detections: data.detections, stdp: data.stdp, world_model: data.world_model,
         latency_ms: Date.now() - t,
       })
-    } catch (e) { console.error('[audit] append failed', (e as Error).message) }
+    } catch (e) {
+      logger.error({ msg: 'inference_frame_audit_error', error: (e as Error).message, requestId })
+    }
   }
 
   // Record usage AFTER successful inference
@@ -102,6 +109,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  logger.info({ msg: 'inference_frame_post', userId, bytes, region, source, requestId })
   return NextResponse.json({
     ...envelope(data, t),
     plan: q.plan,
@@ -110,5 +118,6 @@ export async function POST(req: NextRequest) {
     persisted: !!audit_row,
     authenticated: !!userId,
     supabase_configured: HAS_SUPABASE,
-  })
+    requestId,
+  }, { headers: { 'x-request-id': requestId } })
 }

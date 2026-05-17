@@ -1,51 +1,51 @@
 // ATLAS MissionCoreShell: integrates FailsafeSection and MissionCommandsSection
+
 import React from "react";
-import {
-  FailsafeSection,
-  MissionCommandsSection,
-  PolicyReceiptSection,
-  VehicleLinkSection,
-  MissionFenceSection
-} from "../../../components/atlas/sections";
-import {
-  useArduPilotPolicyReceipts,
-  useArduPilotVehicleLink,
-  useArduPilotMissionFence
-} from "../../../lib/atlas/hooks-ardupilot";
-import {
-  getPolicyReceiptPanelVM,
-  getVehicleLinkPanelVM,
-  getMissionFencePanelVM
-} from "../../../lib/atlas/view-models-ardupilot";
+import { AtlasPageHeader, SectionCard, LoadingSkeleton, ErrorBanner, ActionButtonBar } from "../../../lib/atlas/components";
+import { getAtlasPageHeaderVM } from "../../../lib/atlas/view-models";
+// Import your hooks and view-models for operational state as needed
+// import { useArduPilotPolicyReceipts, ... } from "../../../lib/atlas/hooks-ardupilot";
 
-  const policyReceipts = useArduPilotPolicyReceipts();
-  const vehicleLink = useArduPilotVehicleLink();
-  const missionFence = useArduPilotMissionFence();
 
-  const policyVm = getPolicyReceiptPanelVM(
-    policyReceipts.state,
-    policyReceipts.selectedReceipt
-  );
-  const vehicleLinkVm = getVehicleLinkPanelVM(vehicleLink.state);
-  const missionFenceVm = getMissionFencePanelVM(missionFence.state);
+// Example: Replace with your real hooks and view-models for mission, validation, etc.
+const mission = null; // Replace with real mission state
+const validation = null; // Replace with real validation state
+
+export default function MissionCoreShell() {
+  // Example: Replace with real loading/error state as needed
+  const loading = false;
+  const error = null;
+
+  const header = getAtlasPageHeaderVM({ mission, validation });
 
   return (
     <main className="atlas-shell p-8">
-      <h1 className="text-2xl font-bold mb-4">ATLAS Mission Core</h1>
-      <PolicyReceiptSection
-        vm={policyVm}
-        onSelectReceipt={policyReceipts.selectReceipt}
-      />
-      <VehicleLinkSection
-        vm={vehicleLinkVm}
-        onPromotePath={vehicleLink.promotePath}
-      />
-      <MissionFenceSection
-        vm={missionFenceVm}
-        onSetAutoResponse={missionFence.setAutoResponse}
-      />
-      <FailsafeSection />
-      <MissionCommandsSection />
+      <AtlasPageHeader {...header} />
+
+      {error && <ErrorBanner message={error} />}
+      {loading ? (
+        <LoadingSkeleton lines={6} />
+      ) : (
+        <>
+          <SectionCard title="Mission Policy Receipts">
+            {/* Place PolicyReceiptSection or new presentational components here */}
+            <div className="text-gray-400">[PolicyReceiptSection goes here]</div>
+          </SectionCard>
+          <SectionCard title="Vehicle Link">
+            {/* Place VehicleLinkSection or new presentational components here */}
+            <div className="text-gray-400">[VehicleLinkSection goes here]</div>
+          </SectionCard>
+          <SectionCard title="Mission Fence">
+            {/* Place MissionFenceSection or new presentational components here */}
+            <div className="text-gray-400">[MissionFenceSection goes here]</div>
+          </SectionCard>
+          <ActionButtonBar>
+            {/* Example action buttons */}
+            <button className="btn btn-primary">Arm Mission</button>
+            <button className="btn btn-secondary">Abort</button>
+          </ActionButtonBar>
+        </>
+      )}
     </main>
   );
 }

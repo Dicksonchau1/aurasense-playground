@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: ATLAS Live Feed WebSocket Events
+  version: 1.0.0
+  description: WebSocket event schemas for live video, detections, camera control feedback, and alerts.
+servers:
+  - url: /ws/atlas
+paths: {}
+components:
+  schemas:
+    DetectionFrame:
+      type: object
+      properties:
+        frameId:
+          type: string
+        ts:
+          type: integer
+        boxes:
+          type: array
+          items:
+            type: object
+            properties:
+              cls:
+                type: string
+                enum: [CRACK, SPALL, CORROSION, RUST, DELAMINATION]
+              conf:
+                type: number
+              bbox:
+                type: array
+                items:
+                  type: number
+                minItems: 4
+                maxItems: 4
+              geoTag:
+                type: object
+                properties:
+                  lat:
+                    type: number
+                  lon:
+                    type: number
+                  alt:
+                    type: number
+    VideoStreamHealth:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        bitrateKbps:
+          type: integer
+        latencyMs:
+          type: integer
+        packetLoss:
+          type: number
+        codec:
+          type: string
+        resolution:
+          type: string
+        fps:
+          type: integer
+    CameraCommandAck:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        command:
+          $ref: '#/components/schemas/CameraCommand'
+    CameraCommand:
+      oneOf:
+        - type: object
+          properties:
+            type:
+              const: GIMBAL_PITCH
+            deg:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: GIMBAL_YAW
+            deg:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: GIMBAL_TRACK
+            nx:
+              type: number
+            ny:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: ZOOM
+            factor:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: PAYLOAD
+            lens:
+              type: string
+              enum: [EO, IR, WIDE, ZOOM]
+        - type: object
+          properties:
+            type:
+              const: EXPOSURE
+            ev:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: CAPTURE_PHOTO
+        - type: object
+          properties:
+            type:
+              const: RECORD
+            state:
+              type: string
+              enum: [START, STOP]
+    AlertEvent:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [GEOFENCE_BREACH, LOW_BATTERY, SIGNAL_LOSS, CUSTOM]
+        severity:
+          type: string
+          enum: [INFO, WARNING, CRITICAL]
+        message:
+          type: string
+        ts:
+          type: integer
+        data:
+          type: object
+          additionalProperties: true

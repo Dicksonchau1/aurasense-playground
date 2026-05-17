@@ -1,3 +1,78 @@
+import type { PerceptionArbitrationDecision } from "./hooks-fleet";
+// View-model for perception-aware arbitration (Surface 2)
+import type { StatusChipVM, KPIItem } from "./view-models";
+
+function arbitrationTone(outcome: string): StatusChipVM["tone"] {
+  switch (outcome) {
+    case "accept-handoff":
+      return "success";
+    case "accept-handoff-with-warning":
+      return "warning";
+    case "refuse-handoff-insufficient-coverage":
+      return "warning";
+    case "refuse-handoff-critical-findings":
+      return "critical";
+    default:
+      return "neutral";
+  }
+}
+
+export function getPerceptionAwareArbitrationPanelVM(
+  decision: PerceptionArbitrationDecision
+): {
+  status: StatusChipVM;
+  kpis: KPIItem[];
+  reasons: { code: string; message: string }[];
+} {
+  return {
+    status: {
+      label: (() => {
+        switch (decision.outcome) {
+          case "accept-handoff":
+            return "Handoff accepted";
+          case "accept-handoff-with-warning":
+            return "Accepted with warning";
+          case "refuse-handoff-insufficient-coverage":
+            return "Refused: Insufficient coverage";
+          case "refuse-handoff-critical-findings":
+            return "Refused: Critical findings";
+          default:
+            return "Arbitration unknown";
+        }
+      })(),
+      tone: arbitrationTone(decision.outcome)
+    },
+    kpis: [
+      {
+        key: "perceptionCoverage",
+        label: "Perception Coverage",
+        value:
+          decision.perceptionCoverage === null
+            ? "unknown"
+            : `${decision.perceptionCoverage.toFixed(1)}%`,
+        tone: decision.perceptionCoverage === null
+          ? "neutral"
+          : decision.perceptionCoverage >= 95
+          ? "success"
+          : "warning"
+      },
+      {
+        key: "unreviewedCriticalFindings",
+        label: "Unreviewed Critical Findings",
+        value:
+          decision.unreviewedCriticalFindings === null
+            ? "unknown"
+            : String(decision.unreviewedCriticalFindings),
+        tone: decision.unreviewedCriticalFindings === null
+          ? "neutral"
+          : decision.unreviewedCriticalFindings > 0
+          ? "critical"
+          : "success"
+      }
+    ],
+    reasons: decision.reasons
+  };
+}
 // src/lib/atlas/view-models-fleet.ts
 // View-model for perception-typed fleet state (Surface 1)
 

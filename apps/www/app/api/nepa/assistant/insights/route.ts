@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger, getRequestId } from '@/lib/logger';
 
 // Example static insights data
 const insights = [
@@ -14,6 +15,7 @@ const insights = [
   }
 ];
 
-export async function GET() {
-  return NextResponse.json({ data: insights });
+  // For static GET, simulate requestId as undefined
+  logger.info({ msg: 'assistant_insights_get', requestId: undefined });
+  return NextResponse.json({ data: insights, requestId: undefined }, { headers: { 'x-request-id': undefined } });
 }

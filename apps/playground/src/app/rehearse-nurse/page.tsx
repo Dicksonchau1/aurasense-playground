@@ -1,14 +1,17 @@
+"use client";
 export const dynamic = "force-dynamic";
+import { useState } from "react";
+import DynamicImport from "next/dynamic";
+const NurseRehearseSession = DynamicImport(() => import("../../components/rehearseNurse/Session"), { ssr: false });
+const NurseRehearseResult = DynamicImport(() => import("../../components/rehearseNurse/Result"), { ssr: false });
 
 export default function Page() {
-  return (
-    <div style={{ minHeight: "100dvh", margin: 0, padding: 0, background: "#0f1419" }}>
-      <iframe
-        src="/static/hk-trainer.html"
-        style={{ border: "none", width: "100vw", height: "100dvh", display: "block" }}
-        title="HK Hand Hygiene Trainer"
-        allow="camera; microphone"
-      />
-    </div>
-  );
+  return <NurseRehearseFlow />;
+}
+export const dynamic = "force-dynamic";
+
+import NurseRehearseFlow from "./NurseRehearseFlow";
+
+export default function Page() {
+  return <NurseRehearseFlow />;
 }

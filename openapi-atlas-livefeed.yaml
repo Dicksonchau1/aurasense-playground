@@ -1,0 +1,212 @@
+openapi: 3.1.0
+info:
+  title: ATLAS Live Feed API
+  version: 1.0.0
+  description: API for drone live feed, overlays, detections, camera control, annotation, and alerts.
+servers:
+  - url: /api/atlas
+paths:
+  /stream/{sessionId}:
+    get:
+      summary: Get video stream signaling info
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Video stream info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoStream'
+  /camera-command/{sessionId}:
+    post:
+      summary: Send camera/gimbal command
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CameraCommand'
+      responses:
+        '200':
+          description: Command result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+  /annotations/{sessionId}:
+    post:
+      summary: Create annotation
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Annotation'
+      responses:
+        '200':
+          description: Annotation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+  /evidence-bundle/{sessionId}:
+    post:
+      summary: Add annotation to evidence bundle
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                annotationId:
+                  type: string
+                waypointId:
+                  type: string
+      responses:
+        '200':
+          description: Evidence bundle updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+components:
+  schemas:
+    VideoStream:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        signalingUrl:
+          type: string
+        codec:
+          type: string
+          enum: [H264, H265, AV1]
+        resolution:
+          type: string
+          enum: [720p, 1080p, 4K]
+        fps:
+          type: integer
+          enum: [30, 60]
+        bitrateKbps:
+          type: integer
+        latencyMs:
+          type: integer
+        packetLoss:
+          type: number
+    CameraCommand:
+      oneOf:
+        - type: object
+          properties:
+            type:
+              const: GIMBAL_PITCH
+            deg:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: GIMBAL_YAW
+            deg:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: GIMBAL_TRACK
+            nx:
+              type: number
+            ny:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: ZOOM
+            factor:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: PAYLOAD
+            lens:
+              type: string
+              enum: [EO, IR, WIDE, ZOOM]
+        - type: object
+          properties:
+            type:
+              const: EXPOSURE
+            ev:
+              type: number
+        - type: object
+          properties:
+            type:
+              const: CAPTURE_PHOTO
+        - type: object
+          properties:
+            type:
+              const: RECORD
+            state:
+              type: string
+              enum: [START, STOP]
+    Annotation:
+      type: object
+      properties:
+        id:
+          type: string
+        ts:
+          type: integer
+        bbox:
+          type: array
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+        note:
+          type: string
+        severity:
+          type: string
+          enum: [INFO, MINOR, MAJOR, CRITICAL]
+        geoTag:
+          type: object
+          properties:
+            lat:
+              type: number
+            lon:
+              type: number
+            alt:
+              type: number
+        waypointId:
+          type: string
+        evidenceBundleId:
+          type: string
